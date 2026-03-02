@@ -35,7 +35,6 @@ class _SplashScreenState extends State<SplashScreen> {
             Builder(
               builder: (context) {
                 const svgPath = 'assets/images/logo.svg';
-                const pngPath = 'assets/images/logo-green.png';
                 // attempt SVG, fallback to PNG on error
                 return SvgPicture.asset(
                   svgPath,
