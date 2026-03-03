@@ -36,6 +36,14 @@ const energyData = [
   { time: '20:00', consumption: 290 },
 ];
 
+// realistic recent activity entries
+const recentActivities = [
+  { text: 'Gate access granted', details: 'Apartment 204 • 5 min ago' },
+  { text: 'Package delivered', details: 'Front desk • 10 min ago' },
+  { text: 'Security alarm triggered', details: 'Building B • 20 min ago' },
+  { text: 'Maintenance request submitted', details: 'Apartment 110 • 30 min ago' },
+];
+
 export default function Overview() {
   return (
     <Box>
@@ -100,7 +108,7 @@ export default function Overview() {
           </Card>
         </Grid>
 
-        {/* Recent Activity - REMOVED 'item' prop */}
+        {/* Recent Activity  */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Card>
             <CardContent>
@@ -108,9 +116,9 @@ export default function Overview() {
                 Recent Activity
               </Typography>
               <Box sx={{ mt: 2 }}>
-                {[1, 2, 3, 4].map((item) => (
+                {recentActivities.map((act, idx) => (
                   <Box
-                    key={item}
+                    key={idx}
                     sx={{
                       py: 1.5,
                       borderBottom: '1px solid #eee',
@@ -118,10 +126,10 @@ export default function Overview() {
                     }}
                   >
                     <Typography variant="body2" fontWeight={500}>
-                      Gate access granted 
+                      {act.text}
                     </Typography>
                     <Typography variant="caption" color="textSecondary">
-                      Apartment 204 • 5 min ago
+                      {act.details}
                     </Typography>
                   </Box>
                 ))}
