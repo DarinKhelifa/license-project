@@ -43,7 +43,7 @@ interface User {
   name: string;
   email: string;
   phone: string;
-  role: 'resident' | 'security' | 'admin' | 'maintenance';
+  role: 'resident' | 'security' |'maintenance';
   apartment?: string;
   status: 'active' | 'inactive' | 'pending';
   joinDate: string;
@@ -85,7 +85,7 @@ const mockUsers: User[] = [
     name: 'Sofia Mansouri',
     email: 'sofia.m@email.com',
     phone: '0555 45 67 89',
-    role: 'admin',
+    role: 'resident',
     status: 'active',
     joinDate: '2023-09-05',
   },
@@ -103,7 +103,7 @@ const mockUsers: User[] = [
     name: 'Nadia Cherif',
     email: 'nadia.c@email.com',
     phone: '0555 67 89 01',
-    role: 'resident',
+    role: 'maintenance',
     apartment: 'C78',
     status: 'pending',
     joinDate: '2024-03-15',
@@ -259,13 +259,12 @@ export default function ManageAccounts() {
     
     if (tabValue === 0) return matchesSearch; // All
     if (tabValue === 1) return matchesSearch && user.role === 'resident';
-    if (tabValue === 2) return matchesSearch && ['security', 'admin', 'maintenance'].includes(user.role);
+    if (tabValue === 2) return matchesSearch && ['security', 'maintenance'].includes(user.role);
     return matchesSearch;
   });
 
   const getRoleChipColor = (role: string) => {
     switch(role) {
-      case 'admin': return { bg: '#034808', color: 'white' };
       case 'security': return { bg: '#FFD700', color: '#034808' };
       case 'maintenance': return { bg: '#FF6B6B', color: 'white' };
       default: return { bg: '#E0E0E0', color: '#333' };
@@ -441,7 +440,6 @@ export default function ManageAccounts() {
                 >
                   <MenuItem value="resident">Resident</MenuItem>
                   <MenuItem value="security">Security</MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
                   <MenuItem value="maintenance">Maintenance</MenuItem>
                 </Select>
               </FormControl>
