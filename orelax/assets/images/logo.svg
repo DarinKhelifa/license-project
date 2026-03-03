@@ -1,25 +1,39 @@
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg width="800" height="500" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
 
-  <!-- House / Shield Shape -->
-  <polygon points="256,90 400,180 400,340 256,420 112,340 112,180" fill="#F5C518"></polygon>
+  <!-- Background Grid -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <rect width="40" height="40" fill="#f2f2f2"></rect>
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d9d9d9" stroke-width="1"></path>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#grid)"></rect>
 
-  <!-- Roof -->
-  <polygon points="100,170 256,60 412,170 392,200 256,110 120,200" fill="#F5C518"></polygon>
+  <!-- Logo Color -->
+  <g fill="#D4A62A">
 
-  <!-- Chimney -->
-  <rect x="190" y="85" width="35" height="55" fill="#F5C518"></rect>
+    <!-- Key Head -->
+    <circle cx="250" cy="220" r="60" fill="none" stroke="#D4A62A" stroke-width="20"></circle>
+    <circle cx="250" cy="220" r="25" fill="#f2f2f2"></circle>
 
-  <!-- Keyhole Vertical -->
-  <rect x="245" y="180" width="22" height="160" fill="white"></rect>
+    <!-- Key Shaft -->
+    <rect x="300" y="200" width="250" height="40" rx="5"></rect>
 
-  <!-- Keyhole Circle -->
-  <circle cx="256" cy="220" r="25" fill="white"></circle>
+    <!-- House 1 -->
+    <polygon points="420,160 460,120 500,160"></polygon>
+    <rect x="435" y="160" width="50" height="60"></rect>
+    <rect x="455" y="180" width="15" height="40" fill="#f2f2f2"></rect>
 
-  <!-- Keyhole Bottom -->
-  <polygon points="256,245 230,300 282,300" fill="white"></polygon>
+    <!-- House 2 -->
+    <polygon points="500,160 540,120 580,160"></polygon>
+    <rect x="515" y="160" width="50" height="60"></rect>
+    <rect x="535" y="180" width="15" height="40" fill="#f2f2f2"></rect>
+
+  </g>
 
   <!-- Text -->
-  <text x="256" y="490" font-family="Arial, Helvetica, sans-serif" font-size="80" font-weight="bold" text-anchor="middle" fill="#F5C518">
+  <text x="400" y="360" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="64" letter-spacing="12" fill="#D4A62A">
     ORELAX
   </text>
 
