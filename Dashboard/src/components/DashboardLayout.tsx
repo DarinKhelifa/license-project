@@ -25,6 +25,7 @@ import {
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
+  Person as PersonIcon, // Add this line
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,7 +37,9 @@ const menuItems = [
   { text: 'Community', icon: <PeopleIcon />, path: '/community' },
   { text: 'Facilities', icon: <FacilitiesIcon />, path: '/facilities' },
   { text: 'Monitoring', icon: <MonitoringIcon />, path: '/monitoring' },
+  { text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' }, // Now PersonIcon is defined
 ];
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
