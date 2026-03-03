@@ -33,11 +33,12 @@ const drawerWidth = 280;
 
 const menuItems = [
   { text: 'Overview', icon: <DashboardIcon />, path: '/' },
+{ text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' }, 
+
   { text: 'Security', icon: <SecurityIcon />, path: '/security' },
   { text: 'Community', icon: <PeopleIcon />, path: '/community' },
   { text: 'Facilities', icon: <FacilitiesIcon />, path: '/facilities' },
-  { text: 'Monitoring', icon: <MonitoringIcon />, path: '/monitoring' },
-  { text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' }, // Now PersonIcon is defined
+  { text: 'Monitoring', icon: <MonitoringIcon />, path: '/monitoring' }
 ];
 
 
