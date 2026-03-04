@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'signup_screen.dart';  // Fixed path (same folder)
+import 'signup_screen.dart'; // Fixed path (same folder)
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -97,7 +97,8 @@ class LoginScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SignupScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const SignupScreen()),
                   );
                 },
                 child: RichText(

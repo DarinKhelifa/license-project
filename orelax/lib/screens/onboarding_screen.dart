@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'auth/login_screen.dart';
+import 'auth/signup_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -16,23 +17,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final List<Map<String, String>> _pages = [
     {
       'title': 'ALL IN ONE\nREAL RESIDENCE',
-      'description': 'Your connected home where responsive security meets neighbourhood harmony and technological ease.',
+      'description':
+          'Your connected home where responsive security meets neighbourhood harmony and technological ease.',
     },
     {
       'title': 'SMART SECURITY\n24/7 PROTECTION',
-      'description': 'Automated access control for residents and guests with real-time alerts and surveillance.',
+      'description':
+          'Automated access control for residents and guests with real-time alerts and surveillance.',
     },
     {
       'title': 'COMMUNITY LIVING\nCONNECTED NEIGHBORS',
-      'description': 'Private messenger, event organization, and shared space bookings all in one place.',
+      'description':
+          'Private messenger, event organization, and shared space bookings all in one place.',
     },
   ];
 
   // Images for each page
   final List<String> _images = [
     'assets/images/introImg.png',
-    'assets/images/background2.jpg', 
-    'assets/images/backgound1.jpg', 
+    'assets/images/background2.jpg',
+    'assets/images/backgound1.jpg',
   ];
 
   @override
@@ -60,7 +64,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     height: double.infinity,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: Color.fromRGBO(3, 72, 8, 1.0),
+                        color: const Color.fromRGBO(3, 72, 8, 1.0),
                         child: Center(
                           child: Text(
                             'Image not found\n${_images[index]}',
@@ -266,7 +270,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    // Navigate to login
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromRGBO(3, 72, 8, 1.0),
@@ -288,11 +296,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: OutlinedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    // Navigate to signup
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const SignupScreen()),
+                    );
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color.fromRGBO(3, 72, 8, 1.0),
-                    side: const BorderSide(color: Color.fromRGBO(3, 72, 8, 1.0)),
+                    side:
+                        const BorderSide(color: Color.fromRGBO(3, 72, 8, 1.0)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
