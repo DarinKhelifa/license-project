@@ -1,0 +1,26 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- House / Shield Shape -->
+  <polygon points="256,90 400,180 400,340 256,420 112,340 112,180" fill="#F5C518"></polygon>
+
+  <!-- Roof -->
+  <polygon points="100,170 256,60 412,170 392,200 256,110 120,200" fill="#F5C518"></polygon>
+
+  <!-- Chimney -->
+  <rect x="190" y="85" width="35" height="55" fill="#F5C518"></rect>
+
+  <!-- Keyhole Vertical -->
+  <rect x="245" y="180" width="22" height="160" fill="white"></rect>
+
+  <!-- Keyhole Circle -->
+  <circle cx="256" cy="220" r="25" fill="white"></circle>
+
+  <!-- Keyhole Bottom -->
+  <polygon points="256,245 230,300 282,300" fill="white"></polygon>
+
+  <!-- Text -->
+  <text x="256" y="490" font-family="Arial, Helvetica, sans-serif" font-size="80" font-weight="bold" text-anchor="middle" fill="#F5C518">
+    ORELAX
+  </text>
+
+</svg>
