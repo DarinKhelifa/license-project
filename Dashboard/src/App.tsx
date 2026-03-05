@@ -20,20 +20,56 @@ function App() {
     <ThemeProvider theme={orelaxTheme}>
       <CssBaseline />
       <Router>
-        <DashboardLayout>
-          <Routes>
-              {/* Public Routes */}
+        <Routes>
+          {/* Public Routes - NO DASHBOARD LAYOUT */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-            <Route path="/" element={<Overview />} />
-            <Route path="/accounts" element={<ManageAccounts />} />
-            {/*<Route path="/security" element={<Security />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/facilities" element={<Facilities />} />
-            <Route path="/monitoring" element={<Monitoring />} />*/}
-          </Routes>
-        </DashboardLayout>
+          
+          {/* Protected Routes - WITH DASHBOARD LAYOUT AND AUTH GUARD */}
+          <Route path="/dashboard" element={
+            <AuthGuard>
+              <DashboardLayout>
+                <Overview />
+              </DashboardLayout>
+            </AuthGuard>
+          } />
+          <Route path="/accounts" element={
+            <AuthGuard>
+              <DashboardLayout>
+                <ManageAccounts />
+              </DashboardLayout>
+            </AuthGuard>
+          } />
+          {/*<Route path="/security" element={
+            <AuthGuard>
+              <DashboardLayout>
+                <Security />
+              </DashboardLayout>
+            </AuthGuard>
+          } />
+          <Route path="/community" element={
+            <AuthGuard>
+              <DashboardLayout>
+                <Community />
+              </DashboardLayout>
+            </AuthGuard>
+          } />
+          <Route path="/facilities" element={
+            <AuthGuard>
+              <DashboardLayout>
+                <Facilities />
+              </DashboardLayout>
+            </AuthGuard>
+          } />
+          <Route path="/monitoring" element={
+            <AuthGuard>
+              <DashboardLayout>
+                <Monitoring />
+              </DashboardLayout>
+            </AuthGuard>
+          />*/}
+        </Routes>
       </Router>
     </ThemeProvider>
   );
