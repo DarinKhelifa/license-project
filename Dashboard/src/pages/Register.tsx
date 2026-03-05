@@ -8,7 +8,7 @@ import {
   Link,
   Alert,
 } from '@mui/material';
-import Grid from '@mui/material/Grid'; // Import Grid2
+import Grid from '@mui/material/Grid';
 import { useNavigate } from 'react-router-dom';
 
 export default function Register() {
@@ -82,7 +82,8 @@ export default function Register() {
             required
           />
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}> {/* Fixed: using size prop */}
+            {/* FIXED: Changed from size={{ xs:12, sm:6 }} to item xs={12} sm={6} */}
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Phone"
@@ -93,7 +94,8 @@ export default function Register() {
                 required
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}> {/* Fixed: using size prop */}
+            {/* FIXED: Changed from size={{ xs:12, sm:6 }} to item xs={12} sm={6} */}
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Apartment"

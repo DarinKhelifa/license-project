@@ -1,5 +1,5 @@
 import React, { JSX, useState } from 'react';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid'; // Regular Grid, NOT Grid2
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Paper from '@mui/material/Paper';
@@ -307,7 +307,8 @@ export default function ManageAccounts() {
       {/* Search Bar */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid size={{ xs: 12, md: 6 }}> {/* Fixed: using size prop */}
+          {/* FIXED: Changed from size={{ xs:12, md:6 }} to item xs={12} md={6} */}
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               variant="outlined"
@@ -319,7 +320,8 @@ export default function ManageAccounts() {
               }}
             />
           </Grid>
-          <Grid size={{ xs: 12, md: 6 }}> {/* Fixed: using size prop */}
+          {/* FIXED: Changed from size={{ xs:12, md:6 }} to item xs={12} md={6} */}
+          <Grid item xs={12} md={6}>
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
               <Chip
                 icon={<PersonIcon />}
@@ -399,7 +401,8 @@ export default function ManageAccounts() {
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12 }}> {/* Fixed: using size prop */}
+            {/* FIXED: Changed from size={{ xs:12 }} to item xs={12} */}
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Full Name"
@@ -409,7 +412,8 @@ export default function ManageAccounts() {
                 margin="normal"
               />
             </Grid>
-            <Grid size={{ xs: 12 }}> {/* Fixed: using size prop */}
+            {/* FIXED: Changed from size={{ xs:12 }} to item xs={12} */}
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Email"
@@ -420,7 +424,8 @@ export default function ManageAccounts() {
                 margin="normal"
               />
             </Grid>
-            <Grid size={{ xs: 12 }}> {/* Fixed: using size prop */}
+            {/* FIXED: Changed from size={{ xs:12 }} to item xs={12} */}
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Phone"
@@ -430,7 +435,8 @@ export default function ManageAccounts() {
                 margin="normal"
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}> {/* Fixed: using size prop */}
+            {/* FIXED: Changed from size={{ xs:12, md:6 }} to item xs={12} md={6} */}
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Role</InputLabel>
                 <Select
@@ -444,7 +450,8 @@ export default function ManageAccounts() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}> {/* Fixed: using size prop */}
+            {/* FIXED: Changed from size={{ xs:12, md:6 }} to item xs={12} md={6} */}
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Status</InputLabel>
                 <Select
@@ -459,7 +466,8 @@ export default function ManageAccounts() {
               </FormControl>
             </Grid>
             {formData.role === 'resident' && (
-              <Grid size={{ xs: 12 }}> {/* Fixed: using size prop */}
+              /* FIXED: Changed from size={{ xs:12 }} to item xs={12} */
+              <Grid item xs={12}>
                 <TextField
                   fullWidth
                   label="Apartment Number"

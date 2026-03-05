@@ -1,5 +1,5 @@
 import React from 'react';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid'; // Regular Grid
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
@@ -36,7 +36,6 @@ const energyData = [
   { time: '20:00', consumption: 290 },
 ];
 
-// realistic recent activity entries
 const recentActivities = [
   { text: 'Gate access granted', details: 'Apartment 204 • 5 min ago' },
   { text: 'Package delivered', details: 'Front desk • 10 min ago' },
@@ -52,9 +51,9 @@ export default function Overview() {
       </Typography>
       
       <Grid container spacing={3}>
-        {/* Stats Cards - FIXED: using size prop instead of item and xs/sm/md */}
+        {/* Stats Cards - FIXED: using item prop with xs/sm/md */}
         {stats.map((stat, index) => (
-          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
+          <Grid item xs={12} sm={6} md={3} key={index}> {/* Changed: size={{...}} → item xs={12} sm={6} md={3} */}
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -80,8 +79,8 @@ export default function Overview() {
           </Grid>
         ))}
 
-        {/* Energy Consumption Chart - FIXED: using size prop */}
-        <Grid size={{ xs: 12, md: 8 }}>
+        {/* Energy Consumption Chart - FIXED: using item prop */}
+        <Grid item xs={12} md={8}> {/* Changed: size={{ xs:12, md:8 }} → item xs={12} md={8} */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ color: '#034808' }}>
@@ -108,8 +107,8 @@ export default function Overview() {
           </Card>
         </Grid>
 
-        {/* Recent Activity - FIXED: using size prop */}
-        <Grid size={{ xs: 12, md: 4 }}>
+        {/* Recent Activity - FIXED: using item prop */}
+        <Grid item xs={12} md={4}> {/* Changed: size={{ xs:12, md:4 }} → item xs={12} md={4} */}
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ color: '#034808' }}>
