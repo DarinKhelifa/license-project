@@ -229,7 +229,6 @@ const GradualBlur: React.FC<GradualBlurProps> = props => {
     const isHorizontal = ['left', 'right'].includes(config.position);
     const isPageTarget = config.target === 'page';
 
-    // Create base style object
     const baseStyle: CSSProperties = {
       position: isPageTarget ? 'fixed' : 'absolute',
       pointerEvents: config.hoverIntensity ? 'auto' : 'none',
@@ -242,7 +241,6 @@ const GradualBlur: React.FC<GradualBlurProps> = props => {
     if (isVertical) {
       baseStyle.height = responsiveHeight;
       baseStyle.width = responsiveWidth || '100%';
-      // FIXED: Use type assertion for dynamic property
       if (config.position === 'top') {
         baseStyle.top = 0;
       } else if (config.position === 'bottom') {
@@ -253,7 +251,6 @@ const GradualBlur: React.FC<GradualBlurProps> = props => {
     } else if (isHorizontal) {
       baseStyle.width = responsiveWidth || responsiveHeight;
       baseStyle.height = '100%';
-      // FIXED: Use type assertion for dynamic property
       if (config.position === 'left') {
         baseStyle.left = 0;
       } else if (config.position === 'right') {
@@ -303,17 +300,3 @@ GradualBlurMemo.displayName = 'GradualBlur';
 (GradualBlurMemo as any).PRESETS = PRESETS;
 (GradualBlurMemo as any).CURVE_FUNCTIONS = CURVE_FUNCTIONS;
 export default GradualBlurMemo;
-
-const injectStyles = () => {
-  if (typeof document === 'undefined') return;
-  const styleId = 'gradual-blur-styles';
-  if (document.getElementById(styleId)) return;
-  const styleElement = document.createElement('style');
-  styleElement.id = styleId;
-  styleElement.textContent = `.gradual-blur{pointer-events:none;transition:opacity 0.3s ease-out}.gradual-blur-inner{pointer-events:none}`;
-  document.head.appendChild(styleElement);
-};
-
-if (typeof document !== 'undefined') {
-  injectStyles();
-}
