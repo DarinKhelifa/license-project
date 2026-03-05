@@ -32,13 +32,12 @@ import { useNavigate } from 'react-router-dom';
 const drawerWidth = 280;
 
 const menuItems = [
-  { text: 'Overview', icon: <DashboardIcon />, path: '/' },
-{ text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' }, 
-
+  { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Security', icon: <SecurityIcon />, path: '/security' },
   { text: 'Community', icon: <PeopleIcon />, path: '/community' },
   { text: 'Facilities', icon: <FacilitiesIcon />, path: '/facilities' },
-  { text: 'Monitoring', icon: <MonitoringIcon />, path: '/monitoring' }
+  { text: 'Monitoring', icon: <MonitoringIcon />, path: '/monitoring' },
+  { text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' },
 ];
 
 

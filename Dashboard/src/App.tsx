@@ -3,6 +3,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { orelaxTheme } from './styles/theme';
+import AuthGuard from './components/AuthGuard';
+import LandingPage from './pages/LandingPage';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import DashboardLayout from './components/DashboardLayout';
 import Overview from './pages/Overview';
 import ManageAccounts from './pages/ManageAccounts';
@@ -18,6 +22,10 @@ function App() {
       <Router>
         <DashboardLayout>
           <Routes>
+              {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
             <Route path="/" element={<Overview />} />
             <Route path="/accounts" element={<ManageAccounts />} />
             {/*<Route path="/security" element={<Security />} />
