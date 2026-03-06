@@ -299,7 +299,7 @@ class RegistrationSuccessScreen extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.popUntil(context, (route) => route.isFirst);
+                          Navigator.pushReplacementNamed(context, '/home');
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFFD600),

@@ -20,14 +20,20 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
-  uses-material-design: true  # ✅ This must be indented under flutter:
+  uses-material-design: true
 
-  assets:                     # ✅ Also indented under flutter:
+  assets:        # ← must have 2 spaces before it
     - assets/images/introImg.png
     - assets/images/backgound1.jpg
     - assets/images/background2.jpg
     - assets/images/logo-white.png
     - assets/images/logo-green.png
     - assets/images/logo.svg
+    - assets/icon/house.svg
+    - assets/icon/message-circle.svg
+    - assets/icon/user-round.svg
+    - assets/icon/users.svg
+    

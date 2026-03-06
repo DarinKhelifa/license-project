@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'screens/onboarding_screen.dart'; // ✅ only this is needed
+import 'screens/splash_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/signup_screen.dart';
+import 'screens/Home/home-screen.dart';
+import 'screens/Home/profile_screen.dart';
 
 void main() {
   runApp(const OrelaxApp());
@@ -17,7 +22,17 @@ class OrelaxApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: const OnboardingScreen(), // ✅ starts from onboarding
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/onboarding': (context) => const OnboardingScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignupScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        //'/chat': (context) => const ChatScreen(),      // ← add
+        //'/feed': (context) => const FeedScreen(),
+      },
     );
   }
 }
