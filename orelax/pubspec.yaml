@@ -30,11 +30,10 @@ flutter:
     - assets/images/introImg.png
     - assets/images/backgound1.jpg
     - assets/images/background2.jpg
-    - assets/images/logo-white.png
-    - assets/images/logo-green.png
     - assets/images/logo.svg
     - assets/icon/house.svg
     - assets/icon/message-circle.svg
     - assets/icon/user-round.svg
     - assets/icon/users.svg
+    - assets/icon/triangle-alert.svg
     

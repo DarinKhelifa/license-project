@@ -11,6 +11,25 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
+  // Navigation methods
+  void _navigateToPage(int index) {
+    setState(() => _currentIndex = index);
+    
+    switch (index) {
+      case 0: // Home - already on home screen
+        break;
+      case 1: // Chat
+        Navigator.pushNamed(context, '/chat');
+        break;
+      case 2: // Report (formerly Feed)
+        Navigator.pushNamed(context, '/report');
+        break;
+      case 3: // Profile
+        Navigator.pushNamed(context, '/profile');
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       Text(
-                        '★ Secure Gated Community',
+                        'Secure Gated Community',
                         style: TextStyle(fontSize: 11, color: Colors.grey),
                       ),
                     ],
@@ -89,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Announcement Card ──
+                    // ── Announcement Card with example ──
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
@@ -158,19 +177,24 @@ class _HomeScreenState extends State<HomeScreen> {
                                     fontSize: 13, color: Colors.white70),
                               ),
                               const SizedBox(height: 14),
-                              Row(
-                                children: const [
-                                  Text(
-                                    'Learn More ',
-                                    style: TextStyle(
-                                      color: Color(0xFFF5C518),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/events');
+                                },
+                                child: const Row(
+                                  children: [
+                                    Text(
+                                      'Learn More ',
+                                      style: TextStyle(
+                                        color: Color(0xFFF5C518),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
                                     ),
-                                  ),
-                                  Icon(Icons.arrow_forward,
-                                      color: Color(0xFFF5C518), size: 16),
-                                ],
+                                    Icon(Icons.arrow_forward,
+                                        color: Color(0xFFF5C518), size: 16),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -183,16 +207,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     // ── Our Services ──
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
+                      children: [
+                        const Text(
                           'OUR SERVICES',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 14),
                         ),
-                        Text(
-                          'View All',
-                          style:
-                              TextStyle(color: Color(0xFF1A5C2A), fontSize: 13),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/all-services');
+                          },
+                          child: const Text(
+                            'View All',
+                            style: TextStyle(
+                                color: Color(0xFF1A5C2A), fontSize: 13),
+                          ),
                         ),
                       ],
                     ),
@@ -207,32 +236,147 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisSpacing: 14,
                       crossAxisSpacing: 14,
                       childAspectRatio: 1.4,
-                      children: const [
+                      children: [
                         _ServiceCard(
                           icon: Icons.calendar_today_outlined,
-                          iconColor: Color(0xFF5B8DEF),
+                          iconColor: const Color(0xFF5B8DEF),
                           title: 'Facilities',
                           subtitle: 'Reserve gym, pool or club',
+                          onTap: () => Navigator.pushNamed(context, '/facilities'),
                         ),
                         _ServiceCard(
                           icon: Icons.people_outline,
-                          iconColor: Color(0xFFE07B3F),
+                          iconColor: const Color(0xFFE07B3F),
                           title: 'Events',
                           subtitle: 'Neighborhood gatherings',
+                          onTap: () => Navigator.pushNamed(context, '/events'),
                         ),
                         _ServiceCard(
                           icon: Icons.child_care_outlined,
-                          iconColor: Color(0xFFE05C8A),
+                          iconColor: const Color(0xFFE05C8A),
                           title: 'Childcare',
-                          subtitle: '',
+                          subtitle: 'Verified nursery staff',
+                          onTap: () => Navigator.pushNamed(context, '/childcare'),
                         ),
                         _ServiceCard(
-                          icon: Icons.key_outlined,
-                          iconColor: Color(0xFF9B59B6),
+                          icon: Icons.construction_outlined,
+                          iconColor: const Color(0xFF9B59B6),
                           title: 'Helping Staff',
-                          subtitle: '',
+                          subtitle: 'Technicians & Cleaning',
+                          onTap: () => Navigator.pushNamed(context, '/helping-staff'),
                         ),
                       ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // ── Community Post (from second image) ──
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const CircleAvatar(
+                                radius: 16,
+                                backgroundColor: Color(0xFF1A5C2A),
+                                child: Text(
+                                  'C',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  Text(
+                                    'Community Post',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    '2 hours ago • General',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/feed');
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1A5C2A),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'GO TO FEED',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(width: 6),
+                                      Icon(
+                                        Icons.arrow_forward,
+                                        color: Colors.white,
+                                        size: 12,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.grey[200]!,
+                              ),
+                            ),
+                            child: const Text(
+                              '"Does anyone know a good local tutor for mathematics? My daughter needs some help with her finals..."',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.black87,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
 
                     const SizedBox(height: 100), // space for floating navbar
@@ -267,34 +411,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: 'assets/icon/house.svg',
                 label: 'Home',
                 isActive: _currentIndex == 0,
-                onTap: () => setState(() => _currentIndex = 0),
+                onTap: () => _navigateToPage(0),
               ),
               _NavItem(
                 icon: 'assets/icon/message-circle.svg',
                 label: 'Chat',
                 isActive: _currentIndex == 1,
-                onTap: () {
-                  setState(() => _currentIndex = 1);
-                  Navigator.pushNamed(context, '/chat');
-                },
+                onTap: () => _navigateToPage(1),
               ),
               _NavItem(
-                icon: 'assets/icon/users.svg',
-                label: 'Feed',
+                icon: 'assets/icon/triangle-alert.svg',
+                label: 'Report',
                 isActive: _currentIndex == 2,
-                onTap: () {
-                  setState(() => _currentIndex = 2);
-                  Navigator.pushNamed(context, '/feed');
-                },
+                onTap: () => _navigateToPage(2),
               ),
               _NavItem(
                 icon: 'assets/icon/user-round.svg',
                 label: 'Profile',
                 isActive: _currentIndex == 3,
-                onTap: () {
-                  setState(() => _currentIndex = 3);
-                  Navigator.pushNamed(context, '/profile');
-                },
+                onTap: () => _navigateToPage(3),
               ),
             ],
           ),
@@ -363,42 +498,47 @@ class _ServiceCard extends StatelessWidget {
   final Color iconColor;
   final String title;
   final String subtitle;
+  final VoidCallback onTap;
 
   const _ServiceCard({
     required this.icon,
     required this.iconColor,
     required this.title,
     required this.subtitle,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: iconColor, size: 28),
-          const SizedBox(height: 8),
-          Text(title,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          if (subtitle.isNotEmpty)
-            Text(subtitle,
-                style: const TextStyle(fontSize: 11, color: Colors.grey)),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: iconColor, size: 28),
+            const SizedBox(height: 8),
+            Text(title,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            if (subtitle.isNotEmpty)
+              Text(subtitle,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey)),
+          ],
+        ),
       ),
     );
   }
