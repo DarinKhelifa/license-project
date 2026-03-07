@@ -188,14 +188,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: const Icon(Icons.location_on_outlined, color: Colors.white, size: 16),
               ),
-              const SizedBox(width: 8),
-              Text(
-                'ORELAX',
-                style: GoogleFonts.syne(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 2.5,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacementNamed(context, '/home');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'LOGIN',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
             ],

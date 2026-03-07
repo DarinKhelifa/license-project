@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -35,14 +36,12 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Avatar
                     CircleAvatar(
                       radius: 36,
                       backgroundImage: const AssetImage('assets/images/introImg.png'),
                       backgroundColor: Colors.grey.shade200,
                     ),
                     const SizedBox(width: 16),
-                    // Name & email
                     const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -80,19 +79,31 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _ProfileTile(icon: Icons.person_outline, title: 'Edit Profile'),
-                    _divider(),
-                    _ProfileTile(icon: Icons.shield_outlined, title: 'Password & Security'),
-                    _divider(),
-                    _ProfileTile(icon: Icons.notifications_outlined, title: 'Notifications'),
-                    _divider(),
-                    _ProfileTile(icon: Icons.notifications_outlined, title: 'Alerts'),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/user-pen.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Edit Profile'),
                     _divider(),
                     _ProfileTile(
-                      icon: Icons.grid_view_outlined,
+                      icon: SvgPicture.asset('assets/icon/shield-check.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Privacy'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/bell.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Notifications'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/triangle-alert.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Alerts'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/languages.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
                       title: 'Language',
-                      trailing: 'English',
-                    ),
+                      trailing: 'English'),
                   ],
                 ),
               ),
@@ -109,13 +120,16 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _ProfileTile(icon: Icons.shield_outlined, title: 'About Us'),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/handshake.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'About Us'),
                     _divider(),
                     _ProfileTile(
-                      icon: Icons.grid_view_outlined,
+                      icon: SvgPicture.asset('assets/icon/moon.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
                       title: 'Theme',
-                      trailing: 'Light',
-                    ),
+                      trailing: 'Light'),
                   ],
                 ),
               ),
@@ -133,16 +147,20 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _ProfileTile(
-                      icon: Icons.chat_bubble_outline,
-                      title: 'Help Center',
-                    ),
+                      icon: SvgPicture.asset('assets/icon/message-circle-question-mark.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Contact Us'),
                     _divider(),
                     _ProfileTile(
-                      icon: Icons.logout,
+                      icon: SvgPicture.asset('assets/icon/triangle-alert.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Help Center'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/log-out.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.red, BlendMode.srcIn)),
                       title: 'Logout',
-                      titleColor: Colors.red,
-                      iconColor: Colors.red,
-                    ),
+                      titleColor: Colors.red),
                   ],
                 ),
               ),
@@ -186,24 +204,22 @@ class _SectionLabel extends StatelessWidget {
 
 // ── Profile Tile ──
 class _ProfileTile extends StatelessWidget {
-  final IconData icon;
+  final Widget icon;
   final String title;
   final String? trailing;
   final Color titleColor;
-  final Color iconColor;
 
   const _ProfileTile({
     required this.icon,
     required this.title,
     this.trailing,
     this.titleColor = Colors.black87,
-    this.iconColor = Colors.black54,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: iconColor, size: 22),
+      leading: icon,
       title: Text(
         title,
         style: TextStyle(
