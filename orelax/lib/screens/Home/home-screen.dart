@@ -17,8 +17,9 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.white,
       extendBody: true,
       body: SafeArea(
-        child: Column(
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
             // ── Top Bar ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -35,26 +36,49 @@ class _HomeScreenState extends State<HomeScreen> {
                         const Icon(Icons.shield, color: Colors.white, size: 22),
                   ),
                   const SizedBox(width: 10),
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'ORELAX',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color(0xFF1A5C2A),
-                        ),
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0.8, end: 1.0),
+                        duration: const Duration(milliseconds: 1500),
+                        curve: Curves.elasticOut,
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: value,
+                            child: const Text(
+                              'ORELAX',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 24, // bigger font size
+                                color: Color(0xFF1A5C2A),
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      Text(
+                      const Text(
                         '★ Secure Gated Community',
                         style: TextStyle(fontSize: 11, color: Colors.grey),
                       ),
                     ],
                   ),
                   const Spacer(),
-                  const Icon(Icons.notifications_none,
-                      color: Colors.black87, size: 26),
+                  const Tooltip(
+                    message: 'Notifications',
+                    child: Icon(Icons.notifications_none,
+                        color: Colors.black87, size: 26),
+                  ),
+                  const SizedBox(width: 12),
+                  const Tooltip(
+                    message: 'Profile',
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Color(0xFFE0E0E0),
+                      child: Icon(Icons.person, color: Colors.grey, size: 20),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -83,12 +107,11 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
 
             // ── Scrollable Content ──
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                     // ── Announcement Card ──
                     Container(
                       width: double.infinity,
@@ -239,8 +262,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
 
@@ -320,37 +343,40 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          children: [
-            SvgPicture.asset(
-              icon,
-              width: 22,
-              height: 22,
-              colorFilter: ColorFilter.mode(
-                isActive ? Colors.white : Colors.white60,
-                BlendMode.srcIn,
-              ),
-            ),
-            if (isActive) ...[
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+    return Tooltip(
+      message: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Row(
+            children: [
+               SvgPicture.asset(
+                icon,
+                width: 22,
+                height: 22,
+                colorFilter: ColorFilter.mode(
+                  isActive ? Colors.white : Colors.white60,
+                  BlendMode.srcIn,
                 ),
               ),
+              if (isActive) ...[
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -390,7 +416,10 @@ class _ServiceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: iconColor, size: 28),
+          Tooltip(
+            message: title,
+            child: Icon(icon, color: iconColor, size: 28),
+          ),
           const SizedBox(height: 8),
           Text(title,
               style:
