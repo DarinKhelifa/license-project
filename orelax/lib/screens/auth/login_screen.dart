@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'signup_screen.dart';
+
 // ─── Colors ────────────────────────────────────────────────────────────────
 const kGreen       = Color(0xFF1A6B2F);
 const kGreenLight  = Color(0xFF2D8A44);
@@ -141,22 +143,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Sign Up link
                     Center(
-                      child: RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.dmSans(
-                            fontSize: 13.5,
-                            color: kGray600,
-                          ),
-                          children: [
-                            const TextSpan(text: "Don't have an account? "),
-                            TextSpan(
-                              text: 'Sign Up',
-                              style: GoogleFonts.syne(
-                                color: kGreen,
-                                fontWeight: FontWeight.w700,
-                              ),
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SignupScreen(),
                             ),
-                          ],
+                          );
+                        },
+                        child: Text.rich(
+                          TextSpan(
+                            style: GoogleFonts.dmSans(
+                              fontSize: 13.5,
+                              color: kGray600,
+                            ),
+                            children: [
+                              const TextSpan(text: "Don't have an account? "),
+                              TextSpan(
+                                text: 'Sign Up',
+                                style: GoogleFonts.syne(
+                                  color: kGreen,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
