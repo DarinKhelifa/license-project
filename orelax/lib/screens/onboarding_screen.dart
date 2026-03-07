@@ -26,9 +26,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           'Automated access control for residents and guests with real-time alerts and surveillance.',
     },
     {
-      'title': 'COMMUNITY LIVING\nCONNECTED NEIGHBORS',
+      'title': 'RESIDENT COLLABORATION',
       'description':
-          'Private messenger, event organization, and shared space bookings all in one place.',
+          'Benefits for residents through app features and stronger ties with the residence.',
     },
   ];
 
@@ -120,16 +120,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 16),
-                          // "Stay Connected" in yellow
-                          const Text(
-                            'Stay Connected.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.yellow,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          // removed extra caption per design request
                         ],
                       ),
                     ),
@@ -148,6 +139,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
+                    // push indicator much lower so text stays well clear
                     padding: const EdgeInsets.only(bottom: 80.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
