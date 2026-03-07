@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: kGreen.withOpacity(0.3),
+                                color: kGreen.withValues(alpha: 0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -183,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.20),
+                  color: Colors.white.withValues(alpha: 0.20),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.location_on_outlined, color: Colors.white, size: 16),
@@ -208,8 +208,8 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.15),
-              border: Border.all(color: Colors.white.withOpacity(0.25), width: 1.5),
+              color: Colors.white.withValues(alpha: 0.15),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
             ),
             child: const Icon(Icons.home_outlined, color: Colors.white, size: 36),
           ),
@@ -231,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
             'Sign in to secure your residence',
             style: GoogleFonts.dmSans(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.70),
+              color: Colors.white.withValues(alpha: 0.70),
             ),
           ),
         ],
