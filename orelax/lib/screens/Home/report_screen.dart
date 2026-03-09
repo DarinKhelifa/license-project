@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -11,6 +12,9 @@ class _ReportScreenState extends State<ReportScreen> {
   String? _selectedCategory;
   String? _selectedSubCategory;
   bool _isTimeNow = true;
+  TimeOfDay? _selectedTime;
+  XFile? _selectedPhoto;
+  final ImagePicker _imagePicker = ImagePicker();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -219,6 +223,41 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
+  Future<void> _onTimeButtonTap() async {
+    final TimeOfDay initialTime = _selectedTime ?? TimeOfDay.now();
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+
+    if (!mounted || picked == null) return;
+
+    setState(() {
+      _isTimeNow = false;
+      _selectedTime = picked;
+    });
+  }
+
+  Future<void> _onAddPhotosTap() async {
+    final XFile? picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (!mounted || picked == null) return;
+
+    setState(() {
+      _selectedPhoto = picked;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Photo added to report'),
+      ),
+    );
+  }
+
   Widget _buildCategoryButton({
     required String label,
     required bool isSelected,
@@ -284,7 +323,7 @@ class _ReportScreenState extends State<ReportScreen> {
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: label == 'Add Photos' ? _onAddPhotosTap : onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
@@ -313,11 +352,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildTimeButton() {
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _isTimeNow = !_isTimeNow;
-        });
-      },
+      onTap: _onTimeButtonTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
@@ -335,7 +370,9 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Time: ${_isTimeNow ? 'Now' : 'Select'}',
+              _isTimeNow
+                  ? 'Time: Now'
+                  : 'Time: ${_selectedTime != null ? _selectedTime!.format(context) : 'Select'}',
               style: TextStyle(
                 color: _isTimeNow ? const Color(0xFF1A5C2A) : Colors.black87,
                 fontSize: 14,
