@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ReportScreen extends StatefulWidget {
@@ -61,6 +62,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: _buildCategoryButton(
                     label: 'Security',
+                    iconAsset: 'assets/icon/brick-wall-shield.svg',
                     isSelected: _selectedCategory == 'Security',
                     onTap: () => setState(() => _selectedCategory = 'Security'),
                   ),
@@ -69,6 +71,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: _buildCategoryButton(
                     label: 'Maintenance',
+                    iconAsset: 'assets/icon/toolbox.svg',
                     isSelected: _selectedCategory == 'Maintenance',
                     onTap: () => setState(() => _selectedCategory = 'Maintenance'),
                   ),
@@ -83,6 +86,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: _buildSubCategoryButton(
                     label: 'Noise',
+                    iconAsset: 'assets/icon/audio-lines.svg',
                     isSelected: _selectedSubCategory == 'Noise',
                     onTap: () => setState(() => _selectedSubCategory = 'Noise'),
                   ),
@@ -91,6 +95,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 Expanded(
                   child: _buildSubCategoryButton(
                     label: 'Other',
+                    iconAsset: 'assets/icon/triangle-alert.svg',
                     isSelected: _selectedSubCategory == 'Other',
                     onTap: () => setState(() => _selectedSubCategory = 'Other'),
                   ),
@@ -260,27 +265,42 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildCategoryButton({
     required String label,
+    required String iconAsset,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final color = isSelected ? Colors.white : Colors.black87;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF1A5C2A) : Colors.grey[200],
           borderRadius: BorderRadius.circular(30),
           border: isSelected ? null : Border.all(color: Colors.grey[300]!),
         ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black87,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 14,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              iconAsset,
+              width: 22,
+              height: 22,
+              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
             ),
-          ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -288,13 +308,15 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Widget _buildSubCategoryButton({
     required String label,
+    required String iconAsset,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final color = isSelected ? Colors.white : Colors.black87;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF1A5C2A) : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
@@ -303,15 +325,28 @@ class _ReportScreenState extends State<ReportScreen> {
             width: isSelected ? 1.5 : 1,
           ),
         ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black87,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 14,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              iconAsset,
+              width: 22,
+              height: 22,
+              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
             ),
-          ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 14,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
