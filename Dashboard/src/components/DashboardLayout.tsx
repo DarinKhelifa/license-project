@@ -27,7 +27,8 @@ import {
   Logout as LogoutIcon,
   Person as PersonIcon, // Add this line
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const drawerWidth = 280;
 
@@ -44,6 +45,7 @@ const menuItems = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -190,7 +192,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }}
       >
         <Toolbar />
-        {children}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </Box>
     </Box>
   );

@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography, Button, Container, Paper } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   Security as SecurityIcon,
   People as PeopleIcon,
@@ -52,6 +53,11 @@ export default function LandingPage() {
           <Grid container spacing={4} alignItems="center">
             {/* Left Column - Text Content */}
             <Grid item xs={12} md={6}>
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+              >
               <Typography 
                 variant="h2" 
                 sx={{ 
@@ -122,10 +128,16 @@ export default function LandingPage() {
                   Sign Up
                 </Button>
               </Box>
+              </motion.div>
             </Grid>
 
             {/* Right Column - ALL IN ONE Card */}
             <Grid item xs={12} md={6}>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+              >
               <Paper
                 elevation={6}
                 sx={{
@@ -169,6 +181,7 @@ export default function LandingPage() {
                   <DashboardIcon sx={{ fontSize: { xs: 40, md: 50 }, color: '#FFD700' }} />
                 </Box>
               </Paper>
+              </motion.div>
             </Grid>
           </Grid>
         </Container>
@@ -195,6 +208,12 @@ export default function LandingPage() {
         />
         
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
           <Typography 
             variant="h3" 
             sx={{ 
@@ -207,10 +226,18 @@ export default function LandingPage() {
           >
             Why Choose ORELAX?
           </Typography>
+          </motion.div>
           
           <Grid container spacing={4}>
             {/* Feature 1 */}
             <Grid item xs={12} md={4}>
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                style={{ height: '100%' }}
+              >
               <Paper sx={{ 
                 p: { xs: 3, md: 4 }, 
                 textAlign: 'center', 
@@ -230,10 +257,18 @@ export default function LandingPage() {
                   for complete peace of mind.
                 </Typography>
               </Paper>
+              </motion.div>
             </Grid>
 
             {/* Feature 2 */}
             <Grid item xs={12} md={4}>
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                style={{ height: '100%' }}
+              >
               <Paper sx={{ 
                 p: { xs: 3, md: 4 }, 
                 textAlign: 'center', 
@@ -253,10 +288,18 @@ export default function LandingPage() {
                   through our community platform.
                 </Typography>
               </Paper>
+              </motion.div>
             </Grid>
 
             {/* Feature 3 */}
             <Grid item xs={12} md={4}>
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                style={{ height: '100%' }}
+              >
               <Paper sx={{ 
                 p: { xs: 3, md: 4 }, 
                 textAlign: 'center', 
@@ -276,6 +319,7 @@ export default function LandingPage() {
                   maintenance requests effortlessly.
                 </Typography>
               </Paper>
+              </motion.div>
             </Grid>
           </Grid>
         </Container>
@@ -304,6 +348,12 @@ export default function LandingPage() {
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
           <Grid container spacing={4} justifyContent="center">
             <Grid item xs={12} md={6} textAlign="center">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
               <Typography 
                 variant="h4" 
                 sx={{ 
@@ -330,6 +380,7 @@ export default function LandingPage() {
                   <Typography sx={{ fontSize: '1.1rem' }}>contact@orelax.dz</Typography>
                 </Box>
               </Box>
+              </motion.div>
             </Grid>
           </Grid>
         </Container>
