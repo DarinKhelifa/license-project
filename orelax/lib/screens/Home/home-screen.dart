@@ -444,7 +444,7 @@ class _NavItem extends StatelessWidget {
   final String icon;
   final String label;
   final bool isActive;
-  final VoidCallback onTap;
+  final VoidCallback onTap ;
 
   const _NavItem({
     required this.icon,

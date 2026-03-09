@@ -5,6 +5,8 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
 import 'screens/Home/home-screen.dart';
 import 'screens/Home/profile_screen.dart';
+import 'screens/Home/report_screen.dart';
+
 
 void main() {
   runApp(const OrelaxApp());
@@ -30,6 +32,7 @@ class OrelaxApp extends StatelessWidget {
         '/signup': (context) => const SignupScreen(),
         '/home': (context) => const HomeScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/report': (context) => const ReportScreen(),
         //'/chat': (context) => const ChatScreen(),      // ← add
         //'/feed': (context) => const FeedScreen(),
       },
