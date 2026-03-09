@@ -52,65 +52,101 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const drawer = (
-    <Box sx={{ height: '100%', bgcolor: '#034808', color: 'white' }}>
-      <Toolbar sx={{ justifyContent: 'center', py: 2 }}>
-        <Typography variant="h5" sx={{ color: '#FFD700', fontWeight: 'bold' }}>
+    <Box sx={{ 
+      height: '100%', 
+      bgcolor: '#034808', 
+      color: 'white',
+      borderRight: '1px solid rgba(255,215,0,0.1)',
+      boxShadow: '4px 0 24px rgba(3,72,8,0.2)',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <Toolbar sx={{ justifyContent: 'center', py: 3 }}>
+        <Typography variant="h5" sx={{ 
+          color: '#FFD700', 
+          fontWeight: '900',
+          letterSpacing: 2
+        }}>
           ORELAX
         </Typography>
       </Toolbar>
       <Divider sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              onClick={() => {
-                navigate(item.path);
-                setMobileOpen(false);
-              }}
-              sx={{
-                '&:hover': {
-                  bgcolor: '#FFD700',
-                  '& .MuiListItemIcon-root': {
-                    color: '#034808',
+      <List sx={{ px: 2, flexGrow: 1 }}>
+        {menuItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+              <ListItemButton
+                onClick={() => {
+                  navigate(item.path);
+                  setMobileOpen(false);
+                }}
+                sx={{
+                  borderRadius: 2,
+                  bgcolor: isActive ? 'rgba(255,215,0,0.1)' : 'transparent',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: '#FFD700',
+                    transform: 'translateX(4px)',
+                    '& .MuiListItemIcon-root': {
+                      color: '#034808',
+                    },
+                    '& .MuiListItemText-primary': {
+                      color: '#034808',
+                    },
                   },
-                  '& .MuiListItemText-primary': {
-                    color: '#034808',
-                  },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: '#FFD700' }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText 
-                primary={item.text} 
-                sx={{ 
-                  '& .MuiListItemText-primary': { 
-                    color: 'white',
-                    fontWeight: 500 
-                  } 
-                }} 
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
+                }}
+              >
+                <ListItemIcon sx={{ 
+                  color: isActive ? '#FFD700' : 'rgba(255,215,0,0.7)',
+                  minWidth: 40
+                }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text} 
+                  sx={{ 
+                    '& .MuiListItemText-primary': { 
+                      color: isActive ? '#FFD700' : 'rgba(255,255,255,0.8)',
+                      fontWeight: isActive ? 600 : 500 
+                    } 
+                  }} 
+                />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
       <Divider sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
-      <List sx={{ position: 'absolute', bottom: 0, width: '100%' }}>
-        <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon sx={{ color: '#FFD700' }}>
+      <List sx={{ px: 2, pb: 3 }}>
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton sx={{
+            borderRadius: 2,
+            transition: 'all 0.2s',
+            '&:hover': {
+              bgcolor: 'rgba(255,215,0,0.1)',
+              transform: 'translateX(4px)'
+            }
+          }}>
+            <ListItemIcon sx={{ color: 'rgba(255,215,0,0.7)', minWidth: 40 }}>
               <SettingsIcon />
             </ListItemIcon>
-            <ListItemText primary="Settings" sx={{ '& .MuiListItemText-primary': { color: 'white' } }} />
+            <ListItemText primary="Settings" sx={{ '& .MuiListItemText-primary': { color: 'rgba(255,255,255,0.8)' } }} />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton>
-            <ListItemIcon sx={{ color: '#FFD700' }}>
+          <ListItemButton sx={{
+            borderRadius: 2,
+            transition: 'all 0.2s',
+            '&:hover': {
+              bgcolor: 'rgba(255,215,0,0.1)',
+              transform: 'translateX(4px)'
+            }
+          }}>
+            <ListItemIcon sx={{ color: 'rgba(255,215,0,0.7)', minWidth: 40 }}>
               <LogoutIcon />
             </ListItemIcon>
-            <ListItemText primary="Logout" sx={{ '& .MuiListItemText-primary': { color: 'white' } }} />
+            <ListItemText primary="Logout" sx={{ '& .MuiListItemText-primary': { color: 'rgba(255,255,255,0.8)' } }} />
           </ListItemButton>
         </ListItem>
       </List>
@@ -121,12 +157,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <Box sx={{ display: 'flex' }}>
       <AppBar
         position="fixed"
+        elevation={0}
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
-          bgcolor: 'white',
+          bgcolor: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(12px)',
           color: '#034808',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          borderBottom: '1px solid rgba(0,0,0,0.05)',
         }}
       >
         <Toolbar>

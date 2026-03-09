@@ -9,7 +9,12 @@ import {
   People as PeopleIcon,
   LocalParking as ParkingIcon,
   WbSunny as WeatherIcon,
+  FlashOn as FlashOnIcon,
+  NotificationsActive as AlertIcon,
+  Build as BuildIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
+import { motion } from 'framer-motion';
 import {
   AreaChart,
   Area,
@@ -37,10 +42,10 @@ const energyData = [
 ];
 
 const recentActivities = [
-  { text: 'Gate access granted', details: 'Apartment 204 • 5 min ago' },
-  { text: 'Package delivered', details: 'Front desk • 10 min ago' },
-  { text: 'Security alarm triggered', details: 'Building B • 20 min ago' },
-  { text: 'Maintenance request submitted', details: 'Apartment 110 • 30 min ago' },
+  { text: 'Gate access granted', details: 'Apartment 204 • 5 min ago', icon: <CheckCircleIcon sx={{ color: '#4caf50' }} /> },
+  { text: 'Package delivered', details: 'Front desk • 10 min ago', icon: <CheckCircleIcon sx={{ color: '#4caf50' }} /> },
+  { text: 'Security alarm triggered', details: 'Building B • 20 min ago', icon: <AlertIcon sx={{ color: '#f44336' }} /> },
+  { text: 'Maintenance request', details: 'Apartment 110 • 30 min ago', icon: <BuildIcon sx={{ color: '#FFD700' }} /> },
 ];
 
 export default function Overview() {
@@ -51,90 +56,154 @@ export default function Overview() {
       </Typography>
       
       <Grid container spacing={3}>
-        {/* Stats Cards - FIXED: using item prop with xs/sm/md */}
+        {/* Stats Cards */}
         {stats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}> {/* Changed: size={{...}} → item xs={12} sm={6} md={3} */}
-            <Card>
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Box>
-                    <Typography color="textSecondary" gutterBottom variant="body2">
-                      {stat.title}
-                    </Typography>
-                    <Typography variant="h4" component="div" sx={{ color: stat.color, fontWeight: 'bold' }}>
-                      {stat.value}
-                    </Typography>
+          <Grid item xs={12} sm={6} md={3} key={index}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+              whileHover={{ y: -5 }}
+            >
+              <Card sx={{ 
+                borderRadius: 4, 
+                border: '1px solid rgba(0,0,0,0.05)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+                bgcolor: '#ffffff',
+                transition: 'box-shadow 0.3s',
+                '&:hover': {
+                  boxShadow: '0 8px 30px rgba(3,72,8,0.1)',
+                }
+              }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box>
+                      <Typography color="textSecondary" sx={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: 1, mb: 1 }}>
+                        {stat.title}
+                      </Typography>
+                      <Typography variant="h3" sx={{ color: '#034808', fontWeight: 800 }}>
+                        {stat.value}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ 
+                      background: `linear-gradient(135deg, ${stat.color}20 0%, transparent 100%)`,
+                      borderRadius: '16px', 
+                      p: 1.5,
+                      color: stat.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      {React.cloneElement(stat.icon as React.ReactElement, { sx: { fontSize: 32 } })}
+                    </Box>
                   </Box>
-                  <Box sx={{ 
-                    bgcolor: `${stat.color}20`, 
-                    borderRadius: '50%', 
-                    p: 1,
-                    color: stat.color 
-                  }}>
-                    {stat.icon}
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           </Grid>
         ))}
 
-        {/* Energy Consumption Chart - FIXED: using item prop */}
-        <Grid item xs={12} md={8}> {/* Changed: size={{ xs:12, md:8 }} → item xs={12} md={8} */}
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ color: '#034808' }}>
-                Energy Consumption (kWh)
-              </Typography>
-              <Box sx={{ height: 300 }}>
+        {/* Energy Consumption Chart */}
+        <Grid item xs={12} md={8}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            style={{ height: '100%' }}
+          >
+          <Card sx={{ 
+            borderRadius: 4, 
+            height: '100%',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 1 }}>
+                <FlashOnIcon sx={{ color: '#FFD700' }} />
+                <Typography variant="h6" sx={{ color: '#034808', fontWeight: 700 }}>
+                  Energy Consumption (kWh)
+                </Typography>
+              </Box>
+              <Box sx={{ height: 320 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={energyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis />
-                    <Tooltip />
+                  <AreaChart data={energyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorEnergy" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#034808" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#034808" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                      cursor={{ stroke: '#034808', strokeWidth: 1, strokeDasharray: '4 4' }}
+                    />
                     <Area 
                       type="monotone" 
                       dataKey="consumption" 
                       stroke="#034808" 
-                      fill="#034808" 
-                      fillOpacity={0.3} 
+                      strokeWidth={3}
+                      fillOpacity={1} 
+                      fill="url(#colorEnergy)" 
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               </Box>
             </CardContent>
           </Card>
+          </motion.div>
         </Grid>
 
-        {/* Recent Activity - FIXED: using item prop */}
-        <Grid item xs={12} md={4}> {/* Changed: size={{ xs:12, md:4 }} → item xs={12} md={4} */}
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ color: '#034808' }}>
+        {/* Recent Activity */}
+        <Grid item xs={12} md={4}>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            style={{ height: '100%' }}
+          >
+          <Card sx={{ 
+            borderRadius: 4, 
+            height: '100%',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ color: '#034808', fontWeight: 700, mb: 2 }}>
                 Recent Activity
               </Typography>
-              <Box sx={{ mt: 2 }}>
+              <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {recentActivities.map((act, idx) => (
                   <Box
                     key={idx}
                     sx={{
-                      py: 1.5,
-                      borderBottom: '1px solid #eee',
-                      '&:last-child': { borderBottom: 'none' },
+                      display: 'flex',
+                      gap: 2,
+                      p: 1.5,
+                      borderRadius: 2,
+                      transition: 'background-color 0.2s',
+                      '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
                     }}
                   >
-                    <Typography variant="body2" fontWeight={500}>
-                      {act.text}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {act.details}
-                    </Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      {act.icon}
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#333' }}>
+                        {act.text}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#888', fontWeight: 500 }}>
+                        {act.details}
+                      </Typography>
+                    </Box>
                   </Box>
                 ))}
               </Box>
             </CardContent>
           </Card>
+          </motion.div>
         </Grid>
       </Grid>
     </Box>
