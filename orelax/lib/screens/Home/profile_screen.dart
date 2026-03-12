@@ -38,7 +38,8 @@ class ProfileScreen extends StatelessWidget {
                     // Avatar
                     CircleAvatar(
                       radius: 36,
-                      backgroundImage: const AssetImage('assets/images/introImg.png'),
+                      backgroundImage:
+                          const AssetImage('assets/images/introImg.png'),
                       backgroundColor: Colors.grey.shade200,
                     ),
                     const SizedBox(width: 16),
@@ -80,13 +81,19 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _ProfileTile(icon: Icons.person_outline, title: 'Edit Profile'),
+                    _ProfileTile(
+                        icon: Icons.person_outline, title: 'Edit Profile'),
                     _divider(),
-                    _ProfileTile(icon: Icons.shield_outlined, title: 'Password & Security'),
+                    _ProfileTile(
+                        icon: Icons.shield_outlined,
+                        title: 'Password & Security'),
                     _divider(),
-                    _ProfileTile(icon: Icons.notifications_outlined, title: 'Notifications'),
+                    _ProfileTile(
+                        icon: Icons.notifications_outlined,
+                        title: 'Notifications'),
                     _divider(),
-                    _ProfileTile(icon: Icons.notifications_outlined, title: 'Alerts'),
+                    _ProfileTile(
+                        icon: Icons.notifications_outlined, title: 'Alerts'),
                     _divider(),
                     _ProfileTile(
                       icon: Icons.grid_view_outlined,
@@ -109,7 +116,8 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _ProfileTile(icon: Icons.shield_outlined, title: 'About Us'),
+                    _ProfileTile(
+                        icon: Icons.shield_outlined, title: 'About Us'),
                     _divider(),
                     _ProfileTile(
                       icon: Icons.grid_view_outlined,

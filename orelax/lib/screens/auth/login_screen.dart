@@ -4,12 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'signup_screen.dart';
 
 // ─── Colors ────────────────────────────────────────────────────────────────
-const kGreen       = Color(0xFF1A6B2F);
-const kGreenLight  = Color(0xFF2D8A44);
-const kGray200     = Color(0xFFE8ECE8);
-const kGray400     = Color(0xFF9AAB9A);
-const kGray600     = Color(0xFF4A5E4A);
-const kText        = Color(0xFF1A2A1A);
+const kGreen = Color(0xFF1A6B2F);
+const kGreenLight = Color(0xFF2D8A44);
+const kGray200 = Color(0xFFE8ECE8);
+const kGray400 = Color(0xFF9AAB9A);
+const kGray600 = Color(0xFF4A5E4A);
+const kText = Color(0xFF1A2A1A);
 
 void main() {
   runApp(const OrelaxApp());
@@ -79,9 +79,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       icon: Icons.lock_outline,
                       obscure: _obscurePassword,
                       suffix: GestureDetector(
-                        onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+                        onTap: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
                         child: Icon(
-                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
                           color: kGray400,
                           size: 20,
                         ),
@@ -105,8 +108,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Login Button
                     GestureDetector(
-                      onTapDown: (_)  => setState(() => _buttonPressed = true),
-                      onTapUp: (_)    => setState(() => _buttonPressed = false),
+                      onTapDown: (_) => setState(() => _buttonPressed = true),
+                      onTapUp: (_) => setState(() => _buttonPressed = false),
                       onTapCancel: () => setState(() => _buttonPressed = false),
                       child: AnimatedScale(
                         scale: _buttonPressed ? 0.96 : 1.0,
@@ -189,41 +192,17 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.only(top: 56, left: 28, right: 28, bottom: 80),
       child: Column(
         children: [
-          // Logo / brand
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.20),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.location_on_outlined, color: Colors.white, size: 16),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'ORELAX',
-                style: GoogleFonts.syne(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 2.5,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 40),
-
           // Home icon
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white.withValues(alpha: 0.15),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.25), width: 1.5),
             ),
-            child: const Icon(Icons.home_outlined, color: Colors.white, size: 36),
+            child:
+                const Icon(Icons.home_outlined, color: Colors.white, size: 36),
           ),
 
           const SizedBox(height: 16),
@@ -297,10 +276,11 @@ class _InputField extends StatelessWidget {
               ),
             ),
           ),
-          if (suffix != null) Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: suffix,
-          ),
+          if (suffix != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: suffix,
+            ),
         ],
       ),
     );
