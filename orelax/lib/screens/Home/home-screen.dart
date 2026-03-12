@@ -11,20 +11,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  // Navigation methods
   void _navigateToPage(int index) {
     setState(() => _currentIndex = index);
-    
+
     switch (index) {
-      case 0: // Home - already on home screen
+      case 0:
         break;
-      case 1: // Chat
+      case 1:
         Navigator.pushNamed(context, '/chat');
         break;
-      case 2: // Report (formerly Feed)
+      case 2:
         Navigator.pushNamed(context, '/report');
         break;
-      case 3: // Profile
+      case 3:
         Navigator.pushNamed(context, '/profile');
         break;
     }
@@ -54,26 +53,56 @@ class _HomeScreenState extends State<HomeScreen> {
                         const Icon(Icons.shield, color: Colors.white, size: 22),
                   ),
                   const SizedBox(width: 10),
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'ORELAX',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Color(0xFF1A5C2A),
-                        ),
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0.8, end: 1.0),
+                        duration: const Duration(milliseconds: 1500),
+                        curve: Curves.elasticOut,
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: value,
+                            child: const Text(
+                              'ORELAX',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 24,
+                                color: Color(0xFF1A5C2A),
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      Text(
-                        'Secure Gated Community',
+                      const Text(
+                        '★ Secure Gated Community',
                         style: TextStyle(fontSize: 11, color: Colors.grey),
                       ),
                     ],
                   ),
                   const Spacer(),
-                  const Icon(Icons.notifications_none,
-                      color: Colors.black87, size: 26),
+                  Tooltip(
+                    message: 'Notifications',
+                    child: SvgPicture.asset(
+                      'assets/icon/bell.svg',
+                      width: 26,
+                      height: 26,
+                      colorFilter: const ColorFilter.mode(
+                        Colors.black87,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Tooltip(
+                    message: 'Profile',
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Color(0xFFE0E0E0),
+                      child: Icon(Icons.person, color: Colors.grey, size: 20),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -108,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Announcement Card with example ──
+                    // ── Announcement Card ──
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
@@ -242,7 +271,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           iconColor: const Color(0xFF5B8DEF),
                           title: 'Facilities',
                           subtitle: 'Reserve gym, pool or club',
-                          onTap: () => Navigator.pushNamed(context, '/facilities'),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/facilities'),
                         ),
                         _ServiceCard(
                           icon: Icons.people_outline,
@@ -256,21 +286,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           iconColor: const Color(0xFFE05C8A),
                           title: 'Childcare',
                           subtitle: 'Verified nursery staff',
-                          onTap: () => Navigator.pushNamed(context, '/childcare'),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/childcare'),
                         ),
                         _ServiceCard(
                           icon: Icons.construction_outlined,
                           iconColor: const Color(0xFF9B59B6),
                           title: 'Helping Staff',
                           subtitle: 'Technicians & Cleaning',
-                          onTap: () => Navigator.pushNamed(context, '/helping-staff'),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/helping-staff'),
                         ),
                       ],
                     ),
 
                     const SizedBox(height: 20),
 
-                    // ── Community Post (from second image) ──
+                    // ── Community Post ──
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -302,9 +334,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               const SizedBox(width: 10),
-                              Column(
+                              const Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   Text(
                                     'Community Post',
                                     style: TextStyle(
@@ -345,11 +377,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       SizedBox(width: 6),
-                                      Icon(
-                                        Icons.arrow_forward,
-                                        color: Colors.white,
-                                        size: 12,
-                                      ),
+                                      Icon(Icons.arrow_forward,
+                                          color: Colors.white, size: 12),
                                     ],
                                   ),
                                 ),
@@ -362,9 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             decoration: BoxDecoration(
                               color: Colors.grey[50],
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.grey[200]!,
-                              ),
+                              border: Border.all(color: Colors.grey[200]!),
                             ),
                             child: const Text(
                               '"Does anyone know a good local tutor for mathematics? My daughter needs some help with her finals..."',
@@ -379,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 100), // space for floating navbar
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -444,7 +471,7 @@ class _NavItem extends StatelessWidget {
   final String icon;
   final String label;
   final bool isActive;
-  final VoidCallback onTap ;
+  final VoidCallback onTap;
 
   const _NavItem({
     required this.icon,
@@ -455,37 +482,41 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Row(
-          children: [
-            SvgPicture.asset(
-              icon,
-              width: 22,
-              height: 22,
-              colorFilter: ColorFilter.mode(
-                isActive ? Colors.white : Colors.white60,
-                BlendMode.srcIn,
-              ),
-            ),
-            if (isActive) ...[
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+    return Tooltip(
+      message: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color:
+                isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Row(
+            children: [
+              SvgPicture.asset(
+                icon,
+                width: 22,
+                height: 22,
+                colorFilter: ColorFilter.mode(
+                  isActive ? Colors.white : Colors.white60,
+                  BlendMode.srcIn,
                 ),
               ),
+              if (isActive) ...[
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

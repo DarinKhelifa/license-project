@@ -7,7 +7,6 @@ import 'screens/Home/home-screen.dart';
 import 'screens/Home/profile_screen.dart';
 import 'screens/Home/report_screen.dart';
 
-
 void main() {
   runApp(const OrelaxApp());
 }

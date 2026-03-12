@@ -39,5 +39,16 @@ flutter:
     - assets/icon/triangle-alert.svg
     - assets/icon/audio-lines.svg
     - assets/icon/brick-wall-shield.svg
-    - assets/icon/toolbox.svg
+    - assets/icon/bell.svg
+    - assets/icon/handshake.svg
+    - assets/icon/languages.svg
+    - assets/icon/map-pin-house.svg
+    - assets/icon/moon.svg
+    - assets/icon/user-pen.svg
+    - assets/icon/info.svg
+    - assets/icon/shield-check.svg
+    - assets/icon/log-out.svg
+    - assets/icon/message-circle-question-mark.svg
+
+
     
