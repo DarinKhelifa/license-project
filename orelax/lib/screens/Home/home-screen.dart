@@ -35,8 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.white,
       extendBody: true,
       body: SafeArea(
-        child: Column(
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
             // ── Top Bar ──
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -67,7 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               'ORELAX',
                               style: TextStyle(
                                 fontWeight: FontWeight.w900,
+<<<<<<< HEAD
                                 fontSize: 24,
+=======
+                                fontSize: 24, // bigger font size
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
                                 color: Color(0xFF1A5C2A),
                                 letterSpacing: 1.2,
                               ),
@@ -82,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   const Spacer(),
+<<<<<<< HEAD
                   Tooltip(
                     message: 'Notifications',
                     child: SvgPicture.asset(
@@ -93,6 +99,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         BlendMode.srcIn,
                       ),
                     ),
+=======
+                  const Tooltip(
+                    message: 'Notifications',
+                    child: Icon(Icons.notifications_none,
+                        color: Colors.black87, size: 26),
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
                   ),
                   const SizedBox(width: 12),
                   const Tooltip(
@@ -131,12 +143,11 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
 
             // ── Scrollable Content ──
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                     // ── Announcement Card ──
                     Container(
                       width: double.infinity,
@@ -410,8 +421,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
 
@@ -489,13 +500,21 @@ class _NavItem extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
+<<<<<<< HEAD
             color:
                 isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+=======
+            color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
             borderRadius: BorderRadius.circular(30),
           ),
           child: Row(
             children: [
+<<<<<<< HEAD
               SvgPicture.asset(
+=======
+               SvgPicture.asset(
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
                 icon,
                 width: 22,
                 height: 22,
@@ -541,6 +560,7 @@ class _ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -570,6 +590,37 @@ class _ServiceCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ],
         ),
+=======
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Tooltip(
+            message: title,
+            child: Icon(icon, color: iconColor, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(title,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          if (subtitle.isNotEmpty)
+            Text(subtitle,
+                style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        ],
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
       ),
     );
   }

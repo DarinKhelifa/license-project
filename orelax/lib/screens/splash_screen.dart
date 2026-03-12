@@ -8,8 +8,12 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
+<<<<<<< HEAD
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
+=======
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
   late AnimationController _bgController;
   late AnimationController _logoController;
   late Animation<double> _logoScale;
@@ -20,9 +24,15 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
 
     // Background floating balls
+<<<<<<< HEAD
     _bgController =
         AnimationController(vsync: this, duration: const Duration(seconds: 6))
           ..repeat();
+=======
+    _bgController = AnimationController(
+        vsync: this, duration: const Duration(seconds: 6))
+      ..repeat();
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
 
     // Center logo animation
     _logoController = AnimationController(

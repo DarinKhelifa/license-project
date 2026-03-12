@@ -81,6 +81,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _ProfileTile(
+<<<<<<< HEAD
                         icon: SvgPicture.asset('assets/icon/map-pin-house.svg',
                             width: 22,
                             height: 22,
@@ -120,6 +121,32 @@ class ProfileScreen extends StatelessWidget {
                                 Colors.black54, BlendMode.srcIn)),
                         title: 'Alerts'),
                     _divider(),
+=======
+                      icon: SvgPicture.asset('assets/icon/user-pen.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Edit Profile'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/shield-check.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Privacy'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/bell.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Notifications'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/triangle-alert.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Alerts'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/languages.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Language',
+                      trailing: 'English'),
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
                   ],
                 ),
               ),
@@ -137,6 +164,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _ProfileTile(
+<<<<<<< HEAD
                         icon: SvgPicture.asset('assets/icon/languages.svg',
                             width: 22,
                             height: 22,
@@ -170,6 +198,17 @@ class ProfileScreen extends StatelessWidget {
                             colorFilter: const ColorFilter.mode(
                                 Colors.black54, BlendMode.srcIn)),
                         title: 'Contact Us'),
+=======
+                      icon: SvgPicture.asset('assets/icon/handshake.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'About Us'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/moon.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Theme',
+                      trailing: 'Light'),
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
                   ],
                 ),
               ),
@@ -187,6 +226,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     _ProfileTile(
+<<<<<<< HEAD
                         icon: SvgPicture.asset('assets/icon/log-out.svg',
                             width: 22,
                             height: 22,
@@ -194,6 +234,22 @@ class ProfileScreen extends StatelessWidget {
                                 Colors.red, BlendMode.srcIn)),
                         title: 'Logout',
                         titleColor: Colors.red),
+=======
+                      icon: SvgPicture.asset('assets/icon/message-circle-question-mark.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Contact Us'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/triangle-alert.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
+                      title: 'Help Center'),
+                    _divider(),
+                    _ProfileTile(
+                      icon: SvgPicture.asset('assets/icon/log-out.svg', width: 22, height: 22,
+                        colorFilter: const ColorFilter.mode(Colors.red, BlendMode.srcIn)),
+                      title: 'Logout',
+                      titleColor: Colors.red),
+>>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
                   ],
                 ),
               ),
