@@ -32,7 +32,6 @@ flutter:
     - assets/images/backgound1.jpg
     - assets/images/background2.jpg
     - assets/images/logo.svg
-<<<<<<< HEAD
     - assets/icon/house.svg
     - assets/icon/message-circle.svg
     - assets/icon/user-round.svg
@@ -51,8 +50,3 @@ flutter:
     - assets/icon/log-out.svg
     - assets/icon/message-circle-question-mark.svg
 
-
-    
-=======
-    - assets/icon/
->>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6

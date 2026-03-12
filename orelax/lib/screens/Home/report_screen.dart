@@ -73,7 +73,8 @@ class _ReportScreenState extends State<ReportScreen> {
                     label: 'Maintenance',
                     iconAsset: 'assets/icon/toolbox.svg',
                     isSelected: _selectedCategory == 'Maintenance',
-                    onTap: () => setState(() => _selectedCategory = 'Maintenance'),
+                    onTap: () =>
+                        setState(() => _selectedCategory = 'Maintenance'),
                   ),
                 ),
               ],
@@ -128,7 +129,8 @@ class _ReportScreenState extends State<ReportScreen> {
                   hintText: 'Specific Location (e.g. Block B, Lobby)',
                   hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
               ),
             ),
@@ -185,8 +187,8 @@ class _ReportScreenState extends State<ReportScreen> {
                 onPressed: () {
                   // TODO: Implement submit functionality
                   // Validate and submit report
-                  if (_selectedCategory != null && 
-                      _selectedSubCategory != null && 
+                  if (_selectedCategory != null &&
+                      _selectedSubCategory != null &&
                       _locationController.text.isNotEmpty &&
                       _descriptionController.text.isNotEmpty) {
                     // Submit report
