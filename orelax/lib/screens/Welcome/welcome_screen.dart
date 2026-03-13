@@ -9,12 +9,8 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-<<<<<<< HEAD
 class _WelcomeScreenState extends State<WelcomeScreen>
     with TickerProviderStateMixin {
-=======
-class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateMixin {
->>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
   late AnimationController _bgController;
   late AnimationController _logoController;
   late Animation<double> _logoScale;
@@ -48,12 +44,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
     // 5 Second Navigation Timeout
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
-<<<<<<< HEAD
         // We pushReplacement to Onboarding, which routes to Login eventually
-=======
-        // We pushReplacement to Onboarding, which routes to Login eventually 
->>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
-        // Or if the app routes directly to '/login' or '/home', change this string:
         Navigator.pushReplacementNamed(context, '/onboarding');
       }
     });
@@ -144,22 +135,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
                       ],
                     ),
                     const SizedBox(height: 24),
-<<<<<<< HEAD
 
-=======
-                    
->>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
                     // ORELAX Title
                     const Text(
                       'ORELAX',
                       style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.w900,
-<<<<<<< HEAD
                         color: Colors.amber,
-=======
-                        color: Colors.amber, 
->>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
                         letterSpacing: 3.0,
                       ),
                     ),
@@ -181,28 +164,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> with TickerProviderStateM
             ),
           ),
         ],
-<<<<<<< HEAD
-=======
-      ),
-    );
-  }
-
-  // Helper widget to draw the semi-transparent glowing balls
-  Widget _buildBlob(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: const Color(0xFF81C784).withOpacity(0.35),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF81C784).withOpacity(0.15),
-            blurRadius: 40,
-            spreadRadius: 20,
-          ),
-        ],
->>>>>>> 01be9fc9c5bc5aebd3f371e08a8edb07b75fa7b6
       ),
     );
   }
