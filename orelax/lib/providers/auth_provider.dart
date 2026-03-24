@@ -18,10 +18,46 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _user != null;
   
   AuthProvider() {
+    // Listen to auth state changes
     _auth.authStateChanges().listen((User? user) {
       _user = user;
+      _isLoading = false; // Make sure loading stops when auth state changes
+      print('Auth state changed: user = ${user?.email ?? "null"}');
       notifyListeners();
     });
+  }
+  
+  // Email Sign In
+  Future<bool> signInWithEmail(String email, String password) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    
+    print('Attempting sign in with email: $email');
+    
+    try {
+      UserCredential result = await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      print('Sign in successful: ${result.user?.email}');
+      // Don't set _user here - the authStateChanges listener will handle it
+      // _isLoading will be set to false by the listener
+      return true;
+      
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
+      _errorMessage = _getAuthErrorMessage(e.code);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      print('Unexpected error: $e');
+      _errorMessage = 'An unexpected error occurred: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
   
   // Email Sign Up
@@ -36,12 +72,15 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     
+    print('Attempting sign up with email: $email');
+    
     try {
       // Create user in Firebase Auth
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
+      print('User created: ${result.user?.uid}');
       
       // Update display name
       await result.user!.updateDisplayName(name);
@@ -58,85 +97,59 @@ class AuthProvider extends ChangeNotifier {
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
       });
+      print('User data saved to Firestore');
       
-      _user = result.user;
-      _isLoading = false;
-      notifyListeners();
+      // Don't set _user here - the authStateChanges listener will handle it
       return true;
       
     } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
       _errorMessage = _getAuthErrorMessage(e.code);
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'An unexpected error occurred';
+      print('Unexpected error: $e');
+      _errorMessage = 'An unexpected error occurred: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
       return false;
     }
   }
   
-  // Email Sign In
-  Future<bool> signInWithEmail(String email, String password) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-    
-    try {
-      UserCredential result = await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      );
-      _user = result.user;
-      _isLoading = false;
-      notifyListeners();
-      return true;
-      
-    } on FirebaseAuthException catch (e) {
-      _errorMessage = _getAuthErrorMessage(e.code);
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _errorMessage = 'An unexpected error occurred';
-      _isLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-  
-  // Google Sign In - FIXED VERSION
+  // Google Sign In
   Future<bool> signInWithGoogle() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     
+    print('Attempting Google Sign In');
+    
     try {
-      // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
+        print('Google sign in canceled by user');
         _isLoading = false;
         notifyListeners();
         return false;
       }
       
-      // Obtain the auth details from the request
+      print('Google user: ${googleUser.email}');
+      
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       
-      // Create a new credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
       
-      // Sign in to Firebase with the Google credential
       final UserCredential result = await _auth.signInWithCredential(credential);
+      print('Firebase sign in successful: ${result.user?.email}');
       
-      // Check if new user, create Firestore document
       final userDoc = await _firestore.collection('users').doc(result.user!.uid).get();
       if (!userDoc.exists) {
+        print('New user, creating Firestore document');
         await _firestore.collection('users').doc(result.user!.uid).set({
           'uid': result.user!.uid,
           'name': result.user!.displayName ?? '',
@@ -149,12 +162,11 @@ class AuthProvider extends ChangeNotifier {
         });
       }
       
-      _user = result.user;
-      _isLoading = false;
-      notifyListeners();
+      // Don't set _user here - the authStateChanges listener will handle it
       return true;
       
     } catch (e) {
+      print('Google sign in error: $e');
       _errorMessage = 'Google sign in failed: ${e.toString()}';
       _isLoading = false;
       notifyListeners();
@@ -170,7 +182,6 @@ class AuthProvider extends ChangeNotifier {
     await _googleSignIn.signOut();
     await _auth.signOut();
     
-    _user = null;
     _isLoading = false;
     notifyListeners();
   }
@@ -201,8 +212,10 @@ class AuthProvider extends ChangeNotifier {
         return 'Incorrect password';
       case 'network-request-failed':
         return 'Network error. Check your connection';
+      case 'invalid-credential':
+        return 'Invalid email or password';
       default:
-        return 'Authentication failed';
+        return 'Authentication failed: $code';
     }
   }
 }

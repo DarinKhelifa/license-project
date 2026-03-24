@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../providers/auth_provider.dart';
+import '../Home/home_screen.dart';
 import 'signup_screen.dart';
 
 const kGreen = Color(0xFF1A6B2F);
@@ -27,6 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleLogin() async {
     if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
       setState(() {
@@ -45,7 +54,15 @@ class _LoginScreenState extends State<LoginScreen> {
       _emailController.text.trim(),
       _passwordController.text,
     );
-    
+
+    if (success && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+      return;
+    }
+
     if (!success && mounted) {
       setState(() {
         _isLoading = false;
@@ -62,7 +79,15 @@ class _LoginScreenState extends State<LoginScreen> {
     
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithGoogle();
-    
+
+    if (success && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+      return;
+    }
+
     if (!success && mounted) {
       setState(() {
         _isLoading = false;
@@ -90,7 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Error message
                     if (_errorMessage != null)
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -114,7 +138,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     
-                    // Email
                     _InputField(
                       hint: 'E-mail',
                       icon: Icons.mail_outline,
@@ -123,7 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Password
                     _InputField(
                       hint: 'Password',
                       icon: Icons.lock_outline,
@@ -156,7 +178,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const Spacer(),
 
-                    // Login Button
                     GestureDetector(
                       onTapDown: (_) => setState(() => _buttonPressed = true),
                       onTapUp: (_) => setState(() => _buttonPressed = false),
@@ -204,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Google Sign In Button
+                    // Fixed Google Sign-In Button
                     GestureDetector(
                       onTap: _isLoading ? null : _handleGoogleSignIn,
                       child: Container(
@@ -218,10 +239,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Image.network(
+                              // Use SvgPicture instead of Image.network
+                              SvgPicture.network(
                                 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
                                 height: 24,
                                 width: 24,
+                                placeholderBuilder: (context) => 
+                                  const SizedBox(width: 24, height: 24),
                               ),
                               const SizedBox(width: 12),
                               Text(
@@ -240,7 +264,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Sign Up link
                     Center(
                       child: TextButton(
                         onPressed: () {
@@ -320,7 +343,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// Reusable Input Field
 class _InputField extends StatelessWidget {
   final String hint;
   final IconData icon;

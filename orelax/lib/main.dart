@@ -4,6 +4,12 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
+import 'screens/Welcome/welcome_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/Home/home_screen.dart';
+import 'screens/Home/report_screen.dart';
+import 'screens/Home/profile_screen.dart';
+import 'screens/chat/chat_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +37,50 @@ class OrelaxApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        home: const AuthWrapper(),
+        home: const WelcomeScreen(),
+        routes: {
+          '/auth': (_) => const AuthWrapper(),
+          '/onboarding': (_) => const OnboardingScreen(),
+          '/home': (_) => const HomeScreen(),
+          '/chat': (_) => const ChatScreen(),
+          '/report': (_) => const ReportScreen(),
+          '/profile': (_) => const ProfileScreen(),
+          '/events':
+              (_) => const _ComingSoonScreen(title: 'Events'),
+          '/all-services':
+              (_) => const _ComingSoonScreen(title: 'All services'),
+          '/facilities':
+              (_) => const _ComingSoonScreen(title: 'Facilities'),
+          '/childcare':
+              (_) => const _ComingSoonScreen(title: 'Childcare'),
+          '/helping-staff':
+              (_) => const _ComingSoonScreen(title: 'Helping staff'),
+          '/feed': (_) => const _ComingSoonScreen(title: 'Community feed'),
+        },
+      ),
+    );
+  }
+}
+
+class _ComingSoonScreen extends StatelessWidget {
+  final String title;
+
+  const _ComingSoonScreen({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: const Color(0xFF034808),
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: Text(
+          '$title — coming soon',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 16, color: Colors.black54),
+        ),
       ),
     );
   }

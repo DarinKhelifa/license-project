@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../Home/home_screen.dart';
 import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -20,6 +21,16 @@ class _SignupScreenState extends State<SignupScreen> {
   final _phoneController = TextEditingController();
   final _apartmentController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _apartmentController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleSignUp() async {
     // Validation
@@ -61,7 +72,15 @@ class _SignupScreenState extends State<SignupScreen> {
       apartment: _apartmentController.text.trim(),
       phone: _phoneController.text.trim(),
     );
-    
+
+    if (success && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+      return;
+    }
+
     if (!success && mounted) {
       setState(() {
         _isLoading = false;
@@ -152,10 +171,10 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   _field('Full Name', Icons.person_outline, controller: _nameController),
                   const SizedBox(height: 14),
-                  _field('Phone / E-mail', Icons.phone_outlined,
+                  _field('Email', Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress, controller: _emailController),
                   const SizedBox(height: 14),
-                  _field('Home Address', Icons.location_on_outlined, controller: _apartmentController),
+                  _field('Apartment Number', Icons.location_on_outlined, controller: _apartmentController),
                   const SizedBox(height: 14),
                   _field('Phone Number', Icons.phone_android_outlined,
                       keyboardType: TextInputType.phone, controller: _phoneController),

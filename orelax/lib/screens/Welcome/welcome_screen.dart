@@ -41,11 +41,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
     _logoController.forward();
 
-    // 5 Second Navigation Timeout
+    // 5 second intro then continue app auth flow
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
-        // We pushReplacement to Onboarding, which routes to Login eventually
-        Navigator.pushReplacementNamed(context, '/onboarding');
+        Navigator.pushReplacementNamed(context, '/auth');
       }
     });
   }
