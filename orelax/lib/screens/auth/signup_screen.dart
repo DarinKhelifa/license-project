@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
-import 'login_screen.dart' show LoginScreen;
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import 'login_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -11,6 +12,69 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
+  
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _apartmentController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  Future<void> _handleSignUp() async {
+    // Validation
+    if (_nameController.text.trim().isEmpty) {
+      _showError('Please enter your full name');
+      return;
+    }
+    if (_emailController.text.trim().isEmpty) {
+      _showError('Please enter your email');
+      return;
+    }
+    if (_phoneController.text.trim().isEmpty) {
+      _showError('Please enter your phone number');
+      return;
+    }
+    if (_apartmentController.text.trim().isEmpty) {
+      _showError('Please enter your apartment number');
+      return;
+    }
+    if (_passwordController.text.isEmpty) {
+      _showError('Please enter a password');
+      return;
+    }
+    if (_passwordController.text.length < 6) {
+      _showError('Password must be at least 6 characters');
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.signUpWithEmail(
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      apartment: _apartmentController.text.trim(),
+      phone: _phoneController.text.trim(),
+    );
+    
+    if (!success && mounted) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = authProvider.errorMessage;
+      });
+    }
+  }
+  
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,32 +123,58 @@ class _SignupScreenState extends State<SignupScreen> {
                   const SizedBox(height: 16),
 
                   const Text('Sign Up',
-                      style:
-                          TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 24),
+                  
+                  // Error message
+                  if (_errorMessage != null)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: Colors.red, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
-                  _field('Full Name', Icons.person_outline),
+                  _field('Full Name', Icons.person_outline, controller: _nameController),
                   const SizedBox(height: 14),
                   _field('Phone / E-mail', Icons.phone_outlined,
-                      keyboardType: TextInputType.emailAddress),
+                      keyboardType: TextInputType.emailAddress, controller: _emailController),
                   const SizedBox(height: 14),
-                  _field('Home Address', Icons.location_on_outlined),
+                  _field('Home Address', Icons.location_on_outlined, controller: _apartmentController),
+                  const SizedBox(height: 14),
+                  _field('Phone Number', Icons.phone_android_outlined,
+                      keyboardType: TextInputType.phone, controller: _phoneController),
                   const SizedBox(height: 14),
 
-                  // Password field (separate because of eye icon)
+                  // Password field
                   TextField(
+                    controller: _passwordController,
                     obscureText: _obscurePassword,
-                    decoration:
-                        _decoration('Password', Icons.lock_outline).copyWith(
+                    decoration: _decoration('Password', Icons.lock_outline).copyWith(
                       suffixIcon: IconButton(
                         icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                            color: Colors.grey.shade400,
-                            size: 20),
-                        onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword),
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: Colors.grey.shade400,
+                          size: 20,
+                        ),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
                   ),
@@ -94,18 +184,30 @@ class _SignupScreenState extends State<SignupScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _onSignUp,
+                      onPressed: _isLoading ? null : _handleSignUp,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2E7D32),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14)
+                        ),
                       ),
-                      child: const Text('Sign Up',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white)),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Sign Up',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -114,19 +216,21 @@ class _SignupScreenState extends State<SignupScreen> {
                   Center(
                     child: TextButton(
                       onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const LoginScreen())),
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen())
+                      ),
                       child: Text.rich(
                         TextSpan(
                           text: 'Already have an account? ',
                           style: TextStyle(color: Colors.grey.shade500),
                           children: const [
                             TextSpan(
-                                text: 'Sign In',
-                                style: TextStyle(
-                                    color: Color(0xFF2E7D32),
-                                    fontWeight: FontWeight.bold)),
+                              text: 'Sign In',
+                              style: TextStyle(
+                                color: Color(0xFF2E7D32),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -141,14 +245,15 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  // Reusable text field
   Widget _field(String hint, IconData icon,
-      {TextInputType keyboardType = TextInputType.text}) {
+      {TextInputType keyboardType = TextInputType.text, TextEditingController? controller}) {
     return TextField(
-        keyboardType: keyboardType, decoration: _decoration(hint, icon));
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: _decoration(hint, icon),
+    );
   }
 
-  // Reusable decoration
   InputDecoration _decoration(String hint, IconData icon) {
     return InputDecoration(
       hintText: hint,
@@ -158,23 +263,16 @@ class _SignupScreenState extends State<SignupScreen> {
       fillColor: Colors.grey.shade50,
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade200)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade200)),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 1.5)),
-    );
-  }
-
-  void _onSignUp() {
-    // Navigate to registration success screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const RegistrationSuccessScreen(),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF2E7D32), width: 1.5),
       ),
     );
   }
@@ -194,149 +292,4 @@ class _CurveClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
-
-// REGISTRATION SUCCESS SCREEN (NEW)
-class RegistrationSuccessScreen extends StatelessWidget {
-  const RegistrationSuccessScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1B5E20), // dark green background
-      body: Stack(
-        children: [
-          // Decorative circles in background
-          Positioned(
-            top: -60,
-            left: -60,
-            child: _decorativeCircle(220),
-          ),
-          Positioned(
-            bottom: 80,
-            right: -80,
-            child: _decorativeCircle(260),
-          ),
-
-          // Main content
-          SafeArea(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Yellow checkmark box
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFD600),
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Color(0xFF1B5E20),
-                        size: 52,
-                        weight: 700,
-                      ),
-                    ),
-
-                    const SizedBox(height: 36),
-
-                    // Title
-                    const Text(
-                      'Registration Successful!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.2,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Welcome line with yellow "Orelax"
-                    RichText(
-                      textAlign: TextAlign.center,
-                      text: const TextSpan(
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.white70,
-                          height: 1.6,
-                        ),
-                        children: [
-                          TextSpan(text: 'Welcome to '),
-                          TextSpan(
-                            text: 'Orelax',
-                            style: TextStyle(
-                              color: Color(0xFFFFD600),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          TextSpan(text: ' community.\n'),
-                          TextSpan(
-                            text:
-                                'Your account is under review and you\'ll receive a confirmation soon.',
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 56),
-
-                    // Back to Sign In button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/home');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFD600),
-                          foregroundColor: const Color(0xFF1B5E20),
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Go Home ',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _decorativeCircle(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.05),
-      ),
-    );
-  }
 }

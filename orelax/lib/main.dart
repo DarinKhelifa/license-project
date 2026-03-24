@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
-import 'screens/splash_screen.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/auth/signup_screen.dart';
-import 'screens/Home/home_screen.dart';
-import 'screens/Home/profile_screen.dart';
-import 'screens/Home/report_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
+import 'firebase_options.dart';
+import 'providers/auth_provider.dart';
+import 'screens/auth/auth_wrapper.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const OrelaxApp());
 }
 
@@ -16,23 +18,21 @@ class OrelaxApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ORELAX',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (context) => AuthProvider(),
+      child: MaterialApp(
+        title: 'ORELAX',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primaryColor: const Color(0xFF034808),
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFF034808),
+            secondary: Color(0xFFFFD700),
+          ),
+          useMaterial3: true,
+        ),
+        home: const AuthWrapper(),
       ),
-      debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const SplashScreen(), // Fixed: added closing quote
-        '/onboarding': (context) => const OnboardingScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/report': (context) => const ReportScreen(),
-      },
     );
   }
 }

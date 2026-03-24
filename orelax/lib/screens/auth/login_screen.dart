@@ -1,36 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import 'signup_screen.dart';
 
-// ─── Colors ────────────────────────────────────────────────────────────────
 const kGreen = Color(0xFF1A6B2F);
 const kGreenLight = Color(0xFF2D8A44);
 const kGray200 = Color(0xFFE8ECE8);
 const kGray400 = Color(0xFF9AAB9A);
 const kGray600 = Color(0xFF4A5E4A);
 const kText = Color(0xFF1A2A1A);
-
-void main() {
-  runApp(const OrelaxApp());
-}
-
-class OrelaxApp extends StatelessWidget {
-  const OrelaxApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Orelax',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: kGreen),
-        useMaterial3: true,
-      ),
-      home: const LoginScreen(),
-    );
-  }
-}
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,6 +21,55 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _buttonPressed = false;
+  bool _isLoading = false;
+  String? _errorMessage;
+  
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  Future<void> _handleLogin() async {
+    if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter email and password';
+      });
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.signInWithEmail(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+    
+    if (!success && mounted) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = authProvider.errorMessage;
+      });
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.signInWithGoogle();
+    
+    if (!success && mounted) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = authProvider.errorMessage;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,10 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: const Color(0xFFF4F6F4),
       body: Column(
         children: [
-          // ── Green Header ────────────────────────────────────────────────
           _buildHeader(),
-
-          // ── White Card ──────────────────────────────────────────────────
           Expanded(
             child: Transform.translate(
               offset: const Offset(0, -32),
@@ -65,11 +90,36 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Error message
+                    if (_errorMessage != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: Colors.red, fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    
                     // Email
                     _InputField(
                       hint: 'E-mail',
                       icon: Icons.mail_outline,
                       keyboardType: TextInputType.emailAddress,
+                      controller: _emailController,
                     ),
                     const SizedBox(height: 16),
 
@@ -78,9 +128,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       hint: 'Password',
                       icon: Icons.lock_outline,
                       obscure: _obscurePassword,
+                      controller: _passwordController,
                       suffix: GestureDetector(
-                        onTap: () => setState(
-                            () => _obscurePassword = !_obscurePassword),
+                        onTap: () => setState(() => _obscurePassword = !_obscurePassword),
                         child: Icon(
                           _obscurePassword
                               ? Icons.visibility_outlined
@@ -111,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onTapDown: (_) => setState(() => _buttonPressed = true),
                       onTapUp: (_) => setState(() => _buttonPressed = false),
                       onTapCancel: () => setState(() => _buttonPressed = false),
+                      onTap: _isLoading ? null : _handleLogin,
                       child: AnimatedScale(
                         scale: _buttonPressed ? 0.96 : 1.0,
                         duration: const Duration(milliseconds: 120),
@@ -128,15 +179,60 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                           ),
                           child: Center(
-                            child: Text(
-                              'LOGIN',
-                              style: GoogleFonts.syne(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                letterSpacing: 1.2,
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    'LOGIN',
+                                    style: GoogleFonts.syne(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Google Sign In Button
+                    GestureDetector(
+                      onTap: _isLoading ? null : _handleGoogleSignIn,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: kGray200, width: 1.5),
+                        ),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.network(
+                                'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                                height: 24,
+                                width: 24,
                               ),
-                            ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Sign in with Google',
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 14,
+                                  color: kGray600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -161,12 +257,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontSize: 13.5,
                               color: kGray600,
                             ),
-                            children: [
-                              const TextSpan(text: "Don't have an account? "),
+                            children: const [
+                              TextSpan(text: "Don't have an account? "),
                               TextSpan(
                                 text: 'Sign Up',
-                                style: GoogleFonts.syne(
-                                  color: kGreen,
+                                style: TextStyle(
+                                  color: Color(0xFF1A6B2F),
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -192,21 +288,16 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.only(top: 56, left: 28, right: 28, bottom: 80),
       child: Column(
         children: [
-          // Home icon
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white.withValues(alpha: 0.15),
-              border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.25), width: 1.5),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.5),
             ),
-            child:
-                const Icon(Icons.home_outlined, color: Colors.white, size: 36),
+            child: const Icon(Icons.home_outlined, color: Colors.white, size: 36),
           ),
-
           const SizedBox(height: 16),
-
           Text(
             'Welcome Back',
             style: GoogleFonts.syne(
@@ -215,9 +306,7 @@ class _LoginScreenState extends State<LoginScreen> {
               color: Colors.white,
             ),
           ),
-
           const SizedBox(height: 6),
-
           Text(
             'Sign in to secure your residence',
             style: GoogleFonts.dmSans(
@@ -231,13 +320,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// ─── Reusable Input Field ───────────────────────────────────────────────────
+// Reusable Input Field
 class _InputField extends StatelessWidget {
   final String hint;
   final IconData icon;
   final bool obscure;
   final Widget? suffix;
   final TextInputType? keyboardType;
+  final TextEditingController? controller;
 
   const _InputField({
     required this.hint,
@@ -245,6 +335,7 @@ class _InputField extends StatelessWidget {
     this.obscure = false,
     this.suffix,
     this.keyboardType,
+    this.controller,
   });
 
   @override
@@ -262,6 +353,7 @@ class _InputField extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: TextField(
+              controller: controller,
               obscureText: obscure,
               keyboardType: keyboardType,
               style: GoogleFonts.dmSans(fontSize: 15, color: kText),
