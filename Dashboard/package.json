@@ -15,6 +15,7 @@
     "@types/node": "^20.8.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "firebase": "^12.11.0",
     "framer-motion": "^12.35.2",
     "mathjs": "^15.1.1",
     "react": "^18.2.0",
@@ -22,7 +23,6 @@
     "react-router-dom": "^6.16.0",
     "react-scripts": "5.0.1",
     "recharts": "^2.8.0",
-    "typescript": "^5.2.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -48,5 +48,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "typescript": "^4.9.5"
   }
 }

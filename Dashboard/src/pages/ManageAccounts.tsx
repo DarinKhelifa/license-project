@@ -1,5 +1,5 @@
-import React, { JSX, useState } from 'react';
-import Grid from '@mui/material/Grid'; // Regular Grid, NOT Grid2
+import React, { useState, useEffect } from 'react';
+import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Paper from '@mui/material/Paper';
@@ -28,6 +28,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Alert from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
+import CircularProgress from '@mui/material/CircularProgress';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -35,7 +36,9 @@ import {
   Person as PersonIcon,
   Security as SecurityIcon,
   Search as SearchIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
 
 // Types
 interface User {
@@ -43,72 +46,11 @@ interface User {
   name: string;
   email: string;
   phone: string;
-  role: 'resident' | 'security' |'maintenance';
+  role: 'resident' | 'security' | 'admin' | 'maintenance';
   apartment?: string;
   status: 'active' | 'inactive' | 'pending';
   joinDate: string;
 }
-
-// Mock Data
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Ahmed Benali',
-    email: 'ahmed.benali@email.com',
-    phone: '0555 12 34 56',
-    role: 'resident',
-    apartment: 'B12',
-    status: 'active',
-    joinDate: '2024-01-15',
-  },
-  {
-    id: '2',
-    name: 'Fatima Zohra',
-    email: 'fatima.z@email.com',
-    phone: '0555 23 45 67',
-    role: 'resident',
-    apartment: 'A45',
-    status: 'active',
-    joinDate: '2024-02-20',
-  },
-  {
-    id: '3',
-    name: 'Karim Hadji',
-    email: 'karim.hadji@email.com',
-    phone: '0555 34 56 78',
-    role: 'security',
-    status: 'active',
-    joinDate: '2023-11-10',
-  },
-  {
-    id: '4',
-    name: 'Sofia Mansouri',
-    email: 'sofia.m@email.com',
-    phone: '0555 45 67 89',
-    role: 'resident',
-    status: 'active',
-    joinDate: '2023-09-05',
-  },
-  {
-    id: '5',
-    name: 'Mohamed Kaci',
-    email: 'mohamed.k@email.com',
-    phone: '0555 56 78 90',
-    role: 'maintenance',
-    status: 'inactive',
-    joinDate: '2024-03-01',
-  },
-  {
-    id: '6',
-    name: 'Nadia Cherif',
-    email: 'nadia.c@email.com',
-    phone: '0555 67 89 01',
-    role: 'maintenance',
-    apartment: 'C78',
-    status: 'pending',
-    joinDate: '2024-03-15',
-  },
-];
 
 // Tab Panel Component
 interface TabPanelProps {
@@ -134,8 +76,10 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function ManageAccounts() {
+  const { userData, getAllUsers, updateUserRole, updateUserStatus, deleteUser, createUser } = useAuth();
   const [tabValue, setTabValue] = useState(0);
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deleteDialog, setDeleteDialog] = useState(false);
@@ -152,6 +96,43 @@ export default function ManageAccounts() {
     apartment: '',
     status: 'active' as User['status'],
   });
+
+  // Check if user is admin
+  const isAdmin = (userData?.role ?? '').trim().toLowerCase() === 'admin';
+
+  // Load users from Firebase
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const allUsers = await getAllUsers();
+      const formattedUsers: User[] = allUsers.map(u => ({
+        id: u.uid,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        role: u.role,
+        apartment: u.apartment,
+        status: u.status,
+        joinDate: u.joinDate,
+      }));
+      setUsers(formattedUsers);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load users',
+        severity: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadUsers();
+    }
+  }, [isAdmin]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -198,20 +179,28 @@ export default function ManageAccounts() {
     setUserToDelete(null);
   };
 
-  const handleDeleteUser = () => {
+  const handleDeleteUser = async () => {
     if (userToDelete) {
-      setUsers(users.filter(u => u.id !== userToDelete.id));
-      setSnackbar({
-        open: true,
-        message: `User ${userToDelete.name} deleted successfully`,
-        severity: 'success',
-      });
+      try {
+        await deleteUser(userToDelete.id);
+        await loadUsers();
+        setSnackbar({
+          open: true,
+          message: `User ${userToDelete.name} deleted successfully`,
+          severity: 'success',
+        });
+      } catch (error) {
+        setSnackbar({
+          open: true,
+          message: 'Failed to delete user',
+          severity: 'error',
+        });
+      }
       handleCloseDeleteDialog();
     }
   };
 
-  const handleSaveUser = () => {
-    // Validate form
+  const handleSaveUser = async () => {
     if (!formData.name || !formData.email || !formData.phone) {
       setSnackbar({
         open: true,
@@ -221,33 +210,35 @@ export default function ManageAccounts() {
       return;
     }
 
-    if (editingUser) {
-      // Update existing user
-      setUsers(users.map(u => 
-        u.id === editingUser.id 
-          ? { ...u, ...formData, id: u.id }
-          : u
-      ));
+    try {
+      if (editingUser) {
+        // Update existing user
+        await updateUserRole(editingUser.id, formData.role);
+        await updateUserStatus(editingUser.id, formData.status);
+        await loadUsers();
+        setSnackbar({
+          open: true,
+          message: `User ${formData.name} updated successfully`,
+          severity: 'success',
+        });
+      } else {
+        // Add new user
+        await createUser(formData);
+        await loadUsers();
+        setSnackbar({
+          open: true,
+          message: `User ${formData.name} added successfully`,
+          severity: 'success',
+        });
+      }
+      handleCloseDialog();
+    } catch (error) {
       setSnackbar({
         open: true,
-        message: `User ${formData.name} updated successfully`,
-        severity: 'success',
-      });
-    } else {
-      // Add new user
-      const newUser: User = {
-        id: Date.now().toString(),
-        ...formData,
-        joinDate: new Date().toISOString().split('T')[0],
-      };
-      setUsers([...users, newUser]);
-      setSnackbar({
-        open: true,
-        message: `User ${formData.name} added successfully`,
-        severity: 'success',
+        message: 'Failed to save user',
+        severity: 'error',
       });
     }
-    handleCloseDialog();
   };
 
   const filteredUsers = users.filter(user => {
@@ -259,12 +250,13 @@ export default function ManageAccounts() {
     
     if (tabValue === 0) return matchesSearch; // All
     if (tabValue === 1) return matchesSearch && user.role === 'resident';
-    if (tabValue === 2) return matchesSearch && ['security', 'maintenance'].includes(user.role);
+    if (tabValue === 2) return matchesSearch && ['security', 'admin', 'maintenance'].includes(user.role);
     return matchesSearch;
   });
 
   const getRoleChipColor = (role: string) => {
     switch(role) {
+      case 'admin': return { bg: '#034808', color: 'white' };
       case 'security': return { bg: '#FFD700', color: '#034808' };
       case 'maintenance': return { bg: '#FF6B6B', color: 'white' };
       default: return { bg: '#E0E0E0', color: '#333' };
@@ -283,6 +275,26 @@ export default function ManageAccounts() {
         return null;
     }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // Access denied if not admin (after loading user role)
+  if (!isAdmin) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="h5" color="error">
+          Access Denied
+        </Typography>
+        <Typography>You don't have permission to view this page.</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -307,7 +319,6 @@ export default function ManageAccounts() {
       {/* Search Bar */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          {/* FIXED: Changed from size={{ xs:12, md:6 }} to item xs={12} md={6} */}
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
@@ -320,7 +331,6 @@ export default function ManageAccounts() {
               }}
             />
           </Grid>
-          {/* FIXED: Changed from size={{ xs:12, md:6 }} to item xs={12} md={6} */}
           <Grid item xs={12} md={6}>
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
               <Chip
@@ -338,6 +348,9 @@ export default function ManageAccounts() {
                 label={`Staff: ${users.filter(u => u.role !== 'resident').length}`}
                 sx={{ bgcolor: '#E0E0E0' }}
               />
+              <IconButton onClick={loadUsers} size="small">
+                <RefreshIcon />
+              </IconButton>
             </Box>
           </Grid>
         </Grid>
@@ -401,7 +414,6 @@ export default function ManageAccounts() {
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           <Grid container spacing={2}>
-            {/* FIXED: Changed from size={{ xs:12 }} to item xs={12} */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -412,7 +424,6 @@ export default function ManageAccounts() {
                 margin="normal"
               />
             </Grid>
-            {/* FIXED: Changed from size={{ xs:12 }} to item xs={12} */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -424,7 +435,6 @@ export default function ManageAccounts() {
                 margin="normal"
               />
             </Grid>
-            {/* FIXED: Changed from size={{ xs:12 }} to item xs={12} */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -435,7 +445,6 @@ export default function ManageAccounts() {
                 margin="normal"
               />
             </Grid>
-            {/* FIXED: Changed from size={{ xs:12, md:6 }} to item xs={12} md={6} */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Role</InputLabel>
@@ -446,11 +455,11 @@ export default function ManageAccounts() {
                 >
                   <MenuItem value="resident">Resident</MenuItem>
                   <MenuItem value="security">Security</MenuItem>
+                  <MenuItem value="admin">Admin</MenuItem>
                   <MenuItem value="maintenance">Maintenance</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-            {/* FIXED: Changed from size={{ xs:12, md:6 }} to item xs={12} md={6} */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Status</InputLabel>
@@ -466,7 +475,6 @@ export default function ManageAccounts() {
               </FormControl>
             </Grid>
             {formData.role === 'resident' && (
-              /* FIXED: Changed from size={{ xs:12 }} to item xs={12} */
               <Grid item xs={12}>
                 <TextField
                   fullWidth
