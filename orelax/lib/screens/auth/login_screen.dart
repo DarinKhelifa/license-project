@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import '../../providers/auth_provider.dart';
 import '../Home/home_screen.dart';
 import 'signup_screen.dart';
@@ -25,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _buttonPressed = false;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _staySignedIn = true;
   
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -49,6 +51,17 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
     
+    // Control how Firebase keeps the user signed in.
+    // LOCAL => persists across app restarts.
+    // SESSION => expires when the app/browser session ends.
+    try {
+      await fb.FirebaseAuth.instance.setPersistence(
+        _staySignedIn ? fb.Persistence.LOCAL : fb.Persistence.SESSION,
+      );
+    } catch (_) {
+      // If persistence cannot be set (platform limitations), continue login anyway.
+    }
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithEmail(
       _emailController.text.trim(),
@@ -93,6 +106,44 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
         _errorMessage = authProvider.errorMessage;
       });
+    }
+  }
+
+  Future<void> _sendPasswordReset() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter your email address';
+      });
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.sendPasswordResetEmail(email);
+    
+    setState(() {
+      _isLoading = false;
+    });
+    
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password reset email sent! Check your inbox.'),
+          backgroundColor: kGreen,
+        ),
+      );
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to send reset email. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -164,16 +215,44 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
 
                     const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        'Forgot password?',
-                        style: GoogleFonts.dmSans(
-                          fontSize: 13,
-                          color: kGreen,
-                          fontWeight: FontWeight.w500,
+                    Row(
+                      children: [
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: _sendPasswordReset,
+                          child: Text(
+                            'Forgot password?',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 13,
+                              color: kGreen,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _staySignedIn,
+                          activeColor: kGreen,
+                          onChanged: (value) {
+                            setState(() => _staySignedIn = value ?? true);
+                          },
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Stay signed in',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 13.5,
+                              color: kGray600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     const Spacer(),
@@ -225,7 +304,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 12),
 
-                    // Fixed Google Sign-In Button
                     GestureDetector(
                       onTap: _isLoading ? null : _handleGoogleSignIn,
                       child: Container(
@@ -239,7 +317,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Use SvgPicture instead of Image.network
                               SvgPicture.network(
                                 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
                                 height: 24,

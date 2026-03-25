@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../Home/home_screen.dart';
@@ -15,7 +16,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -33,7 +34,6 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _handleSignUp() async {
-    // Validation
     if (_nameController.text.trim().isEmpty) {
       _showError('Please enter your full name');
       return;
@@ -58,12 +58,12 @@ class _SignupScreenState extends State<SignupScreen> {
       _showError('Password must be at least 6 characters');
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signUpWithEmail(
       name: _nameController.text.trim(),
@@ -88,7 +88,32 @@ class _SignupScreenState extends State<SignupScreen> {
       });
     }
   }
-  
+
+  Future<void> _handleGoogleSignUp() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.signInWithGoogle();
+
+    if (success && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+      return;
+    }
+
+    if (!success && mounted) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = authProvider.errorMessage;
+      });
+    }
+  }
+
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -101,13 +126,10 @@ class _SignupScreenState extends State<SignupScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Green curved header
           ClipPath(
             clipper: _CurveClipper(),
             child: Container(height: 180, color: const Color(0xFF2E7D32)),
           ),
-
-          // Circle below curve
           Transform.translate(
             offset: const Offset(0, -20),
             child: Container(
@@ -120,15 +142,12 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
             ),
           ),
-
-          // Form content
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back to login
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: const Row(
@@ -140,12 +159,12 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  const Text('Sign Up',
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Sign Up',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 24),
-                  
-                  // Error message
+
                   if (_errorMessage != null)
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -180,7 +199,6 @@ class _SignupScreenState extends State<SignupScreen> {
                       keyboardType: TextInputType.phone, controller: _phoneController),
                   const SizedBox(height: 14),
 
-                  // Password field
                   TextField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -199,7 +217,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 28),
 
-                  // Sign Up button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -208,7 +225,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         backgroundColor: const Color(0xFF2E7D32),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       child: _isLoading
@@ -220,7 +237,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('Sign Up',
+                          : const Text(
+                              'Sign Up',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -231,12 +249,46 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Sign In link
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: _isLoading ? null : _handleGoogleSignUp,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: Color(0xFF2E7D32), width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SvgPicture.network(
+                            'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                            height: 22,
+                            width: 22,
+                            placeholderBuilder: (context) => const SizedBox(width: 22, height: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Sign up with Google',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2E7D32),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
                   Center(
                     child: TextButton(
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const LoginScreen())
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
                       ),
                       child: Text.rich(
                         TextSpan(
@@ -255,6 +307,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -264,8 +317,12 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _field(String hint, IconData icon,
-      {TextInputType keyboardType = TextInputType.text, TextEditingController? controller}) {
+  Widget _field(
+    String hint,
+    IconData icon, {
+    TextInputType keyboardType = TextInputType.text,
+    required TextEditingController controller,
+  }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
@@ -300,10 +357,14 @@ class _SignupScreenState extends State<SignupScreen> {
 class _CurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
-    Path path = Path();
+    final path = Path();
     path.lineTo(0, size.height - 40);
     path.quadraticBezierTo(
-        size.width / 2, size.height, size.width, size.height - 40);
+      size.width / 2,
+      size.height,
+      size.width,
+      size.height - 40,
+    );
     path.lineTo(size.width, 0);
     path.close();
     return path;

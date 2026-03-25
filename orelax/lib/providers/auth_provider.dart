@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -6,7 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  GoogleSignIn? _googleSignIn;
   
   User? _user;
   bool _isLoading = false;
@@ -18,10 +19,13 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _user != null;
   
   AuthProvider() {
-    // Listen to auth state changes
+    if (!kIsWeb) {
+      _googleSignIn = GoogleSignIn();
+    }
+
     _auth.authStateChanges().listen((User? user) {
       _user = user;
-      _isLoading = false; // Make sure loading stops when auth state changes
+      _isLoading = false;
       print('Auth state changed: user = ${user?.email ?? "null"}');
       notifyListeners();
     });
@@ -41,8 +45,6 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
       print('Sign in successful: ${result.user?.email}');
-      // Don't set _user here - the authStateChanges listener will handle it
-      // _isLoading will be set to false by the listener
       return true;
       
     } on FirebaseAuthException catch (e) {
@@ -75,18 +77,15 @@ class AuthProvider extends ChangeNotifier {
     print('Attempting sign up with email: $email');
     
     try {
-      // Create user in Firebase Auth
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
       print('User created: ${result.user?.uid}');
       
-      // Update display name
       await result.user!.updateDisplayName(name);
       await result.user!.reload();
       
-      // Save user data to Firestore
       await _firestore.collection('users').doc(result.user!.uid).set({
         'uid': result.user!.uid,
         'name': name,
@@ -99,7 +98,6 @@ class AuthProvider extends ChangeNotifier {
       });
       print('User data saved to Firestore');
       
-      // Don't set _user here - the authStateChanges listener will handle it
       return true;
       
     } on FirebaseAuthException catch (e) {
@@ -126,25 +124,33 @@ class AuthProvider extends ChangeNotifier {
     print('Attempting Google Sign In');
     
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      late final UserCredential result;
       
-      if (googleUser == null) {
-        print('Google sign in canceled by user');
-        _isLoading = false;
-        notifyListeners();
-        return false;
+      if (kIsWeb) {
+        final provider = GoogleAuthProvider();
+        result = await _auth.signInWithPopup(provider);
+      } else {
+        final GoogleSignInAccount? googleUser = await _googleSignIn!.signIn();
+        
+        if (googleUser == null) {
+          print('Google sign in canceled by user');
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
+        
+        print('Google user: ${googleUser.email}');
+        
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        
+        result = await _auth.signInWithCredential(credential);
       }
       
-      print('Google user: ${googleUser.email}');
-      
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      
-      final UserCredential result = await _auth.signInWithCredential(credential);
       print('Firebase sign in successful: ${result.user?.email}');
       
       final userDoc = await _firestore.collection('users').doc(result.user!.uid).get();
@@ -162,7 +168,6 @@ class AuthProvider extends ChangeNotifier {
         });
       }
       
-      // Don't set _user here - the authStateChanges listener will handle it
       return true;
       
     } catch (e) {
@@ -174,12 +179,23 @@ class AuthProvider extends ChangeNotifier {
     }
   }
   
+  // Send Password Reset Email
+  Future<bool> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      return true;
+    } catch (e) {
+      print('Password reset error: $e');
+      return false;
+    }
+  }
+  
   // Sign Out
   Future<void> signOut() async {
     _isLoading = true;
     notifyListeners();
     
-    await _googleSignIn.signOut();
+    await _googleSignIn?.signOut();
     await _auth.signOut();
     
     _isLoading = false;
@@ -195,6 +211,19 @@ class AuthProvider extends ChangeNotifier {
       return doc.data();
     } catch (e) {
       return null;
+    }
+  }
+  
+  // Update user data in Firestore
+  Future<bool> updateUserData(Map<String, dynamic> data) async {
+    if (_user == null) return false;
+    
+    try {
+      await _firestore.collection('users').doc(_user!.uid).update(data);
+      return true;
+    } catch (e) {
+      print('Error updating user data: $e');
+      return false;
     }
   }
   
@@ -218,16 +247,4 @@ class AuthProvider extends ChangeNotifier {
         return 'Authentication failed: $code';
     }
   }
-  // Update user data in Firestore
-Future<bool> updateUserData(Map<String, dynamic> data) async {
-  if (_user == null) return false;
-  
-  try {
-    await _firestore.collection('users').doc(_user!.uid).update(data);
-    return true;
-  } catch (e) {
-    print('Error updating user data: $e');
-    return false;
-  }
-}
 }
