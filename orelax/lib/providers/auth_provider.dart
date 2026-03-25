@@ -218,4 +218,16 @@ class AuthProvider extends ChangeNotifier {
         return 'Authentication failed: $code';
     }
   }
+  // Update user data in Firestore
+Future<bool> updateUserData(Map<String, dynamic> data) async {
+  if (_user == null) return false;
+  
+  try {
+    await _firestore.collection('users').doc(_user!.uid).update(data);
+    return true;
+  } catch (e) {
+    print('Error updating user data: $e');
+    return false;
+  }
+}
 }
