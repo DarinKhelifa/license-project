@@ -1,17 +1,17 @@
 import React, { useState, FormEvent, ChangeEvent } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  TextField,
-  Button,
-  Typography,
-  Link,
-  Alert,
-  Paper,
-} from '@mui/material';
+import { Box, TextField, Button, Typography, Link, Alert, Paper, Grid, CircularProgress, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  Login as LoginIcon,
+  Google as GoogleIcon,
+  Security as SecurityIcon,
+  Verified as VerifiedIcon,
+} from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+
+const GREEN = '#034808';
+const YELLOW = '#FFD700';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -45,76 +45,156 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err?.message ?? 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      bgcolor: '#f5f5f5',
-      p: 2
-    }}>
-      <Paper sx={{ maxWidth: 400, width: '100%', p: 4 }}>
-        <Typography variant="h4" sx={{ color: '#034808', mb: 1, textAlign: 'center' }}>
-          ORELAX
-        </Typography>
-        <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'gray' }}>
-          SMART · SAFE · COMFORTABLE
-        </Typography>
-        
-        <Typography variant="h5" sx={{ mb: 3 }}>
-          Welcome Back
-        </Typography>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', overflow: 'hidden' }}>
+      {/* Ambient glow */}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(1200px 500px at 20% 10%, rgba(3,72,8,0.25), transparent 55%), radial-gradient(900px 420px at 90% 80%, rgba(255,215,0,0.22), transparent 55%)',
+          pointerEvents: 'none',
+        }}
+      />
 
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, py: { xs: 4, md: 7 } }}>
+        <Grid container spacing={3} alignItems="stretch">
+          <Grid item xs={12} md={5}>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  height: '100%',
+                  p: 4,
+                  borderRadius: 4,
+                  bgcolor: GREEN,
+                  color: 'white',
+                  border: '1px solid rgba(255,215,0,0.25)',
+                  overflow: 'hidden',
+                  position: 'relative',
+                }}
+              >
+                <Typography sx={{ fontWeight: 950, fontSize: 40, color: YELLOW, mb: 1.2 }}>
+                  ORELAX
+                </Typography>
+                <Typography sx={{ fontWeight: 900, mb: 2.5 }}>
+                  SMART · SAFE · COMFORTABLE
+                </Typography>
 
-        <Box component="form" onSubmit={handleLogin}>
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-            margin="normal"
-            required
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{
-              mt: 3,
-              mb: 2,
-              bgcolor: '#034808',
-              '&:hover': { bgcolor: '#023206' },
-              py: 1.5,
-            }}
-            disabled={loading}
-          >
-            {loading ? 'Loading...' : 'LOGIN'}
-          </Button>
-        </Box>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <SecurityIcon sx={{ color: YELLOW }} />
+                    <Typography sx={{ fontWeight: 700 }}>Secure access</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <VerifiedIcon sx={{ color: YELLOW }} />
+                    <Typography sx={{ fontWeight: 700 }}>Verified services</Typography>
+                  </Box>
+                </Box>
 
-        <Box sx={{ textAlign: 'center' }}>
-          <Link
-            component="button"
-            variant="body2"
-            onClick={() => navigate('/register')}
-            sx={{ color: '#034808' }}
-          >
-            Don't have an account? Sign Up
-          </Link>
-        </Box>
-      </Paper>
+                <Typography sx={{ color: 'rgba(255,255,255,0.9)', lineHeight: 1.8 }}>
+                  Sign in to manage incidents, chat with your community, and access services.
+                </Typography>
+              </Paper>
+            </motion.div>
+          </Grid>
+
+          <Grid item xs={12} md={7}>
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.55, delay: 0.05 }}
+            >
+              <Paper sx={{ p: { xs: 3, md: 4 }, borderRadius: 4, border: '1px solid rgba(3,72,8,0.10)', boxShadow: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <LoginIcon sx={{ color: GREEN }} />
+                  <Typography sx={{ fontWeight: 900, fontSize: 24, color: GREEN }}>
+                    Welcome back
+                  </Typography>
+                </Box>
+
+                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+                <Box component="form" onSubmit={handleLogin}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    margin="normal"
+                    required
+                  />
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                    margin="normal"
+                    required
+                  />
+
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    sx={{
+                      mt: 3,
+                      bgcolor: GREEN,
+                      py: 1.6,
+                      fontWeight: 950,
+                      '&:hover': { bgcolor: '#023206' },
+                    }}
+                    disabled={loading}
+                  >
+                    {loading ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'LOGIN'}
+                  </Button>
+
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={handleGoogleLogin}
+                    disabled={loading}
+                    sx={{
+                      mt: 2,
+                      borderColor: GREEN,
+                      color: GREEN,
+                      py: 1.4,
+                      fontWeight: 900,
+                      '&:hover': { borderColor: GREEN, bgcolor: 'rgba(3,72,8,0.04)' },
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'center' }}>
+                      <GoogleIcon />
+                      Sign in with Google
+                    </Box>
+                  </Button>
+                </Box>
+
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Link component="button" variant="body2" onClick={() => navigate('/register')} sx={{ color: GREEN, fontWeight: 800 }}>
+                    Don&apos;t have an account? Sign Up
+                  </Link>
+                </Box>
+              </Paper>
+            </motion.div>
+          </Grid>
+        </Grid>
+      </Container>
     </Box>
   );
 }

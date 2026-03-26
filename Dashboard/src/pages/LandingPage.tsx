@@ -1,390 +1,233 @@
 import React from 'react';
-import { Box, Typography, Button, Container, Paper } from '@mui/material';
-import Grid from '@mui/material/Grid';
-import { useNavigate } from 'react-router-dom';
+import { Box, Typography, Button, Container, Paper, Grid, Chip } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Security as SecurityIcon,
   People as PeopleIcon,
   Dashboard as DashboardIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
+  Chat as ChatIcon,
+  Verified as VerifiedIcon,
+  Shield as ShieldIcon,
 } from '@mui/icons-material';
-import GradualBlur from '../components/GradualBlur/GradualBlur';
+
+const GREEN = '#034808';
+const YELLOW = '#FFD700';
 
 export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5' }}>
-      {/* Hero Section with Gradual Blur */}
-      <Box sx={{ 
-        bgcolor: '#034808', 
-        color: 'white', 
-        py: { xs: 4, md: 8 },
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f5f5f5',
+        overflow: 'hidden',
         position: 'relative',
-        minHeight: { xs: 400, md: 500 },
-        overflow: 'hidden'
-      }}>
-        {/* Bottom Blur - creates smooth fade to next section */}
-        <GradualBlur
-          position="bottom"
-          height="10rem"
-          strength={5}
-          divCount={12}
-          curve="ease-out"
-          exponential={true}
-          opacity={0.95}
-          zIndex={5}
-        />
-        
-        {/* Top Blur - adds depth to hero section */}
-        <GradualBlur
-          position="top"
-          height="5rem"
-          strength={2}
-          divCount={6}
-          curve="linear"
-          opacity={0.6}
-          zIndex={5}
-        />
-        
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
-          <Grid container spacing={4} alignItems="center">
-            {/* Left Column - Text Content */}
-            <Grid item xs={12} md={6}>
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-              >
-              <Typography 
-                variant="h2" 
-                sx={{ 
-                  fontWeight: 'bold', 
-                  mb: 2, 
-                  color: '#FFD700',
-                  fontSize: { xs: '2.5rem', md: '3.75rem' }
+      }}
+    >
+      {/* Ambient blobs */}
+      <motion.div
+        style={{
+          position: 'absolute',
+          width: 520,
+          height: 520,
+          left: -240,
+          top: -260,
+          background: 'rgba(3,72,8,0.28)',
+          filter: 'blur(40px)',
+          borderRadius: '999px',
+          pointerEvents: 'none',
+        }}
+        animate={{ y: [0, 18, 0] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        style={{
+          position: 'absolute',
+          width: 520,
+          height: 520,
+          right: -260,
+          bottom: -280,
+          background: 'rgba(255,215,0,0.22)',
+          filter: 'blur(40px)',
+          borderRadius: '999px',
+          pointerEvents: 'none',
+        }}
+        animate={{ y: [0, -14, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1, py: { xs: 5, md: 8 } }}>
+        <Grid container spacing={4} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
+              <Typography
+                sx={{
+                  fontSize: { xs: '2.2rem', md: '3.6rem' },
+                  fontWeight: 950,
+                  letterSpacing: 1,
+                  color: YELLOW,
+                  mb: 1.5,
+                  lineHeight: 1,
                 }}
               >
                 ORELAX
               </Typography>
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  mb: 3, 
+
+              <Typography
+                sx={{
+                  fontSize: { xs: '1.05rem', md: '1.35rem' },
+                  fontWeight: 900,
                   color: 'white',
-                  fontSize: { xs: '1.25rem', md: '1.5rem' }
+                  mb: 2.5,
                 }}
               >
                 SMART · SAFE · COMFORTABLE
               </Typography>
-              <Typography 
-                variant="body1" 
-                sx={{ 
-                  mb: 4, 
-                  color: 'rgba(255,255,255,0.9)',
-                  fontSize: { xs: '1rem', md: '1.1rem' },
-                  lineHeight: 1.6
-                }}
-              >
-                Your connected home where responsive security meets neighbourhood harmony 
-                and technological ease. Stay Connected.
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  onClick={() => navigate('/login')}
-                  sx={{
-                    bgcolor: '#FFD700',
-                    color: '#034808',
-                    '&:hover': { bgcolor: '#FFC107' },
-                    px: 4,
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Login
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  onClick={() => navigate('/register')}
-                  sx={{
-                    borderColor: '#FFD700',
-                    color: '#FFD700',
-                    '&:hover': { 
-                      borderColor: '#FFC107', 
-                      bgcolor: 'rgba(255,215,0,0.1)' 
-                    },
-                    px: 4,
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Sign Up
-                </Button>
-              </Box>
-              </motion.div>
-            </Grid>
 
-            {/* Right Column - ALL IN ONE Card */}
-            <Grid item xs={12} md={6}>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-              >
               <Paper
-                elevation={6}
+                elevation={0}
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.1)',
-                  backdropFilter: 'blur(10px)',
+                  p: 3,
                   borderRadius: 4,
-                  p: { xs: 3, md: 4 },
-                  textAlign: 'center',
-                  border: '2px solid rgba(255,215,0,0.3)',
-                  transition: 'transform 0.3s',
-                  '&:hover': {
-                    transform: 'scale(1.02)',
-                    borderColor: '#FFD700'
-                  }
+                  bgcolor: GREEN,
+                  color: 'white',
+                  border: '1px solid rgba(255,215,0,0.28)',
+                  backdropFilter: 'blur(10px)',
                 }}
               >
-                <Typography 
-                  variant="h4" 
-                  sx={{ 
-                    color: '#FFD700', 
-                    mb: 2,
-                    fontWeight: 'medium'
-                  }}
-                >
+                <Typography sx={{ color: 'rgba(255,255,255,0.95)', lineHeight: 1.8 }}>
+                  A secure gated community experience with incident reporting, chat, and resident services—built for real life.
+                </Typography>
+
+                <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <motion.div whileHover={{ scale: 1.03 }}>
+                    <Button
+                      variant="contained"
+                      size="large"
+                      onClick={() => navigate('/login')}
+                      sx={{
+                        bgcolor: YELLOW,
+                        color: GREEN,
+                        px: 4,
+                        py: 1.7,
+                        fontWeight: 950,
+                        '&:hover': { bgcolor: '#FFC107' },
+                      }}
+                    >
+                      Login
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.03 }}>
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      onClick={() => navigate('/register')}
+                      sx={{
+                        borderColor: YELLOW,
+                        color: YELLOW,
+                        px: 4,
+                        py: 1.7,
+                        fontWeight: 950,
+                        '&:hover': { borderColor: '#FFC107', bgcolor: 'rgba(255,215,0,0.08)' },
+                      }}
+                    >
+                      Sign Up
+                    </Button>
+                  </motion.div>
+                </Box>
+
+                <Box sx={{ mt: 3, display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
+                  <Chip icon={<ShieldIcon />} label="Secure access" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }} />
+                  <Chip icon={<VerifiedIcon />} label="Verified staff" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }} />
+                  <Chip icon={<ChatIcon />} label="Resident chat" sx={{ bgcolor: 'rgba(255,255,255,0.1)', color: 'white' }} />
+                </Box>
+              </Paper>
+            </motion.div>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <Paper
+                elevation={10}
+                sx={{
+                  p: 4,
+                  borderRadius: 5,
+                  border: '1px solid rgba(255,215,0,0.25)',
+                  bgcolor: 'rgba(255,255,255,0.75)',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                <Typography sx={{ color: GREEN, fontWeight: 950, letterSpacing: 0.8, mb: 1.5 }}>
                   ALL IN ONE
                 </Typography>
-                <Typography 
-                  variant="h3" 
-                  sx={{ 
-                    color: 'white', 
-                    mb: 3,
-                    fontWeight: 'bold',
-                    fontSize: { xs: '2rem', md: '2.5rem' }
-                  }}
-                >
+                <Typography sx={{ color: GREEN, fontWeight: 1000, fontSize: '2.2rem', mb: 2 }}>
                   REAL RESIDENCE
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
-                  <SecurityIcon sx={{ fontSize: { xs: 40, md: 50 }, color: '#FFD700' }} />
-                  <PeopleIcon sx={{ fontSize: { xs: 40, md: 50 }, color: '#FFD700' }} />
-                  <DashboardIcon sx={{ fontSize: { xs: 40, md: 50 }, color: '#FFD700' }} />
-                </Box>
+
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid item xs={4}>
+                    <Box
+                      sx={{
+                        borderRadius: 3,
+                        border: '1px solid rgba(3,72,8,0.12)',
+                        bgcolor: 'rgba(3,72,8,0.04)',
+                        p: 2,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <SecurityIcon sx={{ color: GREEN, fontSize: 30 }} />
+                      <Typography sx={{ color: GREEN, mt: 1, fontWeight: 800, fontSize: 13 }}>Security</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Box
+                      sx={{
+                        borderRadius: 3,
+                        border: '1px solid rgba(3,72,8,0.12)',
+                        bgcolor: 'rgba(255,215,0,0.15)',
+                        p: 2,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <PeopleIcon sx={{ color: GREEN, fontSize: 30 }} />
+                      <Typography sx={{ color: GREEN, mt: 1, fontWeight: 800, fontSize: 13 }}>Residents</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Box
+                      sx={{
+                        borderRadius: 3,
+                        border: '1px solid rgba(3,72,8,0.12)',
+                        bgcolor: 'rgba(3,72,8,0.04)',
+                        p: 2,
+                        textAlign: 'center',
+                      }}
+                    >
+                      <DashboardIcon sx={{ color: GREEN, fontSize: 30 }} />
+                      <Typography sx={{ color: GREEN, mt: 1, fontWeight: 800, fontSize: 13 }}>Dashboard</Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+
+                <Typography sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
+                  Designed for admins and residents to manage incidents, communicate, and access community services—fast and organized.
+                </Typography>
               </Paper>
-              </motion.div>
-            </Grid>
+            </motion.div>
           </Grid>
-        </Container>
-      </Box>
+        </Grid>
 
-      {/* Features Section with Blur */}
-      <Box sx={{ 
-        position: 'relative', 
-        py: { xs: 6, md: 8 },
-        minHeight: 400,
-        overflow: 'hidden',
-        bgcolor: '#f5f5f5'
-      }}>
-        {/* Top Blur for features section */}
-        <GradualBlur
-          position="top"
-          height="8rem"
-          strength={4}
-          divCount={10}
-          curve="ease-in"
-          exponential={true}
-          opacity={0.8}
-          zIndex={5}
-        />
-        
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-          <Typography 
-            variant="h3" 
-            sx={{ 
-              textAlign: 'center', 
-              color: '#034808', 
-              mb: 6,
-              fontWeight: 'bold',
-              fontSize: { xs: '2rem', md: '2.5rem' }
-            }}
-          >
-            Why Choose ORELAX?
-          </Typography>
-          </motion.div>
-          
-          <Grid container spacing={4}>
-            {/* Feature 1 */}
-            <Grid item xs={12} md={4}>
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                style={{ height: '100%' }}
-              >
-              <Paper sx={{ 
-                p: { xs: 3, md: 4 }, 
-                textAlign: 'center', 
-                height: '100%',
-                transition: 'transform 0.3s, box-shadow 0.3s',
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 12px 20px rgba(3,72,8,0.3)'
-                }
-              }}>
-                <SecurityIcon sx={{ fontSize: 70, color: '#034808', mb: 2 }} />
-                <Typography variant="h5" sx={{ color: '#034808', mb: 2, fontWeight: 'bold' }}>
-                  Smart Security
-                </Typography>
-                <Typography color="textSecondary" sx={{ lineHeight: 1.7 }}>
-                  Automated access management, real-time alerts, and 24/7 surveillance 
-                  for complete peace of mind.
-                </Typography>
-              </Paper>
-              </motion.div>
-            </Grid>
-
-            {/* Feature 2 */}
-            <Grid item xs={12} md={4}>
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                style={{ height: '100%' }}
-              >
-              <Paper sx={{ 
-                p: { xs: 3, md: 4 }, 
-                textAlign: 'center', 
-                height: '100%',
-                transition: 'transform 0.3s, box-shadow 0.3s',
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 12px 20px rgba(3,72,8,0.3)'
-                }
-              }}>
-                <PeopleIcon sx={{ fontSize: 70, color: '#034808', mb: 2 }} />
-                <Typography variant="h5" sx={{ color: '#034808', mb: 2, fontWeight: 'bold' }}>
-                  Community Living
-                </Typography>
-                <Typography color="textSecondary" sx={{ lineHeight: 1.7 }}>
-                  Connect with neighbors, organize events, and book shared spaces 
-                  through our community platform.
-                </Typography>
-              </Paper>
-              </motion.div>
-            </Grid>
-
-            {/* Feature 3 */}
-            <Grid item xs={12} md={4}>
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                style={{ height: '100%' }}
-              >
-              <Paper sx={{ 
-                p: { xs: 3, md: 4 }, 
-                textAlign: 'center', 
-                height: '100%',
-                transition: 'transform 0.3s, box-shadow 0.3s',
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 12px 20px rgba(3,72,8,0.3)'
-                }
-              }}>
-                <DashboardIcon sx={{ fontSize: 70, color: '#034808', mb: 2 }} />
-                <Typography variant="h5" sx={{ color: '#034808', mb: 2, fontWeight: 'bold' }}>
-                  Smart Management
-                </Typography>
-                <Typography color="textSecondary" sx={{ lineHeight: 1.7 }}>
-                  Monitor energy consumption, control facilities, and manage 
-                  maintenance requests effortlessly.
-                </Typography>
-              </Paper>
-              </motion.div>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* Contact Section with Blur */}
-      <Box sx={{ 
-        bgcolor: '#034808', 
-        color: 'white', 
-        py: { xs: 4, md: 6 },
-        position: 'relative',
-        overflow: 'hidden',
-        minHeight: 200
-      }}>
-        {/* Bottom Blur for smooth transition */}
-        <GradualBlur
-          position="top"
-          height="5rem"
-          strength={3}
-          divCount={8}
-          curve="linear"
-          opacity={0.6}
-          zIndex={5}
-        />
-        
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
-          <Grid container spacing={4} justifyContent="center">
-            <Grid item xs={12} md={6} textAlign="center">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  color: '#FFD700', 
-                  mb: 3,
-                  fontWeight: 'bold',
-                  fontSize: { xs: '1.75rem', md: '2.25rem' }
-                }}
-              >
-                Stay Connected
-              </Typography>
-              <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                gap: { xs: 2, md: 4 }, 
-                flexWrap: 'wrap' 
-              }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PhoneIcon sx={{ color: '#FFD700', fontSize: 28 }} />
-                  <Typography sx={{ fontSize: '1.1rem' }}>+213 (0) 123 456 789</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <EmailIcon sx={{ color: '#FFD700', fontSize: 28 }} />
-                  <Typography sx={{ fontSize: '1.1rem' }}>contact@orelax.dz</Typography>
-                </Box>
-              </Box>
-              </motion.div>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
+        <Box sx={{ mt: { xs: 4, md: 6 }, textAlign: 'center', color: 'text.secondary' }}>
+          <Typography variant="body2">Secure gated access. Modern experience. Powered by Firebase.</Typography>
+        </Box>
+      </Container>
     </Box>
   );
 }
+
