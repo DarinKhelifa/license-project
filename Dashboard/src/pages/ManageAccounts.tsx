@@ -76,7 +76,15 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function ManageAccounts() {
-  const { userData, getAllUsers, updateUserRole, updateUserStatus, deleteUser, createUser } = useAuth();
+  const {
+    userData,
+    getAllUsers,
+    updateUserRole,
+    updateUserStatus,
+    deleteUser,
+    createUser,
+    loading: authLoading,
+  } = useAuth();
   const [tabValue, setTabValue] = useState(0);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -276,7 +284,7 @@ export default function ManageAccounts() {
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
         <CircularProgress />
@@ -292,6 +300,14 @@ export default function ManageAccounts() {
           Access Denied
         </Typography>
         <Typography>You don't have permission to view this page.</Typography>
+      </Box>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
       </Box>
     );
   }

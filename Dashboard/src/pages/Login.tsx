@@ -11,22 +11,37 @@ import {
   Paper,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: FormEvent) => {
+  const { signIn } = useAuth();
+
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    // TODO: Add actual authentication
-    if (email && password) {
-      // For demo, any credentials work
+    setError('');
+
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signIn(email, password);
+      // AuthGuard will allow access based on firebase auth state.
+      // If you still want to use localStorage for any reason, you can keep this line.
       localStorage.setItem('isAuthenticated', 'true');
       navigate('/dashboard');
-    } else {
-      setError('Please fill in all fields');
+    } catch (err: any) {
+      setError(err?.message ?? 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,8 +98,9 @@ export default function Login() {
               '&:hover': { bgcolor: '#023206' },
               py: 1.5,
             }}
+            disabled={loading}
           >
-            LOGIN
+            {loading ? 'Loading...' : 'LOGIN'}
           </Button>
         </Box>
 

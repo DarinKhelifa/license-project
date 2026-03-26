@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -22,20 +23,41 @@ export default function Register() {
     confirmPassword: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const { signUp } = useAuth();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = (e: FormEvent) => {
+  const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-    // TODO: Add actual registration
-    localStorage.setItem('isAuthenticated', 'true');
-    navigate('/dashboard');
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await signUp(formData.email, formData.password, {
+        // Firestore fields for your /users collection
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        apartment: formData.apartment,
+        role: 'resident',
+        status: 'pending',
+      });
+      localStorage.setItem('isAuthenticated', 'true');
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err?.message ?? 'Sign up failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -138,8 +160,9 @@ export default function Register() {
               '&:hover': { bgcolor: '#023206' },
               py: 1.5,
             }}
+            disabled={loading}
           >
-            SIGN UP
+            {loading ? 'Loading...' : 'SIGN UP'}
           </Button>
         </Box>
 
