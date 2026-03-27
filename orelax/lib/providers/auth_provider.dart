@@ -214,6 +214,32 @@ class AuthProvider extends ChangeNotifier {
     }
   }
   
+  // ✅ ADD THESE METHODS (place them here, before updateUserData)
+  
+  // Get user role
+  Future<String?> getUserRole() async {
+    final userData = await getUserData();
+    return userData?['role'];
+  }
+  
+  // Check if user is admin
+  Future<bool> isAdmin() async {
+    final role = await getUserRole();
+    return role == 'admin';
+  }
+  
+  // Check if user is security
+  Future<bool> isSecurity() async {
+    final role = await getUserRole();
+    return role == 'security';
+  }
+  
+  // Check if user is maintenance
+  Future<bool> isMaintenance() async {
+    final role = await getUserRole();
+    return role == 'maintenance';
+  }
+  
   // Update user data in Firestore
   Future<bool> updateUserData(Map<String, dynamic> data) async {
     if (_user == null) return false;
