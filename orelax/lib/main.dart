@@ -11,6 +11,14 @@ import 'screens/Home/report_screen.dart';
 import 'screens/Home/profile_screen.dart';
 import 'screens/chat/chat_screen.dart';
 
+import 'screens/security/access_control_screen.dart';
+import 'screens/security/visitors_screen.dart';
+import 'screens/security/alerts_screen.dart';
+import 'screens/security/access_logs_screen.dart';
+import 'screens/maintenance/work_orders_screen.dart';
+import 'screens/maintenance/pending_requests_screen.dart';
+import 'screens/maintenance/schedule_screen.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -35,27 +43,50 @@ class OrelaxApp extends StatelessWidget {
             primary: Color(0xFF034808),
             secondary: Color(0xFFFFD700),
           ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF034808),
+            foregroundColor: Colors.white,
+          ),
           useMaterial3: true,
         ),
         home: const WelcomeScreen(),
         routes: {
           '/auth': (_) => const AuthWrapper(),
           '/onboarding': (_) => const OnboardingScreen(),
+          '/role-based-home': (_) => const HomeScreen(),
           '/home': (_) => const HomeScreen(),
           '/chat': (_) => const ChatScreen(),
           '/report': (_) => const ReportScreen(),
           '/profile': (_) => const ProfileScreen(),
-          '/events':
-              (_) => const _ComingSoonScreen(title: 'Events'),
-          '/all-services':
-              (_) => const _ComingSoonScreen(title: 'All services'),
-          '/facilities':
-              (_) => const _ComingSoonScreen(title: 'Facilities'),
-          '/childcare':
-              (_) => const _ComingSoonScreen(title: 'Childcare'),
-          '/helping-staff':
-              (_) => const _ComingSoonScreen(title: 'Helping staff'),
-          '/feed': (_) => const _ComingSoonScreen(title: 'Community feed'),
+
+          // Resident shortcuts (no extra pages — same Coming Soon shell)
+          '/feed': (_) => const _ComingSoonScreen(title: 'Community Feed'),
+          '/events': (_) => const _ComingSoonScreen(title: 'Events'),
+          '/bookings': (_) => const _ComingSoonScreen(title: 'Bookings'),
+          '/maintenance-request':
+              (_) => const _ComingSoonScreen(title: 'Maintenance Request'),
+          '/facilities': (_) => const _ComingSoonScreen(title: 'Facilities'),
+
+          // Security (real screens — opened from home)
+          '/access-control': (_) => const AccessControlScreen(),
+          '/visitors': (_) => const VisitorsScreen(),
+          '/alerts': (_) => const AlertsScreen(),
+          '/access-logs': (_) => const AccessLogsScreen(),
+
+          // Maintenance (real screens — opened from home)
+          '/work-orders': (_) => const WorkOrdersScreen(),
+          '/pending-requests': (_) => const PendingRequestsScreen(),
+          '/schedule': (_) => const MaintenanceScheduleScreen(),
+
+          // Placeholders
+          '/all-services': (_) => const _ComingSoonScreen(title: 'All Services'),
+          '/childcare': (_) => const _ComingSoonScreen(title: 'Childcare'),
+          '/helping-staff': (_) => const _ComingSoonScreen(title: 'Helping Staff'),
+          '/manage-accounts':
+              (_) => const _ComingSoonScreen(title: 'Manage Accounts'),
+          '/security-management':
+              (_) => const _ComingSoonScreen(title: 'Security Management'),
+          '/monitoring': (_) => const _ComingSoonScreen(title: 'Monitoring'),
         },
       ),
     );
@@ -76,10 +107,33 @@ class _ComingSoonScreen extends StatelessWidget {
         foregroundColor: Colors.white,
       ),
       body: Center(
-        child: Text(
-          '$title — coming soon',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 16, color: Colors.black54),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.build,
+              size: 80,
+              color: const Color(0xFF034808).withOpacity(0.5),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              '$title — Coming Soon',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'This feature is under development',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
         ),
       ),
     );
