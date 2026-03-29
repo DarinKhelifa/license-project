@@ -18,6 +18,10 @@ import 'screens/security/access_logs_screen.dart';
 import 'screens/maintenance/work_orders_screen.dart';
 import 'screens/maintenance/pending_requests_screen.dart';
 import 'screens/maintenance/schedule_screen.dart';
+import 'screens/facilities_manager/facilities_list_screen.dart';
+import 'screens/facilities_manager/facility_registrations_screen.dart';
+import 'screens/facilities_manager/facility_details_screen.dart';
+import 'screens/facilities_manager/facility_payments_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +61,7 @@ class OrelaxApp extends StatelessWidget {
           '/home': (_) => const HomeScreen(),
           '/chat': (_) => const ChatScreen(),
           '/report': (_) => const ReportScreen(),
+          '/notifications': (_) => const _ComingSoonScreen(title: 'Notifications'),
           '/profile': (_) => const ProfileScreen(),
 
           // Resident shortcuts (no extra pages — same Coming Soon shell)
@@ -77,6 +82,12 @@ class OrelaxApp extends StatelessWidget {
           '/work-orders': (_) => const WorkOrdersScreen(),
           '/pending-requests': (_) => const PendingRequestsScreen(),
           '/schedule': (_) => const MaintenanceScheduleScreen(),
+
+          // Facilities manager screens
+          '/fm-facilities': (_) => const FacilitiesListScreen(),
+          '/fm-registrations': (_) => const FacilityRegistrationsScreen(),
+          '/fm-facility-details': (_) => const FacilityDetailsScreen(),
+          '/fm-payments': (_) => const FacilityPaymentsScreen(),
 
           // Placeholders
           '/all-services': (_) => const _ComingSoonScreen(title: 'All Services'),

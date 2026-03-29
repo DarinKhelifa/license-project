@@ -39,6 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
         return '★ Security · Access & monitoring';
       case 'maintenance':
         return '★ Maintenance · Work orders & repairs';
+      case 'facility manager':
+      case 'facilities manager':
+      case 'facility_manager':
+      case 'facilities_manager':
+        return '★ Facilities Manager · Reservations & approvals';
       default:
         return '★ Secure Gated Community';
     }
@@ -50,9 +55,23 @@ class _HomeScreenState extends State<HomeScreen> {
         return 'Search access, visitors, alerts...';
       case 'maintenance':
         return 'Search work orders, requests...';
+      case 'facility manager':
+      case 'facilities manager':
+      case 'facility_manager':
+      case 'facilities_manager':
+        return 'Search facilities, registrations, payments...';
       default:
         return 'Search services, events...';
     }
+  }
+
+  bool get _usesNotificationsTab {
+    return _role == 'security' ||
+        _role == 'maintenance' ||
+        _role == 'facility manager' ||
+        _role == 'facilities manager' ||
+        _role == 'facility_manager' ||
+        _role == 'facilities_manager';
   }
 
   void _navigateToPage(int index) {
@@ -65,7 +84,10 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.pushNamed(context, '/chat');
         break;
       case 2:
-        Navigator.pushNamed(context, '/report');
+        Navigator.pushNamed(
+          context,
+          _usesNotificationsTab ? '/notifications' : '/report',
+        );
         break;
       case 3:
         Navigator.pushNamed(context, '/profile');
@@ -228,8 +250,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => _navigateToPage(1),
               ),
               _NavItem(
-                icon: 'assets/icon/triangle-alert.svg',
-                label: 'Report',
+                icon: _usesNotificationsTab
+                    ? 'assets/icon/bell.svg'
+                    : 'assets/icon/triangle-alert.svg',
+                label: _usesNotificationsTab ? 'Notifications' : 'Report',
                 isActive: _currentIndex == 2,
                 onTap: () => _navigateToPage(2),
               ),
@@ -253,6 +277,11 @@ class _HomeScreenState extends State<HomeScreen> {
         return _buildSecurityHomeContent();
       case 'maintenance':
         return _buildMaintenanceHomeContent();
+      case 'facility manager':
+      case 'facilities manager':
+      case 'facility_manager':
+      case 'facilities_manager':
+        return _buildFacilitiesManagerHomeContent();
       default:
         return _buildResidentHomeContent();
     }
@@ -738,6 +767,235 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: const Text(
                   'Prioritize common-area repairs before unit callbacks. Use Report in the bottom bar for new tickets.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 100),
+      ],
+    );
+  }
+
+  Widget _buildFacilitiesManagerHomeContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A5C2A),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -10,
+                top: -10,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 30,
+                bottom: -20,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5C518),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'ANNOUNCEMENT',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Facilities control center',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Manage facilities and resident registrations for pool, party room, nursery, and gym.',
+                    style: TextStyle(fontSize: 13, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'OUR SERVICES',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            GestureDetector(
+              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+              child: const Text(
+                'View All',
+                style: TextStyle(color: Color(0xFF1A5C2A), fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 14,
+          crossAxisSpacing: 14,
+          childAspectRatio: 1.4,
+          children: [
+            _ServiceCard(
+              icon: Icons.pool,
+              iconColor: const Color(0xFF5B8DEF),
+              title: 'Pool',
+              subtitle: 'Manage slots',
+              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+            ),
+            _ServiceCard(
+              icon: Icons.celebration_outlined,
+              iconColor: const Color(0xFFE07B3F),
+              title: 'Party Room',
+              subtitle: 'Bookings & rules',
+              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+            ),
+            _ServiceCard(
+              icon: Icons.child_care_outlined,
+              iconColor: const Color(0xFFE05C8A),
+              title: 'Nursery',
+              subtitle: 'Capacity & sessions',
+              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+            ),
+            _ServiceCard(
+              icon: Icons.fitness_center,
+              iconColor: const Color(0xFF9B59B6),
+              title: 'Gym',
+              subtitle: 'Equipment & hours',
+              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Color(0xFF1A5C2A),
+                    child: Icon(Icons.how_to_reg, color: Colors.white, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Registrations',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          'Approve or refuse requests',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/fm-registrations'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A5C2A),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'OPEN',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          Icon(Icons.arrow_forward,
+                              color: Colors.white, size: 12),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: const Text(
+                  'Handle resident registrations, update facility details, and follow up on payment status.',
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.black87,
