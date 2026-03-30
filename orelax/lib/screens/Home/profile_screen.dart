@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../screens/Welcome/welcome_screen.dart';
 import 'edit_profile_screen.dart';
 import 'change_password_screen.dart';
 
@@ -23,10 +24,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-    
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userData = await authProvider.getUserData();
-    
+
     setState(() {
       _userData = userData;
       _isLoading = false;
@@ -41,7 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F2F5),
       body: SafeArea(
@@ -80,7 +81,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         radius: 36,
                         backgroundColor: const Color(0xFF1A6B2F),
                         child: Text(
-                          _getInitials(_userData?['name'] ?? user?.displayName ?? 'U'),
+                          _getInitials(
+                              _userData?['name'] ?? user?.displayName ?? 'U'),
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -95,7 +97,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _userData?['name'] ?? user?.displayName ?? 'Loading...',
+                              _userData?['name'] ??
+                                  user?.displayName ??
+                                  'Loading...',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -114,10 +118,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             if (_userData?['apartment'] != null)
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2,
+                                  horizontal: 8,
+                                  vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1A6B2F).withOpacity(0.1),
+                                  color:
+                                      const Color(0xFF1A6B2F).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -287,7 +293,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final TextEditingController controller = TextEditingController(
       text: _userData?['phone'] ?? '',
     );
-    
+
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -326,7 +332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
-    
+
     if (result == true) {
       _refreshData();
     }
@@ -336,7 +342,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final TextEditingController controller = TextEditingController(
       text: _userData?['apartment'] ?? '',
     );
-    
+
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -374,7 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
-    
+
     if (result == true) {
       _refreshData();
     }
@@ -444,12 +450,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Logout'),
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
@@ -459,7 +465,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 listen: false,
               );
               await authProvider.signOut();
-              Navigator.pop(context); // Close dialog
+              Navigator.pop(dialogContext); // Close dialog
+              if (!mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WelcomeScreen(),
+                ),
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -538,8 +552,7 @@ class _ProfileTile extends StatelessWidget {
               trailing!,
               style: const TextStyle(color: Colors.grey, fontSize: 14),
             ),
-          if (onTap != null)
-            const SizedBox(width: 4),
+          if (onTap != null) const SizedBox(width: 4),
           if (onTap != null)
             Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
         ],
