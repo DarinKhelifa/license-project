@@ -287,7 +287,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Same layout pattern as residents: hero card → OUR SERVICES → grid → feed-style card.
+  /// Security Dashboard
   Widget _buildSecurityHomeContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -535,6 +535,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Maintenance Dashboard
   Widget _buildMaintenanceHomeContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -782,6 +783,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Facilities Manager Dashboard
   Widget _buildFacilitiesManagerHomeContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -866,7 +868,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+              onTap: () => Navigator.pushNamed(context, '/facilities'),
               child: const Text(
                 'View All',
                 style: TextStyle(color: Color(0xFF1A5C2A), fontSize: 13),
@@ -887,29 +889,29 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icons.pool,
               iconColor: const Color(0xFF5B8DEF),
               title: 'Pool',
-              subtitle: 'Manage slots',
-              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+              subtitle: 'Manage slots & capacity',
+              onTap: () => Navigator.pushNamed(context, '/facility/pool'),
             ),
             _ServiceCard(
               icon: Icons.celebration_outlined,
               iconColor: const Color(0xFFE07B3F),
               title: 'Party Room',
               subtitle: 'Bookings & rules',
-              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+              onTap: () => Navigator.pushNamed(context, '/facility/party-room'),
             ),
             _ServiceCard(
               icon: Icons.child_care_outlined,
               iconColor: const Color(0xFFE05C8A),
               title: 'Nursery',
               subtitle: 'Capacity & sessions',
-              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+              onTap: () => Navigator.pushNamed(context, '/facility/nursery'),
             ),
             _ServiceCard(
               icon: Icons.fitness_center,
               iconColor: const Color(0xFF9B59B6),
               title: 'Gym',
               subtitle: 'Equipment & hours',
-              onTap: () => Navigator.pushNamed(context, '/fm-facilities'),
+              onTap: () => Navigator.pushNamed(context, '/facility/gym'),
             ),
           ],
         ),
@@ -1011,278 +1013,276 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Resident Dashboard with Facilities Navigation
   Widget _buildResidentHomeContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-                    // ── Announcement Card ──
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
+        // Announcement Card
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A5C2A),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -10,
+                top: -10,
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 30,
+                bottom: -20,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5C518),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'ANNOUNCEMENT',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Weekend Festival',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Join us this Saturday for the\ncommunity BBQ and music night.',
+                    style: TextStyle(
+                        fontSize: 13, color: Colors.white70),
+                  ),
+                  const SizedBox(height: 14),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/events');
+                    },
+                    child: const Row(
+                      children: [
+                        Text(
+                          'Learn More ',
+                          style: TextStyle(
+                            color: Color(0xFFF5C518),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward,
+                            color: Color(0xFFF5C518), size: 16),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Our Services
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'OUR SERVICES',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.pushNamed(context, '/facilities');
+              },
+              child: const Text(
+                'View All',
+                style: TextStyle(
+                    color: Color(0xFF1A5C2A), fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Facilities Grid - Now with individual navigation to each facility!
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 14,
+          crossAxisSpacing: 14,
+          childAspectRatio: 1.4,
+          children: [
+            _ServiceCard(
+              icon: Icons.pool,
+              iconColor: const Color(0xFF5B8DEF),
+              title: 'Pool',
+              subtitle: 'Olympic size, 08:00-22:00',
+              onTap: () => Navigator.pushNamed(context, '/facility/pool'),
+            ),
+            _ServiceCard(
+              icon: Icons.celebration_outlined,
+              iconColor: const Color(0xFFE07B3F),
+              title: 'Party Room',
+              subtitle: 'Birthdays & events',
+              onTap: () => Navigator.pushNamed(context, '/facility/party-room'),
+            ),
+            _ServiceCard(
+              icon: Icons.child_care_outlined,
+              iconColor: const Color(0xFFE05C8A),
+              title: 'Nursery',
+              subtitle: 'Childcare 08:00-18:00',
+              onTap: () => Navigator.pushNamed(context, '/facility/nursery'),
+            ),
+            _ServiceCard(
+              icon: Icons.fitness_center,
+              iconColor: const Color(0xFF9B59B6),
+              title: 'Gym',
+              subtitle: '24/7 Access',
+              onTap: () => Navigator.pushNamed(context, '/facility/gym'),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        // Community Post
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Color(0xFF1A5C2A),
+                    child: Text(
+                      'C',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Community Post',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        '2 hours ago • General',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/feed');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A5C2A),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Stack(
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Positioned(
-                            right: -10,
-                            top: -10,
-                            child: Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.05),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 30,
-                            bottom: -20,
-                            child: Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.05),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF5C518),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Text(
-                                  'ANNOUNCEMENT',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              const Text(
-                                'Weekend Festival',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              const Text(
-                                'Join us this Saturday for the\ncommunity BBQ and music night.',
-                                style: TextStyle(
-                                    fontSize: 13, color: Colors.white70),
-                              ),
-                              const SizedBox(height: 14),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.pushNamed(context, '/events');
-                                },
-                                child: const Row(
-                                  children: [
-                                    Text(
-                                      'Learn More ',
-                                      style: TextStyle(
-                                        color: Color(0xFFF5C518),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    Icon(Icons.arrow_forward,
-                                        color: Color(0xFFF5C518), size: 16),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // ── Our Services ──
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'OUR SERVICES',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/all-services');
-                          },
-                          child: const Text(
-                            'View All',
+                          Text(
+                            'GO TO FEED',
                             style: TextStyle(
-                                color: Color(0xFF1A5C2A), fontSize: 13),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Services Grid ──
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 1.4,
-                      children: [
-                        _ServiceCard(
-                          icon: Icons.calendar_today_outlined,
-                          iconColor: const Color(0xFF5B8DEF),
-                          title: 'Facilities',
-                          subtitle: 'Reserve gym, pool or club',
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/facilities'),
-                        ),
-                        _ServiceCard(
-                          icon: Icons.people_outline,
-                          iconColor: const Color(0xFFE07B3F),
-                          title: 'Events',
-                          subtitle: 'Neighborhood gatherings',
-                          onTap: () => Navigator.pushNamed(context, '/events'),
-                        ),
-                        _ServiceCard(
-                          icon: Icons.child_care_outlined,
-                          iconColor: const Color(0xFFE05C8A),
-                          title: 'Childcare',
-                          subtitle: 'Verified nursery staff',
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/childcare'),
-                        ),
-                        _ServiceCard(
-                          icon: Icons.construction_outlined,
-                          iconColor: const Color(0xFF9B59B6),
-                          title: 'Helping Staff',
-                          subtitle: 'Technicians & Cleaning',
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/helping-staff'),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // ── Community Post ──
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const CircleAvatar(
-                                radius: 16,
-                                backgroundColor: Color(0xFF1A5C2A),
-                                child: Text(
-                                  'C',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Community Post',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  Text(
-                                    '2 hours ago • General',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Spacer(),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.pushNamed(context, '/feed');
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF1A5C2A),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'GO TO FEED',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      SizedBox(width: 6),
-                                      Icon(Icons.arrow_forward,
-                                          color: Colors.white, size: 12),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[50],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey[200]!),
-                            ),
-                            child: const Text(
-                              '"Does anyone know a good local tutor for mathematics? My daughter needs some help with her finals..."',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.black87,
-                                fontStyle: FontStyle.italic,
-                              ),
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
+                          SizedBox(width: 6),
+                          Icon(Icons.arrow_forward,
+                              color: Colors.white, size: 12),
                         ],
                       ),
                     ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: const Text(
+                  '"Does anyone know a good local tutor for mathematics? My daughter needs some help with her finals..."',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
 
         const SizedBox(height: 100),
       ],

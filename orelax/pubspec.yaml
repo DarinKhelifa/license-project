@@ -60,4 +60,22 @@ flutter:
     - assets/icon/log-out.svg
     - assets/icon/message-circle-question-mark.svg
     - assets/images/Google_logo.svg
+    - assets/images/pool1.jpg
+    - assets/images/pool2.jpg
+    - assets/images/pool3.jpg
+    - assets/images/pool4.jpg
+    - assets/images/partyroom1.jpg
+    - assets/images/partyroom2.jpg
+    - assets/images/partyroom3.jpg
+    - assets/images/partyroom4.jpg
+    - assets/images/childcare1.jpg
+    - assets/images/childcare2.jpg
+    - assets/images/childcare3.jpg
+    - assets/images/childcare4.jpg
+    - assets/images/childcare5.jpg
+    - assets/images/gym1.jpg
+    - assets/images/gym2.jpg
+    - assets/images/gym3.jpg
+    - assets/images/gym4.jpg
+
 
