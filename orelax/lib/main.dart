@@ -23,6 +23,7 @@ import 'screens/facilities_manager/facility_registrations_screen.dart';
 import 'screens/facilities_manager/facility_details_screen.dart';
 import 'screens/facilities_manager/facility_payments_screen.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -64,7 +65,13 @@ class OrelaxApp extends StatelessWidget {
           '/notifications': (_) => const _ComingSoonScreen(title: 'Notifications'),
           '/profile': (_) => const ProfileScreen(),
 
-          // Resident shortcuts (no extra pages — same Coming Soon shell)
+          // Resident Facility Detail Screens
+          '/facility/pool': (_) => const FacilityDetailsScreen(facilityName: 'Pool'),
+          '/facility/party-room': (_) => const FacilityDetailsScreen(facilityName: 'Party Room'),
+          '/facility/nursery': (_) => const FacilityDetailsScreen(facilityName: 'Nursery'),
+          '/facility/gym': (_) => const FacilityDetailsScreen(facilityName: 'Gym'),
+
+          // Resident shortcuts (Coming Soon)
           '/feed': (_) => const _ComingSoonScreen(title: 'Community Feed'),
           '/events': (_) => const _ComingSoonScreen(title: 'Events'),
           '/bookings': (_) => const _ComingSoonScreen(title: 'Bookings'),
@@ -86,7 +93,7 @@ class OrelaxApp extends StatelessWidget {
           // Facilities manager screens
           '/fm-facilities': (_) => const FacilitiesListScreen(),
           '/fm-registrations': (_) => const FacilityRegistrationsScreen(),
-          '/fm-facility-details': (_) => const FacilityDetailsScreen(),
+          '/fm-facility-details': (_) => const FacilityDetailsScreen(facilityName: '',),
           '/fm-payments': (_) => const FacilityPaymentsScreen(),
 
           // Placeholders
