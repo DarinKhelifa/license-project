@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../services/chat_service.dart';
 
 class IndividualChatScreen extends StatefulWidget {
@@ -23,9 +21,21 @@ class IndividualChatScreen extends StatefulWidget {
 
 class _IndividualChatScreenState extends State<IndividualChatScreen> {
   final TextEditingController messageController = TextEditingController();
+  bool hasText = false;
   final firebase_auth.FirebaseAuth firebaseAuth =
       firebase_auth.FirebaseAuth.instance;
   final Chatservice chatService = Chatservice();
+
+  @override
+  void initState() {
+    super.initState();
+    messageController.addListener(() {
+      if (!mounted) return;
+      setState(() {
+        hasText = messageController.text.trim().isNotEmpty;
+      });
+    });
+  }
 
   void sendMessage() async {
     if (messageController.text.isNotEmpty) {
@@ -43,24 +53,90 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Center(child: Text(widget.name)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        titleSpacing: 0,
+        leading: IconButton(
+          padding: const EdgeInsets.only(left: 16),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.black87,
+            size: 20,
+          ),
+          onPressed: () {
+            Navigator.maybePop(context);
+          },
+        ),
+        title: Row(
+          children: [
+            const SizedBox(width: 8),
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.grey[200],
+              child: const Icon(
+                Icons.person,
+                size: 18,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF34C759),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Online',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            onPressed: () {
-              Provider.of<AuthProvider>(context, listen: false).signOut();
-              if (mounted) {
-                Navigator.pop(context); // Optional safely pops chat screen
-              }
-            },
-            icon: const Icon(Icons.logout),
+            icon: const Icon(
+              Icons.more_vert,
+              color: Colors.black87,
+            ),
+            onPressed: () {},
           ),
         ],
       ),
       body: Column(
-        children: [Expanded(child: _buildMessageList()), userInput()],
+        children: [
+          Expanded(child: _buildMessageList()),
+          userInput(),
+        ],
       ),
-      backgroundColor: Colors.white,
     );
   }
 
@@ -70,54 +146,165 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
       stream: chatService.getMessages(senderId, widget.receiverId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const Text("Error");
+          return const Center(child: Text('Error loading messages'));
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: Text("Loading..."));
+          return const Center(child: CircularProgressIndicator());
         }
+
+        final docs = snapshot.data!.docs;
+        if (docs.isEmpty) {
+          return const Center(
+            child: Text(
+              'No messages yet',
+              style: TextStyle(color: Colors.black54),
+            ),
+          );
+        }
+
         return ListView(
-          children: snapshot.data!.docs
-              .map((e) => _buildMessageItem(e, context))
-              .toList(),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          children: [
+            Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'Today',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ...docs.asMap().entries.map((entry) {
+              final index = entry.key;
+              final doc = entry.value;
+              final nextDoc = index < docs.length - 1 ? docs[index + 1] : null;
+              final isTail = _isSentTail(doc, nextDoc);
+              return _buildMessageItem(doc, context, isTail);
+            }).toList(),
+            const SizedBox(height: 16),
+          ],
         );
       },
     );
   }
 
-  Widget _buildMessageItem(DocumentSnapshot doc, BuildContext context) {
+  Widget _buildMessageItem(
+      DocumentSnapshot doc, BuildContext context, bool isTail) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     bool currentUser = data["senderId"] == firebaseAuth.currentUser?.uid;
+    final bubbleColor =
+        currentUser ? const Color(0xFF8BC38A) : const Color(0xFFF1F1F1);
+    final textColor = currentUser ? Colors.white : Colors.black87;
+    final borderRadius = currentUser
+        ? BorderRadius.only(
+            topLeft: const Radius.circular(15),
+            topRight: const Radius.circular(15),
+            bottomLeft: const Radius.circular(15),
+            bottomRight: Radius.circular(isTail ? 4 : 15),
+          )
+        : const BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+            bottomLeft: Radius.circular(4),
+            bottomRight: Radius.circular(15),
+          );
 
     return GestureDetector(
       onDoubleTap: () {
         if (currentUser) {
-          // Only allow actions if the current user is the sender
           _showEditDeleteDialog(context, data, doc.id);
         }
       },
       child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           crossAxisAlignment:
               currentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+              constraints: const BoxConstraints(maxWidth: 320),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: currentUser ? Colors.green : Colors.blue,
+                color: bubbleColor,
+                borderRadius: borderRadius,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  data["message"],
-                  style: const TextStyle(fontSize: 15, color: Colors.white),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              child: Text(
+                data["message"],
+                style: TextStyle(
+                  fontSize: 15,
+                  color: textColor,
                 ),
               ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment:
+                  currentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+              children: [
+                if (!currentUser)
+                  Text(
+                    _formatTimestamp(data['timestamp']),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                    ),
+                  ),
+                if (currentUser) ...[
+                  Text(
+                    _formatTimestamp(data['timestamp']),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(
+                    Icons.done_all,
+                    size: 14,
+                    color: Color(0xFF34C759),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  bool _isSentTail(DocumentSnapshot doc, DocumentSnapshot? nextDoc) {
+    if (nextDoc == null) return true;
+    final currentSender = (doc.data() as Map<String, dynamic>)["senderId"];
+    final nextSender = (nextDoc.data() as Map<String, dynamic>)["senderId"];
+    return currentSender != nextSender;
+  }
+
+  String _formatTimestamp(dynamic timestampValue) {
+    if (timestampValue == null) return '';
+    DateTime date;
+
+    if (timestampValue is Timestamp) {
+      date = timestampValue.toDate();
+    } else if (timestampValue is DateTime) {
+      date = timestampValue;
+    } else if (timestampValue is int) {
+      date = DateTime.fromMillisecondsSinceEpoch(timestampValue);
+    } else {
+      return '';
+    }
+
+    final hours = date.hour.toString().padLeft(2, '0');
+    final minutes = date.minute.toString().padLeft(2, '0');
+    return '$hours:$minutes';
   }
 
   void _showEditDeleteDialog(
@@ -138,7 +325,6 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                // Update the message
                 chatService.updateMessage(
                     messageId, editController.text, userId, widget.receiverId);
                 editController.clear();
@@ -148,7 +334,6 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
             ),
             TextButton(
               onPressed: () {
-                // Delete the message
                 chatService.deleteMessage(messageId, userId, widget.receiverId);
                 Navigator.of(context).pop();
               },
@@ -167,38 +352,49 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
   }
 
   Widget userInput() {
-    return Padding(
-      padding: const EdgeInsets.all(18.0),
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         children: [
           Expanded(
-            child: TextFormField(
-              controller: messageController,
-              decoration: InputDecoration(
-                filled: true,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                hintText: 'Message',
-                contentPadding:
-                    const EdgeInsets.only(left: 15, bottom: 8, top: 8),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.emoji_emotions_outlined,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: messageController,
+                      decoration: const InputDecoration(
+                        hintText: 'Message...',
+                        border: InputBorder.none,
+                      ),
+                      textCapitalization: TextCapitalization.sentences,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(
-            width: 10,
-          ),
+          const SizedBox(width: 12),
           Container(
-            decoration: BoxDecoration(
-                color: Colors.blue, borderRadius: BorderRadius.circular(40)),
+            decoration: const BoxDecoration(
+              color: Colors.black,
+              shape: BoxShape.circle,
+            ),
             child: IconButton(
               onPressed: sendMessage,
-              icon: const Icon(
-                Icons.send_rounded,
-                size: 30,
+              icon: Icon(
+                hasText ? Icons.send : Icons.mic,
                 color: Colors.white,
               ),
             ),
