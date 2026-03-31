@@ -22,6 +22,7 @@ import 'screens/facilities_manager/facilities_list_screen.dart';
 import 'screens/facilities_manager/facility_registrations_screen.dart';
 import 'screens/facilities_manager/facility_details_screen.dart';
 import 'screens/facilities_manager/facility_payments_screen.dart';
+import 'screens/resident/helping_staff/helping_staff_home_screen.dart';
 
 
 void main() async {
@@ -99,7 +100,7 @@ class OrelaxApp extends StatelessWidget {
           // Placeholders
           '/all-services': (_) => const _ComingSoonScreen(title: 'All Services'),
           '/childcare': (_) => const _ComingSoonScreen(title: 'Childcare'),
-          '/helping-staff': (_) => const _ComingSoonScreen(title: 'Helping Staff'),
+          '/helping-staff': (_) => const HelpingStaffScreen(),
           '/manage-accounts':
               (_) => const _ComingSoonScreen(title: 'Manage Accounts'),
           '/security-management':

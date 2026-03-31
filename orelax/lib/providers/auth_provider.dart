@@ -45,6 +45,9 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
       print('Sign in successful: ${result.user?.email}');
+      _user = result.user;
+      _isLoading = false;
+      notifyListeners();
       return true;
       
     } on FirebaseAuthException catch (e) {
@@ -97,7 +100,9 @@ class AuthProvider extends ChangeNotifier {
         'createdAt': FieldValue.serverTimestamp(),
       });
       print('User data saved to Firestore');
-      
+      _user = result.user;
+      _isLoading = false;
+      notifyListeners();
       return true;
       
     } on FirebaseAuthException catch (e) {
@@ -152,6 +157,9 @@ class AuthProvider extends ChangeNotifier {
       }
       
       print('Firebase sign in successful: ${result.user?.email}');
+      _user = result.user;
+      _isLoading = false;
+      notifyListeners();
       
       final userDoc = await _firestore.collection('users').doc(result.user!.uid).get();
       if (!userDoc.exists) {
@@ -204,10 +212,11 @@ class AuthProvider extends ChangeNotifier {
   
   // Get user data from Firestore
   Future<Map<String, dynamic>?> getUserData() async {
-    if (_user == null) return null;
+    final currentUser = _user ?? _auth.currentUser;
+    if (currentUser == null) return null;
     
     try {
-      final doc = await _firestore.collection('users').doc(_user!.uid).get();
+      final doc = await _firestore.collection('users').doc(currentUser.uid).get();
       return doc.data();
     } catch (e) {
       return null;

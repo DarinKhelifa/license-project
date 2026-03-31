@@ -26,11 +26,22 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final data = await auth.getUserData();
     if (!mounted) return;
-    final r = (data?['role'] as String?)?.trim().toLowerCase();
+    
+    // Debug: Print user data to console
+    print('=== USER DATA FROM FIREBASE ===');
+    print('Full user data: $data');
+    print('Role field: ${data?['role']}');
+    print('================================');
+    
+    // Get role and normalize to lowercase
+    final r = (data?['role'] as String?)?.trim().toLowerCase() ?? 'resident';
+    
     setState(() {
-      if (r != null && r.isNotEmpty) _role = r;
+      _role = r;
       _roleResolved = true;
     });
+    
+    print('Normalized role set to: $_role');
   }
 
   String get _tagline {
@@ -270,21 +281,36 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// One scroll area per role — original bottom bar stays the same for everyone.
+  /// One scroll area per role — CORRECTED VERSION
   Widget _buildHomeScrollContent() {
-    switch (_role) {
-      case 'security':
-        return _buildSecurityHomeContent();
-      case 'maintenance':
-        return _buildMaintenanceHomeContent();
-      case 'facility manager':
-      case 'facilities manager':
-      case 'facility_manager':
-      case 'facilities_manager':
-        return _buildFacilitiesManagerHomeContent();
-      default:
-        return _buildResidentHomeContent();
+    final normalizedRole = _role.toLowerCase().trim();
+    
+    print('=== ROUTING: User role is "$normalizedRole" ===');
+    
+    // Security Role
+    if (normalizedRole == 'security') {
+      print('Routing to Security Dashboard');
+      return _buildSecurityHomeContent();
     }
+    
+    // Maintenance Role
+    if (normalizedRole == 'maintenance') {
+      print('Routing to Maintenance Dashboard');
+      return _buildMaintenanceHomeContent();
+    }
+    
+    // Facilities Manager Role
+    if (normalizedRole == 'facility manager' || 
+        normalizedRole == 'facilities manager' ||
+        normalizedRole == 'facility_manager' ||
+        normalizedRole == 'facilities_manager') {
+      print('Routing to Facilities Manager Dashboard');
+      return _buildFacilitiesManagerHomeContent();
+    }
+    
+    // Default to Resident (also handles 'admin', 'resident', etc.)
+    print('Routing to Resident Dashboard');
+    return _buildResidentHomeContent();
   }
 
   /// Security Dashboard
@@ -1013,7 +1039,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Resident Dashboard with Facilities Navigation
+  /// Resident Dashboard
   Widget _buildResidentHomeContent() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1114,18 +1140,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 24),
 
-        // Our Services
+        // Resident shortcuts
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'OUR SERVICES',
+              'RESIDENT SERVICES',
               style: TextStyle(
                   fontWeight: FontWeight.bold, fontSize: 14),
             ),
             GestureDetector(
               onTap: () {
-                Navigator.pushNamed(context, '/facilities');
+                Navigator.pushNamed(context, '/helping-staff');
               },
               child: const Text(
                 'View All',
@@ -1138,7 +1164,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 16),
 
-        // Facilities Grid - Now with individual navigation to each facility!
+        // Resident Shortcut Grid
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -1148,32 +1174,32 @@ class _HomeScreenState extends State<HomeScreen> {
           childAspectRatio: 1.4,
           children: [
             _ServiceCard(
-              icon: Icons.pool,
+              icon: Icons.support_agent,
               iconColor: const Color(0xFF5B8DEF),
-              title: 'Pool',
-              subtitle: 'Olympic size, 08:00-22:00',
-              onTap: () => Navigator.pushNamed(context, '/facility/pool'),
+              title: 'Helping Staff',
+              subtitle: 'Request cleaning, repair, or service',
+              onTap: () => Navigator.pushNamed(context, '/helping-staff'),
             ),
             _ServiceCard(
-              icon: Icons.celebration_outlined,
+              icon: Icons.event,
               iconColor: const Color(0xFFE07B3F),
-              title: 'Party Room',
-              subtitle: 'Birthdays & events',
-              onTap: () => Navigator.pushNamed(context, '/facility/party-room'),
+              title: 'Events',
+              subtitle: 'Community gatherings & workshops',
+              onTap: () => Navigator.pushNamed(context, '/events'),
             ),
             _ServiceCard(
-              icon: Icons.child_care_outlined,
+              icon: Icons.child_care,
               iconColor: const Color(0xFFE05C8A),
-              title: 'Nursery',
-              subtitle: 'Childcare 08:00-18:00',
-              onTap: () => Navigator.pushNamed(context, '/facility/nursery'),
+              title: 'Childcare',
+              subtitle: 'Book nursery and childcare support',
+              onTap: () => Navigator.pushNamed(context, '/childcare'),
             ),
             _ServiceCard(
-              icon: Icons.fitness_center,
+              icon: Icons.place,
               iconColor: const Color(0xFF9B59B6),
-              title: 'Gym',
-              subtitle: '24/7 Access',
-              onTap: () => Navigator.pushNamed(context, '/facility/gym'),
+              title: 'Facilities',
+              subtitle: 'Check available spaces & hours',
+              onTap: () => Navigator.pushNamed(context, '/facilities'),
             ),
           ],
         ),
