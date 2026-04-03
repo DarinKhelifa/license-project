@@ -81,42 +81,15 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 24),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    widget.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF34C759),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'Online',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              child: Text(
+                widget.name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
               ),
             ),
           ],
@@ -202,7 +175,7 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     bool currentUser = data["senderId"] == firebaseAuth.currentUser?.uid;
     final bubbleColor =
-        currentUser ? const Color(0xFF8BC38A) : const Color(0xFFF1F1F1);
+        currentUser ? const Color(0xFF4CAF50) : const Color(0xFFF1F1F1);
     final textColor = currentUser ? Colors.white : Colors.black87;
     final borderRadius = currentUser
         ? BorderRadius.only(
@@ -250,29 +223,13 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
               mainAxisAlignment:
                   currentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
               children: [
-                if (!currentUser)
-                  Text(
-                    _formatTimestamp(data['timestamp']),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
+                Text(
+                  _formatTimestamp(data['timestamp']),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey,
                   ),
-                if (currentUser) ...[
-                  Text(
-                    _formatTimestamp(data['timestamp']),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(
-                    Icons.done_all,
-                    size: 14,
-                    color: Color(0xFF34C759),
-                  ),
-                ],
+                ),
               ],
             ),
           ],
@@ -370,7 +327,7 @@ class _IndividualChatScreenState extends State<IndividualChatScreen> {
                     Icons.emoji_emotions_outlined,
                     color: Colors.grey,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       controller: messageController,

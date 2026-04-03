@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/chat_service.dart';
 import 'individual_chat_screen.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
@@ -14,12 +14,115 @@ class _ChatScreenState extends State<ChatScreen> {
   final Chatservice chatservice = Chatservice();
   final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   final TextEditingController searchController = TextEditingController();
+  final FocusNode searchFocusNode = FocusNode();
   String searchText = '';
 
   @override
   void dispose() {
     searchController.dispose();
+    searchFocusNode.dispose();
     super.dispose();
+  }
+
+  Future<List<Map<String, dynamic>>> _filterResidents(
+      List<Map<String, dynamic>> residents) async {
+    final filtered = <Map<String, dynamic>>[];
+    for (var resident in residents) {
+      final uid = resident["uid"] as String?;
+      if (uid == null) continue;
+
+      final hasMessage = resident.containsKey("lastMessage") &&
+          resident["lastMessage"] != null &&
+          resident["lastMessage"].toString().isNotEmpty;
+
+      if (hasMessage) {
+        filtered.add(resident);
+        continue;
+      }
+
+      // Fallback: Check if a chat room with messages physically exists
+      final currentUid = firebaseAuth.currentUser?.uid;
+      if (currentUid == null) continue;
+
+      List<String> ids = [currentUid, uid];
+      ids.sort();
+      String chatRoomId = ids.join('_');
+
+      try {
+        final snap = await FirebaseFirestore.instance
+            .collection("chat_room")
+            .doc(chatRoomId)
+            .collection("Messages")
+            .orderBy("time", descending: true)
+            .limit(1)
+            .get();
+
+        if (snap.docs.isNotEmpty) {
+          final docData = snap.docs.first.data();
+          resident["lastMessage"] = docData["message"];
+          resident["lastMessageTimestamp"] = docData["time"];
+          filtered.add(resident);
+        }
+      } catch (e) {
+        // ignore errors
+      }
+    }
+    return filtered;
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/images/no-message.png',
+            height: 150,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Welcome to Chat!',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Inter',
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Feel free to start a new conversation\nby tapping the button below.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+              fontFamily: 'Inter',
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              searchFocusNode.requestFocus();
+            },
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              'Start New Chat',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'Inter',
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF388E3C),
+              shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -53,18 +156,21 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         ),
-        title: const Text(
-          'messages',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-            fontFamily: 'Inter',
+        title: const Padding(
+          padding: EdgeInsets.only(left: 24),
+          child: Text(
+            'Chat ',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+              fontFamily: 'Inter',
+            ),
           ),
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.only(right: 24),
             child: CircleAvatar(
               radius: 18,
               backgroundColor: Colors.grey[100],
@@ -84,6 +190,7 @@ class _ChatScreenState extends State<ChatScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: TextField(
                 controller: searchController,
+                focusNode: searchFocusNode,
                 onChanged: (value) {
                   setState(() {
                     searchText = value.trim();
@@ -123,13 +230,13 @@ class _ChatScreenState extends State<ChatScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  var residents = snapshot.data!.where((userData) {
+                  var allResidents = snapshot.data!.where((userData) {
                     return userData["role"] == "resident" &&
                         userData["email"] != firebaseAuth.currentUser?.email;
                   }).toList();
 
                   if (searchText.isNotEmpty) {
-                    residents = residents.where((userData) {
+                    allResidents = allResidents.where((userData) {
                       final name = (userData["name"] ?? '').toString();
                       return name
                           .toLowerCase()
@@ -137,18 +244,32 @@ class _ChatScreenState extends State<ChatScreen> {
                     }).toList();
                   }
 
-                  if (residents.isEmpty) {
-                    return const Center(child: Text('No users found'));
-                  }
+                  return FutureBuilder<List<Map<String, dynamic>>>(
+                    future: searchText.isNotEmpty
+                        ? Future.value(allResidents)
+                        : _filterResidents(allResidents),
+                    builder: (context, filterSnapshot) {
+                      if (filterSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 16,
-                    ),
-                    itemCount: residents.length,
-                    itemBuilder: (context, index) {
-                      return userListitem(residents[index], context);
+                      final filteredResidents = filterSnapshot.data ?? [];
+
+                      if (filteredResidents.isEmpty) {
+                        return _buildEmptyState();
+                      }
+
+                      return ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 16,
+                        ),
+                        itemCount: filteredResidents.length,
+                        itemBuilder: (context, index) {
+                          return userListitem(filteredResidents[index], context);
+                        },
+                      );
                     },
                   );
                 },
@@ -235,110 +356,92 @@ class Usertile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.grey[200],
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    fontFamily: 'Inter',
-                  ),
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: Colors.grey[200],
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  fontFamily: 'Inter',
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      preview,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    timestamp,
+                    name,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    preview,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
                       color: Colors.grey,
                       fontFamily: 'Inter',
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  if (unreadCount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade600,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        unreadCount.toString(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
-                          fontFamily: 'Inter',
-                        ),
-                      ),
-                    )
-                  else
-                    const Icon(
-                      Icons.done_all,
-                      size: 18,
-                      color: Colors.green,
-                    ),
                 ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  timestamp,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+                if (unreadCount > 0) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 20,
+                    height: 20,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: Colors.blueAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      unreadCount.toString(),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
         ),
       ),
     );
