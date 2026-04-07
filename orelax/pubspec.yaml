@@ -7,32 +7,41 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-  shared_preferences: ^2.2.0 # for persistent login state
-
   flutter:
     sdk: flutter
 
-  # For smooth page indicator
+  socket_io_client: ^2.0.3
+  
+  uuid: ^4.1.0
+  # Networking & API
+  http: ^1.2.0
+  
+  # Local Storage
+  shared_preferences: ^2.2.0
+  
+  # UI & Design
   smooth_page_indicator: ^1.1.0
-
-  # SVG support for logo and other vector assets
   flutter_svg: ^2.0.10+1
   google_fonts: ^8.0.2
+  intl: ^0.19.0
+  qr_flutter: ^4.1.0
+  image_picker: ^1.0.7
+  
+  # State Management
+  provider: ^6.1.5+1
+  
+  # Firebase (keep for now, remove when fully migrated)
   firebase_core: ^4.6.0
   firebase_auth: ^6.3.0
   cloud_firestore: ^6.2.0
+  firebase_storage: ^13.2.0
   google_sign_in: ^6.2.1
-  provider: ^6.1.5+1
-  image_picker: ^1.0.7
-  intl: ^0.19.0
-  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
   flutter_launcher_icons: ^0.14.4
-
 
 flutter:
   uses-material-design: true
@@ -78,5 +87,3 @@ flutter:
     - assets/images/gym2.jpg
     - assets/images/gym3.jpg
     - assets/images/gym4.jpg
-
-

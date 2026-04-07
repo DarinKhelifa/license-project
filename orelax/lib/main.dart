@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'providers/facility_provider.dart';
+import 'providers/booking_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
 import 'screens/Welcome/welcome_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/Home/home_screen.dart';
 import 'screens/Home/report_screen.dart';
 import 'screens/Home/profile_screen.dart';
 import 'screens/chat/chat_screen.dart';
@@ -18,18 +17,13 @@ import 'screens/security/access_logs_screen.dart';
 import 'screens/maintenance/work_orders_screen.dart';
 import 'screens/maintenance/pending_requests_screen.dart';
 import 'screens/maintenance/schedule_screen.dart';
-import 'screens/facilities_manager/facilities_list_screen.dart';
-import 'screens/facilities_manager/facility_registrations_screen.dart';
-import 'screens/facilities_manager/facility_details_screen.dart';
-import 'screens/facilities_manager/facility_payments_screen.dart';
 import 'screens/resident/helping_staff/helping_staff_home_screen.dart';
-
+import 'screens/resident/facilities/resident_facilities_screen.dart';
+import 'screens/facilities_manager/create_edit_facility_screen.dart';
+import 'screens/facilities_manager/facility_detail_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
   runApp(const OrelaxApp());
 }
 
@@ -38,8 +32,12 @@ class OrelaxApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AuthProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider(create: (context) => FacilityProvider()),
+        ChangeNotifierProvider(create: (context) => BookingProvider()),
+      ],
       child: MaterialApp(
         title: 'ORELAX',
         debugShowCheckedModeBanner: false,
@@ -59,43 +57,33 @@ class OrelaxApp extends StatelessWidget {
         routes: {
           '/auth': (_) => const AuthWrapper(),
           '/onboarding': (_) => const OnboardingScreen(),
-          '/role-based-home': (_) => const HomeScreen(),
-          '/home': (_) => const HomeScreen(),
           '/chat': (_) => const ChatScreen(),
           '/report': (_) => const ReportScreen(),
           '/notifications': (_) => const _ComingSoonScreen(title: 'Notifications'),
           '/profile': (_) => const ProfileScreen(),
 
-          // Resident Facility Detail Screens
-          '/facility/pool': (_) => const FacilityDetailsScreen(facilityName: 'Pool'),
-          '/facility/party-room': (_) => const FacilityDetailsScreen(facilityName: 'Party Room'),
-          '/facility/nursery': (_) => const FacilityDetailsScreen(facilityName: 'Nursery'),
-          '/facility/gym': (_) => const FacilityDetailsScreen(facilityName: 'Gym'),
-
-          // Resident shortcuts (Coming Soon)
+          // Resident shortcuts
           '/feed': (_) => const _ComingSoonScreen(title: 'Community Feed'),
           '/events': (_) => const _ComingSoonScreen(title: 'Events'),
           '/bookings': (_) => const _ComingSoonScreen(title: 'Bookings'),
           '/maintenance-request':
               (_) => const _ComingSoonScreen(title: 'Maintenance Request'),
-          '/facilities': (_) => const _ComingSoonScreen(title: 'Facilities'),
+          '/facilities': (_) => const ResidentFacilitiesScreen(),
 
-          // Security (real screens — opened from home)
+          // Security screens
           '/access-control': (_) => const AccessControlScreen(),
           '/visitors': (_) => const VisitorsScreen(),
           '/alerts': (_) => const AlertsScreen(),
           '/access-logs': (_) => const AccessLogsScreen(),
 
-          // Maintenance (real screens — opened from home)
+          // Maintenance screens
           '/work-orders': (_) => const WorkOrdersScreen(),
           '/pending-requests': (_) => const PendingRequestsScreen(),
           '/schedule': (_) => const MaintenanceScheduleScreen(),
 
-          // Facilities manager screens
-          '/fm-facilities': (_) => const FacilitiesListScreen(),
-          '/fm-registrations': (_) => const FacilityRegistrationsScreen(),
-          '/fm-facility-details': (_) => const FacilityDetailsScreen(facilityName: '',),
-          '/fm-payments': (_) => const FacilityPaymentsScreen(),
+          // Facilities Manager
+          '/create-facility': (_) => const CreateEditFacilityScreen(),
+          '/facility-detail': (_) => const _FacilityDetailWrapper(),
 
           // Placeholders
           '/all-services': (_) => const _ComingSoonScreen(title: 'All Services'),
@@ -109,6 +97,17 @@ class OrelaxApp extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+// Wrapper for facility detail to pass arguments
+class _FacilityDetailWrapper extends StatelessWidget {
+  const _FacilityDetailWrapper();
+
+  @override
+  Widget build(BuildContext context) {
+    final args = ModalRoute.of(context)!.settings.arguments as String;
+    return FacilityDetailScreen(facilityId: args);
   }
 }
 

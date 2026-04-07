@@ -77,7 +77,7 @@ function TabPanel(props: TabPanelProps) {
 
 export default function ManageAccounts() {
   const {
-    userData,
+    user,
     getAllUsers,
     updateUserRole,
     updateUserStatus,
@@ -85,6 +85,7 @@ export default function ManageAccounts() {
     createUser,
     loading: authLoading,
   } = useAuth();
+  
   const [tabValue, setTabValue] = useState(0);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,16 +106,16 @@ export default function ManageAccounts() {
     status: 'active' as User['status'],
   });
 
-  // Check if user is admin
-  const isAdmin = (userData?.role ?? '').trim().toLowerCase() === 'admin';
+  // Check if current user is admin
+  const isAdmin = user?.role === 'admin';
 
-  // Load users from Firebase
+  // Load users from API
   const loadUsers = async () => {
     setLoading(true);
     try {
       const allUsers = await getAllUsers();
       const formattedUsers: User[] = allUsers.map(u => ({
-        id: u.uid,
+        id: u.id || u.uid,
         name: u.name,
         email: u.email,
         phone: u.phone,
@@ -231,7 +232,14 @@ export default function ManageAccounts() {
         });
       } else {
         // Add new user
-        await createUser(formData);
+        await createUser({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          role: formData.role,
+          apartment: formData.apartment,
+          status: formData.status,
+        });
         await loadUsers();
         setSnackbar({
           open: true,
@@ -292,7 +300,7 @@ export default function ManageAccounts() {
     );
   }
 
-  // Access denied if not admin (after loading user role)
+  // Access denied if not admin
   if (!isAdmin) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
