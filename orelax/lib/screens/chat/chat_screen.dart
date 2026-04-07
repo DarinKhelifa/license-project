@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/chat_service.dart';
-import 'individual_chat_screen.dart';
+import '../../services/api_service.dart';
+import 'chat_room_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -11,336 +13,236 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final Chatservice chatservice = Chatservice();
-  final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-  final TextEditingController searchController = TextEditingController();
-  String searchText = '';
+  List<Map<String, dynamic>> _chats = [];
+  bool _isLoading = true;
+  
+  // Store listener reference for cleanup
+  late final Function(dynamic) _newMessageListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _initChat();
+  }
 
   @override
   void dispose() {
-    searchController.dispose();
+    // Remove listener to prevent memory leaks
+    ChatService.removeNewMessageListener(_newMessageListener);
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        titleSpacing: 10,
-        leadingWidth: 64,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(18),
-            onTap: () {
-              Navigator.maybePop(context);
+  Future<void> _initChat() async {
+    _setupSocketListeners();
+    await _loadChats();
+  }
+
+  void _setupSocketListeners() {
+    // Create the listener
+    _newMessageListener = (message) {
+      _loadChats(); // Refresh chat list when new message arrives
+    };
+    
+    // Add listener instead of replacing
+    ChatService.addNewMessageListener(_newMessageListener);
+  }
+
+  Future<void> _loadChats() async {
+    try {
+      final chats = await ApiService.getChats();
+      setState(() {
+        _chats = chats;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading chats: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _startNewChat() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = authProvider.user?['id'];
+    
+    // Get all users except current user
+    final users = await ApiService.getAllUsers();
+    final otherUsers = users.where((u) => u['id'] != currentUserId).toList();
+    
+    final selectedUser = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('New Message'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: ListView.builder(
+            itemCount: otherUsers.length,
+            itemBuilder: (context, index) {
+              final user = otherUsers[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: const Color(0xFF034808),
+                  child: Text(user['name'][0].toUpperCase()),
+                ),
+                title: Text(user['name']),
+                subtitle: Text(user['role'] ?? 'Resident'),
+                onTap: () => Navigator.pop(context, user),
+              );
             },
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new,
-                size: 18,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-        ),
-        title: const Text(
-          'messages',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-            fontFamily: 'Inter',
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.grey[100],
-              child: const Icon(
-                Icons.person,
-                size: 18,
-                color: Colors.black87,
-              ),
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: TextField(
-                controller: searchController,
-                onChanged: (value) {
-                  setState(() {
-                    searchText = value.trim();
-                  });
-                },
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: Colors.grey,
-                  ),
-                  hintText: 'Search here...',
-                  hintStyle: const TextStyle(
-                    color: Colors.grey,
-                    fontFamily: 'Inter',
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 18,
-                    horizontal: 16,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(28),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: StreamBuilder(
-                stream: chatservice.getUserScreen(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Center(child: Text('Error loading users'));
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+    );
+    
+    if (selectedUser != null) {
+      try {
+        final otherUserId = selectedUser['id'] ?? selectedUser['_id'];
+        final chat = await ApiService.createChat(
+          otherUserId: otherUserId,
+          otherUserName: selectedUser['name'],
+        );
+        await _loadChats();
+        _openChat(chat);
+      } catch (e) {
+        print('Failed to start new chat: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not start chat. Please try again.')),
+          );
+        }
+      }
+    }
+  }
 
-                  var residents = snapshot.data!.where((userData) {
-                    return userData["role"] == "resident" &&
-                        userData["email"] != firebaseAuth.currentUser?.email;
-                  }).toList();
-
-                  if (searchText.isNotEmpty) {
-                    residents = residents.where((userData) {
-                      final name = (userData["name"] ?? '').toString();
-                      return name
-                          .toLowerCase()
-                          .startsWith(searchText.toLowerCase());
-                    }).toList();
-                  }
-
-                  if (residents.isEmpty) {
-                    return const Center(child: Text('No users found'));
-                  }
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 16,
-                    ),
-                    itemCount: residents.length,
-                    itemBuilder: (context, index) {
-                      return userListitem(residents[index], context);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
+  void _openChat(Map<String, dynamic> chat) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = authProvider.user?['id'];
+    
+    final otherParticipantIndex = chat['participants'][0] == currentUserId ? 1 : 0;
+    final otherUser = {
+      'id': chat['participants'][otherParticipantIndex],
+      'name': chat['participantNames'][otherParticipantIndex],
+    };
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatRoomScreen(
+          chatId: chat['_id'],
+          otherUser: otherUser,
         ),
       ),
-    );
+    ).then((_) => _loadChats());
   }
 
-  Widget userListitem(Map<String, dynamic> userData, BuildContext context) {
-    if (userData["email"] != firebaseAuth.currentUser?.email) {
-      final preview = userData["lastMessage"] as String? ?? 'Tap to chat';
-      final timestamp = _formatTimestamp(
-        userData["lastSeen"] ?? userData["lastMessageTimestamp"],
-      );
-      final unreadCount = userData["unreadCount"] as int? ?? 0;
-      final isRead = userData["isRead"] as bool? ?? true;
-
-      return Usertile(
-        name: userData["name"] ?? 'Unknown User',
-        preview: preview,
-        timestamp: timestamp,
-        unreadCount: unreadCount,
-        isRead: isRead,
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => IndividualChatScreen(
-                name: userData["name"] ?? 'Unknown User',
-                receiverId: userData["uid"],
-                receiverEmail: userData["email"] ?? '',
-              ),
-            ),
-          );
-        },
-      );
-    } else {
-      return const SizedBox.shrink();
+  String _formatTime(String? timeString) {
+    if (timeString == null) return '';
+    try {
+      final time = DateTime.parse(timeString);
+      final now = DateTime.now();
+      final diff = now.difference(time);
+      
+      if (diff.inDays > 0) {
+        return '${diff.inDays}d';
+      } else if (diff.inHours > 0) {
+        return '${diff.inHours}h';
+      } else if (diff.inMinutes > 0) {
+        return '${diff.inMinutes}m';
+      } else {
+        return 'now';
+      }
+    } catch (e) {
+      return '';
     }
-  }
-
-  String _formatTimestamp(dynamic timestampValue) {
-    if (timestampValue == null) return '';
-    if (timestampValue is String) return timestampValue;
-    if (timestampValue is int) {
-      final date = DateTime.fromMillisecondsSinceEpoch(timestampValue);
-      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-    }
-    return '';
-  }
-}
-
-class Usertile extends StatelessWidget {
-  final String name;
-  final String preview;
-  final String timestamp;
-  final int unreadCount;
-  final bool isRead;
-  final VoidCallback onTap;
-
-  const Usertile({
-    super.key,
-    required this.name,
-    required this.preview,
-    required this.timestamp,
-    required this.unreadCount,
-    required this.isRead,
-    required this.onTap,
-  });
-
-  String get initials {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    if (name.isNotEmpty) {
-      return name[0].toUpperCase();
-    }
-    return '';
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
+    final authProvider = Provider.of<AuthProvider>(context);
+    final currentUserId = authProvider.user?['id'];
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Messages'),
+        backgroundColor: const Color(0xFF034808),
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            onPressed: _startNewChat,
+            icon: const Icon(Icons.edit),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: Colors.grey[200],
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    fontFamily: 'Inter',
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      preview,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                        fontFamily: 'Inter',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    timestamp,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontFamily: 'Inter',
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  if (unreadCount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade600,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        unreadCount.toString(),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
-                          fontFamily: 'Inter',
-                        ),
-                      ),
-                    )
-                  else
-                    const Icon(
-                      Icons.done_all,
-                      size: 18,
-                      color: Colors.green,
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _chats.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text('No messages yet'),
+                      SizedBox(height: 8),
+                      Text('Start a conversation with your neighbors'),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _chats.length,
+                  itemBuilder: (context, index) {
+                    final chat = _chats[index];
+                    final otherParticipantIndex = chat['participants'][0] == currentUserId ? 1 : 0;
+                    final otherName = chat['participantNames'][otherParticipantIndex];
+                    final unreadCount = chat['unreadCount']?[currentUserId] ?? 0;
+                    final isFromMe = chat['lastMessageSenderId'] == currentUserId;
+                    
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: const Color(0xFF034808),
+                        child: Text(otherName[0].toUpperCase()),
+                      ),
+                      title: Text(
+                        otherName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        isFromMe ? 'You: ${chat['lastMessage']}' : chat['lastMessage'],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _formatTime(chat['lastMessageTime']),
+                            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                          ),
+                          if (unreadCount > 0)
+                            Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF034808),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '$unreadCount',
+                                style: const TextStyle(color: Colors.white, fontSize: 11),
+                              ),
+                            ),
+                        ],
+                      ),
+                      onTap: () => _openChat(chat),
+                    );
+                  },
+                ),
     );
   }
 }

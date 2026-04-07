@@ -81,8 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         radius: 36,
                         backgroundColor: const Color(0xFF1A6B2F),
                         child: Text(
-                          _getInitials(
-                              _userData?['name'] ?? user?.displayName ?? 'U'),
+                          _getInitials(_userData?['name'] ?? user?['name'] ?? 'U'),
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -97,9 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _userData?['name'] ??
-                                  user?.displayName ??
-                                  'Loading...',
+                              _userData?['name'] ?? user?['name'] ?? 'Loading...',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -108,7 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              user?.email ?? 'No email',
+                              _userData?['email'] ?? user?['email'] ?? 'No email',
                               style: const TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey,
@@ -122,8 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      const Color(0xFF1A6B2F).withOpacity(0.1),
+                                  color: const Color(0xFF1A6B2F).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -183,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _ProfileTile(
                         icon: Icons.badge_outlined,
                         title: 'Role',
-                        trailing: _userData?['role'] ?? 'Resident',
+                        trailing: _userData?['role']?.toString().toUpperCase() ?? 'Resident',
                         onTap: null,
                       ),
                     ],
