@@ -13,9 +13,19 @@ class ChatService {
   static final List<Function(dynamic)> _userTypingListeners = [];
   
   static bool _isConnecting = false;
-  static bool _isReconnecting = false;
+  static int _reconnectAttempts = 0;
 
   static bool get isConnected => socket != null && socket!.connected;
+  
+  // Get the correct server URL based on platform
+  static String get _serverUrl {
+    // For web, you need to use the actual IP or hostname
+    // Replace with your actual server IP when running on web
+    // For local development, use:
+    // - For Chrome: 'http://localhost:5000' or 'http://127.0.0.1:5000'
+    // - For different devices on same network: 'http://YOUR_COMPUTER_IP:5000'
+    return 'http://localhost:5000';
+  }
 
   // Add listener methods
   static void addNewMessageListener(Function(dynamic) listener) {
@@ -80,6 +90,7 @@ class ChatService {
     }
 
     _isConnecting = true;
+    _reconnectAttempts = 0;
 
     if (socket != null) {
       socket?.disconnect();
@@ -89,93 +100,103 @@ class ChatService {
 
     currentUserId = userId;
     
-    socket = IO.io('http://localhost:5000', <String, dynamic>{
-      'transports': ['websocket'],
-      'autoConnect': true,
-      'reconnection': true,
-      'reconnectionDelay': 1000,
-      'reconnectionDelayMax': 5000,
-      'reconnectionAttempts': 10,
-    });
+    print('🔌 Attempting to connect to $_serverUrl');
     
-    socket?.on('connect', (_) {
-      _isConnecting = false;
-      _isReconnecting = false;
-      print('✅ Socket connected: ${socket?.id}');
-      socket?.emit('user-connected', userId);
-    });
-    
-    socket?.on('new-message', (data) {
-      print('📩 New message received: $data');
-      for (var listener in _newMessageListeners) {
-        listener(data);
-      }
-    });
-
-    socket?.on('message-sent', (data) {
-      print('✅ Message sent ack: $data');
-      for (var listener in _messageSentListeners) {
-        listener(data);
-      }
-    });
-
-    socket?.on('message-error', (data) {
-      print('❌ Message error: $data');
-      for (var listener in _messageErrorListeners) {
-        listener(data);
-      }
-    });
-
-    socket?.on('users-online', (data) {
-      print('👥 Users online: $data');
-      for (var listener in _usersOnlineListeners) {
-        listener(data);
-      }
-    });
-    
-    socket?.on('message-read', (data) {
-      print('📖 Message read: $data');
-      for (var listener in _messageReadListeners) {
-        listener(data);
-      }
-    });
-    
-    socket?.on('user-typing', (data) {
-      for (var listener in _userTypingListeners) {
-        listener(data);
-      }
-    });
-    
-    socket?.on('disconnect', (_) {
-      print('🔌 Socket disconnected');
-      _isConnecting = false;
-      _isReconnecting = true;
+    try {
+      socket = IO.io(_serverUrl, <String, dynamic>{
+        'transports': ['websocket'],
+        'autoConnect': true,
+        'reconnection': true,
+        'reconnectionDelay': 1000,
+        'reconnectionDelayMax': 5000,
+        'reconnectionAttempts': 20,
+        'timeout': 20000,
+      });
       
-      // Attempt to reconnect
-      Future.delayed(const Duration(seconds: 2), () {
-        if (currentUserId != null && !isConnected) {
-          print('🔄 Attempting to reconnect...');
-          _reconnect();
+      socket?.on('connect', (_) {
+        _isConnecting = false;
+        _reconnectAttempts = 0;
+        print('✅ Socket connected: ${socket?.id}');
+        socket?.emit('user-connected', userId);
+        _sendPendingMessages();
+      });
+      
+      socket?.on('new-message', (data) {
+        print('📩 New message received: $data');
+        for (var listener in _newMessageListeners) {
+          listener(data);
         }
       });
-    });
-    
-    socket?.on('connect_error', (error) {
-      print('❌ Socket connection error: $error');
+
+      socket?.on('message-sent', (data) {
+        print('✅ Message sent ack: $data');
+        for (var listener in _messageSentListeners) {
+          listener(data);
+        }
+      });
+
+      socket?.on('message-error', (data) {
+        print('❌ Message error: $data');
+        for (var listener in _messageErrorListeners) {
+          listener(data);
+        }
+      });
+
+      socket?.on('users-online', (data) {
+        print('👥 Users online: $data');
+        for (var listener in _usersOnlineListeners) {
+          listener(data);
+        }
+      });
+      
+      socket?.on('message-read', (data) {
+        print('📖 Message read: $data');
+        for (var listener in _messageReadListeners) {
+          listener(data);
+        }
+      });
+      
+      socket?.on('user-typing', (data) {
+        for (var listener in _userTypingListeners) {
+          listener(data);
+        }
+      });
+      
+      socket?.on('disconnect', (reason) {
+        print('🔌 Socket disconnected. Reason: $reason');
+        _isConnecting = false;
+      });
+      
+      socket?.on('connect_error', (error) {
+        print('❌ Socket connection error: $error');
+        _isConnecting = false;
+        
+        if (error is Map && error['message'] != null) {
+          print('Error details: ${error['message']}');
+        }
+      });
+      
+      socket?.on('reconnect_attempt', (attempt) {
+        print('🔄 Reconnection attempt #$attempt');
+        _reconnectAttempts = attempt;
+      });
+      
+      socket?.on('reconnect', (_) {
+        print('🔄 Socket reconnected successfully');
+        if (currentUserId != null) {
+          socket?.emit('user-connected', currentUserId);
+        }
+        _sendPendingMessages();
+      });
+      
+      socket?.on('reconnect_failed', (_) {
+        print('❌ Reconnection failed after all attempts');
+        _isConnecting = false;
+      });
+      
+    } catch (e) {
+      print('❌ Error creating socket connection: $e');
       _isConnecting = false;
-    });
-    
-    socket?.on('reconnect', (_) {
-      print('🔄 Socket reconnected');
-      if (currentUserId != null) {
-        socket?.emit('user-connected', currentUserId);
-      }
-    });
-  }
-  
-  static Future<void> _reconnect() async {
-    if (currentUserId != null && !isConnected && !_isConnecting) {
-      await connect(currentUserId!);
     }
   }
   
@@ -193,14 +214,24 @@ class ChatService {
     
     // Try to reconnect if not connected
     if (!isConnected) {
-      print('⚠️ Socket not connected, attempting to reconnect...');
-      await _reconnect();
+      print('⚠️ Socket not connected, attempting to reconnect before sending...');
       
-      // Wait a bit for connection
-      await Future.delayed(const Duration(milliseconds: 500));
+      if (!_isConnecting) {
+        await connect(senderId);
+      }
+      
+      // Wait for connection
+      int attempts = 0;
+      while (!isConnected && attempts < 20) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        attempts++;
+      }
       
       if (!isConnected) {
-        print('❌ Cannot send message: socket still not connected');
+        print('❌ Cannot send message: socket still not connected after waiting');
+        
+        // Store message to send later (optional)
+        _storePendingMessage(chatId, senderId, senderName, text, type);
         return;
       }
     }
@@ -213,6 +244,33 @@ class ChatService {
       'text': text,
       'type': type,
     });
+  }
+  
+  // Store pending messages for when connection is restored
+  static final List<Map<String, dynamic>> _pendingMessages = [];
+  
+  static void _storePendingMessage(String chatId, String senderId, String senderName, String text, String type) {
+    _pendingMessages.add({
+      'chatId': chatId,
+      'senderId': senderId,
+      'senderName': senderName,
+      'text': text,
+      'type': type,
+    });
+    print('📦 Message stored for later delivery. Pending: ${_pendingMessages.length}');
+  }
+  
+  // Call this when connection is restored to send pending messages
+  static void _sendPendingMessages() {
+    if (isConnected && _pendingMessages.isNotEmpty) {
+      print('📤 Sending ${_pendingMessages.length} pending messages...');
+      final messages = List<Map<String, dynamic>>.from(_pendingMessages);
+      _pendingMessages.clear();
+      
+      for (var message in messages) {
+        socket!.emit('send-message', message);
+      }
+    }
   }
   
   static void markAsRead(String messageId, String? userId, String chatId) {
@@ -242,11 +300,15 @@ class ChatService {
     _usersOnlineListeners.clear();
     _messageReadListeners.clear();
     _userTypingListeners.clear();
+    _pendingMessages.clear();
     
-    socket?.disconnect();
-    socket = null;
+    if (socket != null) {
+      socket?.disconnect();
+      socket?.clearListeners();
+      socket = null;
+    }
     currentUserId = null;
     _isConnecting = false;
-    _isReconnecting = false;
+    _reconnectAttempts = 0;
   }
 }
