@@ -15,18 +15,23 @@ class EventsScreen extends StatefulWidget {
 }
 
 class _EventsScreenState extends State<EventsScreen> {
+  bool _showMyEvents = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<EventProvider>(context, listen: false).fetchEvents();
+      final provider = Provider.of<EventProvider>(context, listen: false);
+      provider.fetchEvents();
+      provider.fetchMyEvents();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final eventProvider = Provider.of<EventProvider>(context);
-    
+    final currentEvents = _showMyEvents ? eventProvider.myEvents : eventProvider.events;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -36,11 +41,15 @@ class _EventsScreenState extends State<EventsScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              final created = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CreateEventScreen()),
-              ).then((_) => eventProvider.fetchEvents());
+              );
+              if (created == true) {
+                await eventProvider.fetchMyEvents();
+                await eventProvider.fetchEvents();
+              }
             },
             icon: const Icon(Icons.add),
             tooltip: 'Create Event',
@@ -49,23 +58,64 @@ class _EventsScreenState extends State<EventsScreen> {
       ),
       body: eventProvider.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : eventProvider.events.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: () => eventProvider.fetchEvents(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: eventProvider.events.length,
-                    itemBuilder: (context, index) {
-                      final event = eventProvider.events[index];
-                      return _EventCard(event: event);
-                    },
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => setState(() => _showMyEvents = false),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _showMyEvents ? Colors.white : const Color(0xFF034808),
+                            foregroundColor: _showMyEvents ? Colors.black : Colors.white,
+                            side: const BorderSide(color: Color(0xFF034808)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text('All Events'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => setState(() => _showMyEvents = true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _showMyEvents ? const Color(0xFF034808) : Colors.white,
+                            foregroundColor: _showMyEvents ? Colors.white : Colors.black,
+                            side: const BorderSide(color: Color(0xFF034808)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text('My Events'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                Expanded(
+                  child: currentEvents.isEmpty
+                      ? _buildEmptyState(showMyEvents: _showMyEvents)
+                      : RefreshIndicator(
+                          onRefresh: () async {
+                            await eventProvider.fetchEvents();
+                            await eventProvider.fetchMyEvents();
+                          },
+                          child: ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: currentEvents.length,
+                            itemBuilder: (context, index) {
+                              final event = currentEvents[index];
+                              return _EventCard(event: event);
+                            },
+                          ),
+                        ),
+                ),
+              ],
+            ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({bool showMyEvents = false}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -78,16 +128,21 @@ class _EventsScreenState extends State<EventsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Be the first to create an event!',
+            showMyEvents ? 'You have not created any events yet.' : 'Be the first to create an event!',
             style: TextStyle(color: Colors.grey.shade500),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              final created = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CreateEventScreen()),
               );
+              if (created == true) {
+                final provider = Provider.of<EventProvider>(context, listen: false);
+                provider.fetchMyEvents();
+                provider.fetchEvents();
+              }
             },
             icon: const Icon(Icons.add),
             label: const Text('Create Event'),
@@ -126,7 +181,7 @@ class _EventCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -148,7 +203,7 @@ class _EventCard extends StatelessWidget {
                   : Container(
                       height: 120,
                       width: double.infinity,
-                      color: event.categoryColor.withOpacity(0.2),
+                      color: event.categoryColor.withValues(alpha: 0.2),
                       child: Center(
                         child: Text(
                           event.categoryIcon,
@@ -157,7 +212,7 @@ class _EventCard extends StatelessWidget {
                       ),
                     ),
             ),
-            
+
             // Content
             Padding(
               padding: const EdgeInsets.all(16),
@@ -170,7 +225,7 @@ class _EventCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
-                          color: event.categoryColor.withOpacity(0.1),
+                          color: event.categoryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -189,6 +244,81 @@ class _EventCard extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const Spacer(),
+                      if (event.capacity > 0)
+                        Row(
+                          children: [
+                            Icon(Icons.people, size: 14, color: Colors.grey.shade500),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${event.currentRegistrations}/${event.capacity}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Title
+                  Text(
+                    event.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Description
+                  Text(
+                    event.description,
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Date, Time, Location
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade500),
+                      const SizedBox(width: 4),
+                      Text(
+                        DateFormat('MMM dd, yyyy').format(event.date),
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
+                      const SizedBox(width: 4),
+                      Text(
+                        event.time,
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(Icons.location_on, size: 14, color: Colors.grey.shade500),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          event.location,
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
                       const Spacer(),
                       if (event.capacity > 0)
                         Row(

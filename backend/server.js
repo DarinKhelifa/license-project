@@ -13,6 +13,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const facilityRoutes = require('./src/routes/facilityRoutes');
 const bookingRoutes = require('./src/routes/bookingRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
+const eventRoutes = require('./src/routes/eventRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -42,6 +43,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/facilities', facilityRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/events', eventRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
