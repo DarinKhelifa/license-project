@@ -21,6 +21,8 @@ import 'screens/resident/helping_staff/helping_staff_home_screen.dart';
 import 'screens/resident/facilities/resident_facilities_screen.dart';
 import 'screens/facilities_manager/create_edit_facility_screen.dart';
 import 'screens/facilities_manager/facility_detail_screen.dart';
+import 'screens/resident/events/events_screen.dart';  // Add this import
+import 'providers/event_provider.dart';  // Add this import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +39,8 @@ class OrelaxApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => AuthProvider()),
         ChangeNotifierProvider(create: (context) => FacilityProvider()),
         ChangeNotifierProvider(create: (context) => BookingProvider()),
+        ChangeNotifierProvider(create: (context) => EventProvider()),  // ADD THIS
+
       ],
       child: MaterialApp(
         title: 'ORELAX',
@@ -64,7 +68,7 @@ class OrelaxApp extends StatelessWidget {
 
           // Resident shortcuts
           '/feed': (_) => const _ComingSoonScreen(title: 'Community Feed'),
-          '/events': (_) => const _ComingSoonScreen(title: 'Events'),
+          '/events': (_) => EventsScreen(),  // Add this line
           '/bookings': (_) => const _ComingSoonScreen(title: 'Bookings'),
           '/maintenance-request':
               (_) => const _ComingSoonScreen(title: 'Maintenance Request'),

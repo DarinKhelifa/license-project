@@ -252,4 +252,127 @@ class ApiService {
       throw Exception('Failed to load users');
     }
   }
+
+  // ========== EVENT METHODS ==========
+
+// Get all approved events
+static Future<List<Map<String, dynamic>>> getEvents() async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.get(
+    Uri.parse('$baseUrl/events'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  
+  if (response.statusCode == 200) {
+    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+  } else {
+    throw Exception('Failed to load events');
+  }
+}
+
+// Get user's own events
+static Future<List<Map<String, dynamic>>> getMyEvents() async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.get(
+    Uri.parse('$baseUrl/events/my-events'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  
+  if (response.statusCode == 200) {
+    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+  } else {
+    throw Exception('Failed to load my events');
+  }
+}
+
+// Get event by ID
+static Future<Map<String, dynamic>> getEventById(String id) async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.get(
+    Uri.parse('$baseUrl/events/$id'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Failed to load event');
+  }
+}
+
+// Create new event
+static Future<Map<String, dynamic>> createEvent(Map<String, dynamic> eventData) async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.post(
+    Uri.parse('$baseUrl/events'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode(eventData),
+  );
+  
+  if (response.statusCode == 201) {
+    return jsonDecode(response.body);
+  } else {
+    final error = jsonDecode(response.body);
+    throw Exception(error['message'] ?? 'Failed to create event');
+  }
+}
+
+// Update event
+static Future<Map<String, dynamic>> updateEvent(String id, Map<String, dynamic> eventData) async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.put(
+    Uri.parse('$baseUrl/events/$id'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode(eventData),
+  );
+  
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Failed to update event');
+  }
+}
+
+// Cancel event
+static Future<void> cancelEvent(String id) async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.delete(
+    Uri.parse('$baseUrl/events/$id'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  
+  if (response.statusCode != 200) {
+    throw Exception('Failed to cancel event');
+  }
+}
 }

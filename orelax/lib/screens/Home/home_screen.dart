@@ -1193,12 +1193,12 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () => Navigator.pushNamed(context, '/helping-staff'),
             ),
             _ServiceCard(
-              icon: Icons.event,
-              iconColor: const Color(0xFFE07B3F),
-              title: 'Events',
-              subtitle: 'Community gatherings & workshops',
-              onTap: () => Navigator.pushNamed(context, '/events'),
-            ),
+  icon: Icons.event,
+  iconColor: const Color(0xFFE07B3F),
+  title: 'Events',
+  subtitle: 'Community gatherings & workshops',
+  onTap: () => Navigator.pushNamed(context, '/events'),  // This should go to events screen
+),
             _ServiceCard(
               icon: Icons.child_care,
               iconColor: const Color(0xFFE05C8A),
