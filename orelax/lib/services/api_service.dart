@@ -375,4 +375,47 @@ static Future<void> cancelEvent(String id) async {
     throw Exception('Failed to cancel event');
   }
 }
+// ========== REPORT METHODS ==========
+
+// Create a new report
+static Future<Map<String, dynamic>> createReport(Map<String, dynamic> reportData) async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.post(
+    Uri.parse('$baseUrl/reports'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode(reportData),
+  );
+  
+  if (response.statusCode == 201) {
+    return jsonDecode(response.body);
+  } else {
+    final error = jsonDecode(response.body);
+    throw Exception(error['message'] ?? 'Failed to submit report');
+  }
+}
+
+// Get user's own reports
+static Future<List<Map<String, dynamic>>> getMyReports() async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.get(
+    Uri.parse('$baseUrl/reports/my-reports'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  
+  if (response.statusCode == 200) {
+    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+  } else {
+    throw Exception('Failed to load reports');
+  }
+}
 }

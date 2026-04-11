@@ -1,6 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/report_provider.dart';
+import '../../models/report_model.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -14,8 +20,8 @@ class _ReportScreenState extends State<ReportScreen> {
   String? _selectedSubCategory;
   bool _isTimeNow = true;
   TimeOfDay? _selectedTime;
-  XFile? _selectedPhoto;
-  final ImagePicker _imagePicker = ImagePicker();
+  String? _photoBase64;
+  bool _isPickingPhoto = false;
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -159,23 +165,48 @@ class _ReportScreenState extends State<ReportScreen> {
             // Buttons row - Add Photos / Time
             Row(
               children: [
-                // Add Photos Button
                 Expanded(
                   child: _buildActionButton(
                     icon: Icons.photo_camera_outlined,
                     label: 'Add Photos',
-                    onTap: () {
-                      // TODO: Implement photo picking
-                    },
+                    onTap: _onAddPhotosTap,
+                    hasPhoto: _photoBase64 != null,
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Time Button
                 Expanded(
                   child: _buildTimeButton(),
                 ),
               ],
             ),
+
+            if (_photoBase64 != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                height: 80,
+                width: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  image: DecorationImage(
+                    image: MemoryImage(base64Decode(_photoBase64!)),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _photoBase64 = null),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.close, size: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ],
 
             const SizedBox(height: 40),
 
@@ -184,30 +215,7 @@ class _ReportScreenState extends State<ReportScreen> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement submit functionality
-                  // Validate and submit report
-                  if (_selectedCategory != null &&
-                      _selectedSubCategory != null &&
-                      _locationController.text.isNotEmpty &&
-                      _descriptionController.text.isNotEmpty) {
-                    // Submit report
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Report submitted successfully'),
-                        backgroundColor: Color(0xFF1A5C2A),
-                      ),
-                    );
-                    Navigator.pop(context);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please fill in all fields'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
+                onPressed: _submitReport,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1A5C2A),
                   foregroundColor: Colors.white,
@@ -230,6 +238,35 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
+  Future<void> _onAddPhotosTap() async {
+    if (_isPickingPhoto) return;
+    
+    setState(() => _isPickingPhoto = true);
+    
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _photoBase64 = base64Encode(bytes);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Photo added to report')),
+        );
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+    } finally {
+      setState(() => _isPickingPhoto = false);
+    }
+  }
+
   Future<void> _onTimeButtonTap() async {
     final TimeOfDay initialTime = _selectedTime ?? TimeOfDay.now();
 
@@ -246,21 +283,73 @@ class _ReportScreenState extends State<ReportScreen> {
     });
   }
 
-  Future<void> _onAddPhotosTap() async {
-    final XFile? picked = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
+  Future<void> _submitReport() async {
+    // Validate form
+    if (_selectedCategory == null) {
+      _showError('Please select an incident category');
+      return;
+    }
+    if (_selectedSubCategory == null) {
+      _showError('Please select a sub-category');
+      return;
+    }
+    if (_locationController.text.trim().isEmpty) {
+      _showError('Please enter the location');
+      return;
+    }
+    if (_descriptionController.text.trim().isEmpty) {
+      _showError('Please describe the incident');
+      return;
+    }
+
+    setState(() {});
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUser = authProvider.user;
+    
+    if (currentUser == null) {
+      _showError('You must be logged in to submit a report');
+      return;
+    }
+
+    final report = Report(
+      id: '',
+      category: _selectedCategory!,
+      subCategory: _selectedSubCategory!,
+      location: _locationController.text.trim(),
+      description: _descriptionController.text.trim(),
+      photoBase64: _photoBase64,
+      timeIsNow: _isTimeNow,
+      customTime: !_isTimeNow && _selectedTime != null 
+          ? _selectedTime!.format(context) 
+          : null,
+      status: 'pending',
+      createdBy: currentUser['id'] ?? '',
+      createdByName: currentUser['name'] ?? 'User',
+      createdAt: DateTime.now(),
     );
 
-    if (!mounted || picked == null) return;
+    final reportProvider = Provider.of<ReportProvider>(context, listen: false);
+    final success = await reportProvider.createReport(report);
 
-    setState(() {
-      _selectedPhoto = picked;
-    });
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Report submitted successfully'),
+          backgroundColor: Color(0xFF1A5C2A),
+        ),
+      );
+      Navigator.pop(context);
+    } else if (mounted) {
+      _showError(reportProvider.error ?? 'Failed to submit report');
+    }
+  }
 
+  void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Photo added to report'),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
       ),
     );
   }
@@ -358,27 +447,34 @@ class _ReportScreenState extends State<ReportScreen> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    bool hasPhoto = false,
   }) {
     return GestureDetector(
-      onTap: label == 'Add Photos' ? _onAddPhotosTap : onTap,
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: hasPhoto ? const Color(0xFF1A5C2A).withOpacity(0.1) : Colors.grey[100],
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: hasPhoto ? const Color(0xFF1A5C2A) : Colors.grey[300]!,
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 20, color: Colors.black87),
+            Icon(
+              icon, 
+              size: 20, 
+              color: hasPhoto ? const Color(0xFF1A5C2A) : Colors.black87,
+            ),
             const SizedBox(width: 8),
             Text(
-              label,
-              style: const TextStyle(
-                color: Colors.black87,
+              hasPhoto ? 'Photo Added' : label,
+              style: TextStyle(
+                color: hasPhoto ? const Color(0xFF1A5C2A) : Colors.black87,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: hasPhoto ? FontWeight.bold : FontWeight.w500,
               ),
             ),
           ],
