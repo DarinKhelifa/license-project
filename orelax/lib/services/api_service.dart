@@ -418,4 +418,43 @@ static Future<List<Map<String, dynamic>>> getMyReports() async {
     throw Exception('Failed to load reports');
   }
 }
+
+// Get reports for security/maintenance role
+static Future<List<Map<String, dynamic>>> getReportsForRole() async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.get(
+    Uri.parse('$baseUrl/reports/admin/all'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  
+  if (response.statusCode == 200) {
+    return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+  } else {
+    throw Exception('Failed to load reports');
+  }
+}
+
+// Update report status
+static Future<void> updateReportStatus(String reportId, String status) async {
+  final token = await getToken();
+  if (token == null) throw Exception('Not authenticated');
+  
+  final response = await http.put(
+    Uri.parse('$baseUrl/reports/$reportId/status'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({'status': status}),
+  );
+  
+  if (response.statusCode != 200) {
+    throw Exception('Failed to update status');
+  }
+}
 }

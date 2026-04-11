@@ -24,13 +24,12 @@ const io = socketIo(server, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
-  pingTimeout: 60000, // Increase ping timeout to 60 seconds
-  pingInterval: 25000, // Send ping every 25 seconds
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 // Middleware
 app.use(cors());
-// Increase body size limit for base64 images (50MB)
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -55,20 +54,29 @@ app.get('/api/health', (req, res) => {
 // Socket.io Chat Logic
 const Chat = require('./src/models/Chat');
 const Message = require('./src/models/Message');
-
+const Report = require('./src/models/Report');
+const reportController = require('./src/controllers/reportController');
+reportController.setIo(io);
 // Store online users
 const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
-  // User joins with their userId
-  socket.on('user-connected', (userId) => {
-    onlineUsers.set(userId, socket.id);
-    console.log(`User ${userId} connected. Online users: ${onlineUsers.size}`);
+  // User joins with their userId and role
+  socket.on('user-connected', (data) => {
+    const { userId, role } = data;
+    onlineUsers.set(userId, { socketId: socket.id, role });
+    console.log(`User ${userId} (${role}) connected. Online users: ${onlineUsers.size}`);
+    
+    // Join role-based room for alerts
+    if (role) {
+      socket.join(`role-${role}`);
+      console.log(`User ${userId} joined role-${role} room`);
+    }
     
     // Broadcast online status to all users
-    io.emit('users-online', Array.from(onlineUsers.keys()));
+    io.emit('users-online', Array.from(onlineUsers.keys()).map(id => ({ userId: id })));
   });
 
   // Send a message
@@ -77,7 +85,6 @@ io.on('connection', (socket) => {
       const { chatId, senderId, senderName, text, type = 'text' } = data;
       console.log(`📤 receive send-message for chat=${chatId} sender=${senderId} text=${text}`);
       
-      // Save message to database
       const message = new Message({
         chatId,
         senderId,
@@ -90,7 +97,6 @@ io.on('connection', (socket) => {
       const savedMessage = await message.save();
       console.log(`💾 message saved ${savedMessage._id}`);
       
-      // Get chat participants and update chat metadata
       const chat = await Chat.findById(chatId);
       if (!chat) {
         console.warn(`⚠️ Chat not found for chatId=${chatId}`);
@@ -115,14 +121,14 @@ io.on('connection', (socket) => {
       await Chat.findByIdAndUpdate(chatId, updateOps);
       console.log(`✅ Chat metadata updated`);
 
-      const recipientSocketId = onlineUsers.get(recipientId);
+      const recipientData = onlineUsers.get(recipientId);
+      const recipientSocketId = recipientData?.socketId;
       console.log(`🔌 recipientSocketId=${recipientSocketId}, onlineUsers size=${onlineUsers.size}`);
       if (recipientSocketId) {
         io.to(recipientSocketId).emit('new-message', savedMessage.toJSON());
         console.log(`📬 message delivered to recipient socket`);
       }
 
-      // Emit the new message to the sender too so the chat room updates for the sender
       const messageJSON = savedMessage.toJSON();
       socket.emit('new-message', messageJSON);
       socket.emit('message-sent', messageJSON);
@@ -144,15 +150,14 @@ io.on('connection', (socket) => {
         status: 'read',
       });
       
-      // Update chat unread count
       await Chat.findByIdAndUpdate(chatId, {
         $set: { [`unreadCount.${userId}`]: 0 },
       });
       
-      // Notify sender that message was read
       const message = await Message.findById(messageId);
       if (message) {
-        const senderSocketId = onlineUsers.get(message.senderId);
+        const senderData = onlineUsers.get(message.senderId);
+        const senderSocketId = senderData?.socketId;
         if (senderSocketId) {
           io.to(senderSocketId).emit('message-read', { messageId, userId });
         }
@@ -172,8 +177,8 @@ io.on('connection', (socket) => {
   // User disconnects
   socket.on('disconnect', () => {
     let disconnectedUserId;
-    for (let [userId, socketId] of onlineUsers.entries()) {
-      if (socketId === socket.id) {
+    for (let [userId, data] of onlineUsers.entries()) {
+      if (data.socketId === socket.id) {
         disconnectedUserId = userId;
         onlineUsers.delete(userId);
         break;
@@ -181,7 +186,7 @@ io.on('connection', (socket) => {
     }
     if (disconnectedUserId) {
       console.log(`User ${disconnectedUserId} disconnected`);
-      io.emit('users-online', Array.from(onlineUsers.keys()));
+      io.emit('users-online', Array.from(onlineUsers.keys()).map(id => ({ userId: id })));
     }
   });
 });

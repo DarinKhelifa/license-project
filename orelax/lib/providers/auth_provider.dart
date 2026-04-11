@@ -25,7 +25,6 @@ class AuthProvider extends ChangeNotifier {
       _user = user;
       _errorMessage = null;
       
-      // Initialize chat connection if user is authenticated
       if (_user != null) {
         await initializeChat();
       }
@@ -37,10 +36,11 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  // Initialize chat connection
+  // Initialize chat connection with user role
   Future<void> initializeChat() async {
     if (_user != null && _user!['id'] != null) {
-      await ChatService.connect(_user!['id']);
+      final role = _user!['role'] ?? 'resident';
+      await ChatService.connect(_user!['id'], role: role);
     }
   }
   
@@ -53,7 +53,6 @@ class AuthProvider extends ChangeNotifier {
       final response = await ApiService.login(email: email, password: password);
       _user = response['user'];
       
-      // Initialize chat connection after successful login
       if (_user != null) {
         await initializeChat();
       }
@@ -91,7 +90,6 @@ class AuthProvider extends ChangeNotifier {
       );
       _user = response['user'];
       
-      // Initialize chat connection after successful signup
       if (_user != null) {
         await initializeChat();
       }
@@ -173,7 +171,6 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     
-    // Disconnect chat when signing out
     ChatService.disconnect();
     
     await ApiService.logout();

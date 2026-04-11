@@ -3,31 +3,49 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 class ChatService {
   static IO.Socket? socket;
   static String? currentUserId;
+  static String? currentUserRole;
   
-  // Change to lists of listeners
+  // Listeners
   static final List<Function(dynamic)> _newMessageListeners = [];
   static final List<Function(dynamic)> _messageSentListeners = [];
   static final List<Function(dynamic)> _messageErrorListeners = [];
   static final List<Function(dynamic)> _usersOnlineListeners = [];
   static final List<Function(dynamic)> _messageReadListeners = [];
   static final List<Function(dynamic)> _userTypingListeners = [];
+  static final List<Function(dynamic)> _newAlertListeners = [];
+  static final List<Function(dynamic)> _alertStatusUpdateListeners = [];
   
   static bool _isConnecting = false;
   static int _reconnectAttempts = 0;
 
   static bool get isConnected => socket != null && socket!.connected;
   
-  // Get the correct server URL based on platform
   static String get _serverUrl {
-    // For web, you need to use the actual IP or hostname
-    // Replace with your actual server IP when running on web
-    // For local development, use:
-    // - For Chrome: 'http://localhost:5000' or 'http://127.0.0.1:5000'
-    // - For different devices on same network: 'http://YOUR_COMPUTER_IP:5000'
     return 'http://localhost:5000';
   }
 
-  // Add listener methods
+  // Alert listeners
+  static void addNewAlertListener(Function(dynamic) listener) {
+    if (!_newAlertListeners.contains(listener)) {
+      _newAlertListeners.add(listener);
+    }
+  }
+  
+  static void removeNewAlertListener(Function(dynamic) listener) {
+    _newAlertListeners.remove(listener);
+  }
+  
+  static void addAlertStatusUpdateListener(Function(dynamic) listener) {
+    if (!_alertStatusUpdateListeners.contains(listener)) {
+      _alertStatusUpdateListeners.add(listener);
+    }
+  }
+  
+  static void removeAlertStatusUpdateListener(Function(dynamic) listener) {
+    _alertStatusUpdateListeners.remove(listener);
+  }
+
+  // Existing listeners
   static void addNewMessageListener(Function(dynamic) listener) {
     if (!_newMessageListeners.contains(listener)) {
       _newMessageListeners.add(listener);
@@ -78,7 +96,7 @@ class ChatService {
     _userTypingListeners.remove(listener);
   }
 
-  static Future<void> connect(String userId) async {
+  static Future<void> connect(String userId, {String? role}) async {
     if (currentUserId == userId && isConnected) {
       print('🔄 ChatService already connected for user $userId');
       return;
@@ -99,8 +117,9 @@ class ChatService {
     }
 
     currentUserId = userId;
+    currentUserRole = role;
     
-    print('🔌 Attempting to connect to $_serverUrl');
+    print('🔌 Attempting to connect to $_serverUrl with role: $role');
     
     try {
       socket = IO.io(_serverUrl, <String, dynamic>{
@@ -117,7 +136,7 @@ class ChatService {
         _isConnecting = false;
         _reconnectAttempts = 0;
         print('✅ Socket connected: ${socket?.id}');
-        socket?.emit('user-connected', userId);
+        socket?.emit('user-connected', { 'userId': userId, 'role': role });
         _sendPendingMessages();
       });
       
@@ -162,6 +181,21 @@ class ChatService {
         }
       });
       
+      // Alert listeners
+      socket?.on('new-alert', (data) {
+        print('🔔 New alert received: $data');
+        for (var listener in _newAlertListeners) {
+          listener(data);
+        }
+      });
+      
+      socket?.on('alert-status-updated', (data) {
+        print('📢 Alert status updated: $data');
+        for (var listener in _alertStatusUpdateListeners) {
+          listener(data);
+        }
+      });
+      
       socket?.on('disconnect', (reason) {
         print('🔌 Socket disconnected. Reason: $reason');
         _isConnecting = false;
@@ -184,7 +218,7 @@ class ChatService {
       socket?.on('reconnect', (_) {
         print('🔄 Socket reconnected successfully');
         if (currentUserId != null) {
-          socket?.emit('user-connected', currentUserId);
+          socket?.emit('user-connected', { 'userId': currentUserId, 'role': currentUserRole });
         }
         _sendPendingMessages();
       });
@@ -212,15 +246,13 @@ class ChatService {
       return;
     }
     
-    // Try to reconnect if not connected
     if (!isConnected) {
       print('⚠️ Socket not connected, attempting to reconnect before sending...');
       
       if (!_isConnecting) {
-        await connect(senderId);
+        await connect(senderId, role: currentUserRole);
       }
       
-      // Wait for connection
       int attempts = 0;
       while (!isConnected && attempts < 20) {
         await Future.delayed(const Duration(milliseconds: 200));
@@ -229,8 +261,6 @@ class ChatService {
       
       if (!isConnected) {
         print('❌ Cannot send message: socket still not connected after waiting');
-        
-        // Store message to send later (optional)
         _storePendingMessage(chatId, senderId, senderName, text, type);
         return;
       }
@@ -246,7 +276,6 @@ class ChatService {
     });
   }
   
-  // Store pending messages for when connection is restored
   static final List<Map<String, dynamic>> _pendingMessages = [];
   
   static void _storePendingMessage(String chatId, String senderId, String senderName, String text, String type) {
@@ -260,7 +289,6 @@ class ChatService {
     print('📦 Message stored for later delivery. Pending: ${_pendingMessages.length}');
   }
   
-  // Call this when connection is restored to send pending messages
   static void _sendPendingMessages() {
     if (isConnected && _pendingMessages.isNotEmpty) {
       print('📤 Sending ${_pendingMessages.length} pending messages...');
@@ -300,6 +328,8 @@ class ChatService {
     _usersOnlineListeners.clear();
     _messageReadListeners.clear();
     _userTypingListeners.clear();
+    _newAlertListeners.clear();
+    _alertStatusUpdateListeners.clear();
     _pendingMessages.clear();
     
     if (socket != null) {
@@ -308,6 +338,7 @@ class ChatService {
       socket = null;
     }
     currentUserId = null;
+    currentUserRole = null;
     _isConnecting = false;
     _reconnectAttempts = 0;
   }

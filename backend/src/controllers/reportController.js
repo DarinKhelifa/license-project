@@ -1,6 +1,9 @@
-
 const Report = require('../models/Report');
 const { v4: uuidv4 } = require('uuid');
+
+// Store io instance for real-time alerts
+let io;
+const setIo = (ioInstance) => { io = ioInstance; };
 
 // @desc    Create a new report
 // @route   POST /api/reports
@@ -23,6 +26,27 @@ const createReport = async (req, res) => {
     });
     
     await report.save();
+    
+    // Emit real-time alert to security and maintenance roles
+    if (io) {
+      const alertData = {
+        id: report.id,
+        title: `New ${category} Report`,
+        message: `${req.user.name} reported a ${subCategory.toLowerCase()} issue at ${location}`,
+        category: category,
+        subCategory: subCategory,
+        location: location,
+        reportedBy: req.user.name,
+        createdAt: report.createdAt,
+        status: 'pending',
+        reportId: report.id
+      };
+      
+      // Send to security and maintenance rooms
+      io.to('role-security').emit('new-alert', alertData);
+      io.to('role-maintenance').emit('new-alert', alertData);
+      console.log(`🔔 Alert sent to security/maintenance for report ${report.id}`);
+    }
     
     res.status(201).json({
       success: true,
@@ -65,7 +89,7 @@ const getReportById = async (req, res) => {
 // ========== ADMIN/STAFF FUNCTIONS ==========
 
 // @desc    Get all reports (Admin/Maintenance/Security)
-// @route   GET /api/reports/all
+// @route   GET /api/reports/admin/all
 const getAllReports = async (req, res) => {
   try {
     const { status, category } = req.query;
@@ -102,6 +126,18 @@ const updateReportStatus = async (req, res) => {
     
     await report.save();
     
+    // Emit status update alert
+    if (io) {
+      const updateData = {
+        reportId: report.id,
+        status: status,
+        updatedBy: req.user.name,
+        updatedAt: new Date()
+      };
+      io.to('role-security').emit('alert-status-updated', updateData);
+      io.to('role-maintenance').emit('alert-status-updated', updateData);
+    }
+    
     res.json({ message: `Report ${status} successfully`, report });
   } catch (error) {
     console.error('Update report status error:', error);
@@ -134,4 +170,5 @@ module.exports = {
   getAllReports,
   updateReportStatus,
   deleteReport,
+  setIo,
 };

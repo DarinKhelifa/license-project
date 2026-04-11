@@ -24,7 +24,7 @@ import 'screens/facilities_manager/facility_detail_screen.dart';
 import 'screens/resident/events/events_screen.dart';  // Add this import
 import 'providers/event_provider.dart';  // Add this import
 import 'providers/report_provider.dart';  // Add this import
-
+import 'providers/alert_provider.dart';  // Add this import
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const OrelaxApp());
@@ -41,7 +41,10 @@ class OrelaxApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => FacilityProvider()),
         ChangeNotifierProvider(create: (context) => BookingProvider()),
         ChangeNotifierProvider(create: (context) => EventProvider()),  // ADD THIS
-        ChangeNotifierProvider(create: (context) => ReportProvider()),  // ADD THIS
+        ChangeNotifierProvider(create: (context) => ReportProvider()), 
+         // ADD THIS
+        ChangeNotifierProvider(create: (context) => AlertProvider()),  // ADD THIS
+
 
       ],
       child: MaterialApp(
