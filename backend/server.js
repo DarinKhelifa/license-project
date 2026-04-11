@@ -20,12 +20,14 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:8080', 'http://localhost:5000', 'http://127.0.0.1:5000'],
+    origin: ['http://localhost:3000', 'http://localhost:8080','http://localhost:58010/', 'http://localhost:5000', 'http://127.0.0.1:5000', 'http://127.0.0.1:8080'],
     methods: ['GET', 'POST'],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
   },
   pingTimeout: 60000,
   pingInterval: 25000,
+  transports: ['websocket', 'polling'], // Add this
 });
 
 // Middleware
@@ -189,8 +191,13 @@ io.on('connection', (socket) => {
       io.emit('users-online', Array.from(onlineUsers.keys()).map(id => ({ userId: id })));
     }
   });
-});
+}
 
+);
+// Add connection error logging
+io.engine.on('connection_error', (err) => {
+  console.log('Connection error:', err);
+});
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('ERROR:', err);

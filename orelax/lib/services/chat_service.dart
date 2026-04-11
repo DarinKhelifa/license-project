@@ -1,4 +1,5 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ChatService {
   static IO.Socket? socket;
@@ -20,8 +21,15 @@ class ChatService {
 
   static bool get isConnected => socket != null && socket!.connected;
   
+  // Get the correct server URL based on platform
   static String get _serverUrl {
-    return 'http://localhost:5000';
+    if (kIsWeb) {
+      // For web, use localhost (same as your backend)
+      return 'http://localhost:5000';
+    } else {
+      // For mobile emulator
+      return 'http://10.0.2.2:5000';
+    }
   }
 
   // Alert listeners
@@ -120,22 +128,27 @@ class ChatService {
     currentUserRole = role;
     
     print('🔌 Attempting to connect to $_serverUrl with role: $role');
+    print('🔌 Platform: ${kIsWeb ? "Web" : "Mobile"}');
     
     try {
+      // Configure socket options
       socket = IO.io(_serverUrl, <String, dynamic>{
-        'transports': ['websocket'],
+        'transports': ['websocket', 'polling'],
         'autoConnect': true,
         'reconnection': true,
         'reconnectionDelay': 1000,
         'reconnectionDelayMax': 5000,
         'reconnectionAttempts': 20,
         'timeout': 20000,
+        'forceNew': true,  // Add this
+        'multiplex': false, // Add this
       });
       
       socket?.on('connect', (_) {
         _isConnecting = false;
         _reconnectAttempts = 0;
         print('✅ Socket connected: ${socket?.id}');
+        print('✅ Socket connected to $_serverUrl');
         socket?.emit('user-connected', { 'userId': userId, 'role': role });
         _sendPendingMessages();
       });
@@ -204,10 +217,7 @@ class ChatService {
       socket?.on('connect_error', (error) {
         print('❌ Socket connection error: $error');
         _isConnecting = false;
-        
-        if (error is Map && error['message'] != null) {
-          print('Error details: ${error['message']}');
-        }
+        print('❌ Make sure your backend is running on $_serverUrl');
       });
       
       socket?.on('reconnect_attempt', (attempt) {
@@ -253,8 +263,9 @@ class ChatService {
         await connect(senderId, role: currentUserRole);
       }
       
+      // Wait a bit for connection
       int attempts = 0;
-      while (!isConnected && attempts < 20) {
+      while (!isConnected && attempts < 30) {
         await Future.delayed(const Duration(milliseconds: 200));
         attempts++;
       }
