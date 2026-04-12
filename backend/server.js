@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const { v4: uuidv4 } = require('uuid');
+const QRCode = require('qrcode');
 const http = require('http');
 const socketIo = require('socket.io');
 
@@ -15,6 +17,8 @@ const bookingRoutes = require('./src/routes/bookingRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
 const eventRoutes = require('./src/routes/eventRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
+const guestRoutes = require('./src/routes/guestRoutes');
+
 
 const app = express();
 const server = http.createServer(app);
@@ -30,12 +34,12 @@ const io = socketIo(server, {
   transports: ['websocket', 'polling'], // Add this
 });
 
-// Middleware
+// Middleware 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Database connection
+// Database connection 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ MongoDB connected successfully'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
@@ -47,6 +51,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/guests', guestRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -59,6 +64,7 @@ const Message = require('./src/models/Message');
 const Report = require('./src/models/Report');
 const reportController = require('./src/controllers/reportController');
 reportController.setIo(io);
+
 // Store online users
 const onlineUsers = new Map();
 

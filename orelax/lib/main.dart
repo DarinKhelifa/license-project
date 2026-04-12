@@ -9,7 +9,6 @@ import 'screens/onboarding_screen.dart';
 import 'screens/Home/report_screen.dart';
 import 'screens/Home/profile_screen.dart';
 import 'screens/chat/chat_screen.dart';
-
 import 'screens/security/access_control_screen.dart';
 import 'screens/security/visitors_screen.dart';
 import 'screens/security/alerts_screen.dart';
@@ -24,7 +23,8 @@ import 'screens/facilities_manager/facility_detail_screen.dart';
 import 'screens/resident/events/events_screen.dart';  // Add this import
 import 'providers/event_provider.dart';  // Add this import
 import 'providers/report_provider.dart';  // Add this import
-import 'providers/alert_provider.dart';  // Add this import
+import 'providers/alert_provider.dart';
+import 'screens/resident/guest_qr/guest_qr_form_screen.dart';  // Add this import
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const OrelaxApp());
@@ -70,6 +70,7 @@ class OrelaxApp extends StatelessWidget {
           '/report': (_) => const ReportScreen(),
           '/notifications': (_) => const _ComingSoonScreen(title: 'Notifications'),
           '/profile': (_) => const ProfileScreen(),
+          '/guest_qr': (_) =>  const GuestQRFormScreen(),
 
           // Resident shortcuts
           '/feed': (_) => const _ComingSoonScreen(title: 'Community Feed'),
@@ -91,7 +92,7 @@ class OrelaxApp extends StatelessWidget {
           '/schedule': (_) => const MaintenanceScheduleScreen(),
 
           // Facilities Manager
-          '/create-facility': (_) => const CreateEditFacilityScreen(),
+          '/create-facility': (_) =>const CreateEditFacilityScreen(),
           '/facility-detail': (_) => const _FacilityDetailWrapper(),
 
           // Placeholders

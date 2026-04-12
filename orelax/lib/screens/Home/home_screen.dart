@@ -1200,11 +1200,11 @@ class _HomeScreenState extends State<HomeScreen> {
   onTap: () => Navigator.pushNamed(context, '/events'),  // This should go to events screen
 ),
             _ServiceCard(
-              icon: Icons.child_care,
-              iconColor: const Color(0xFFE05C8A),
-              title: 'Childcare',
-              subtitle: 'Book nursery and childcare support',
-              onTap: () => Navigator.pushNamed(context, '/childcare'),
+              icon: Icons.qr_code_2_rounded,
+              iconColor: const Color(0xFF1A5C2A),
+              title: 'QR code',
+              subtitle: 'Generate Qr code for guests',
+              onTap: () => Navigator.pushNamed(context, '/guest_qr'),
             ),
             _ServiceCard(
               icon: Icons.place,
