@@ -3,8 +3,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'guest_qr_view_screen.dart';
 
-void showGuestQRPopup(BuildContext context, String qrData, String guestName) {
+void showGuestQRPopup(
+  BuildContext context,
+  String qrData,
+  String guestName, {
+  String? visitDate,
+  String? hostName,
+}) {
   showDialog(
     context: context,
     builder: (context) {
@@ -81,17 +88,59 @@ void showGuestQRPopup(BuildContext context, String qrData, String guestName) {
                 ),
               ),
               const SizedBox(height: 24),
+              // Preview as Guest button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(
+                      context,
+                      '/guest_qr_view',
+                      arguments: {
+                        'qrData': qrData,
+                        'guestName': guestName,
+                        'visitDate': visitDate,
+                        'hostName': hostName,
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.visibility_outlined, color: Color(0xFF034808)),
+                  label: const Text(
+                    'Preview Guest Screen',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF034808),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    side: const BorderSide(color: Color(0xFF034808)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
                         try {
-                          final bytes = base64Decode(qrData.contains(',') ? qrData.split(',').last : qrData);
+                          final bytes = base64Decode(
+                              qrData.contains(',') ? qrData.split(',').last : qrData);
                           final tempDir = await getTemporaryDirectory();
-                          final file = await File('${tempDir.path}/guest_qr.png').create();
+                          final file =
+                              await File('${tempDir.path}/guest_qr.png').create();
                           await file.writeAsBytes(bytes);
-                          await Share.shareXFiles([XFile(file.path)], text: 'Here is your Guest Access Pass for $guestName');
+                          await Share.shareXFiles(
+                            [XFile(file.path)],
+                            text:
+                                '🏡 Your Orelax Guest Pass, $guestName!\n\nPresent this QR code to the security guard at the entrance gate.',
+                          );
                         } catch (e) {
                           debugPrint('Error sharing QR: $e');
                         }
@@ -99,7 +148,10 @@ void showGuestQRPopup(BuildContext context, String qrData, String guestName) {
                       icon: const Icon(Icons.share, color: Color(0xFF034808)),
                       label: const Text(
                         'Share',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF034808)),
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF034808)),
                       ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),

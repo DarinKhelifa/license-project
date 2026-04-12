@@ -25,6 +25,7 @@ import 'providers/event_provider.dart';  // Add this import
 import 'providers/report_provider.dart';  // Add this import
 import 'providers/alert_provider.dart';
 import 'screens/resident/guest_qr/guest_qr_form_screen.dart';  // Add this import
+import 'screens/resident/guest_qr/guest_qr_view_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const OrelaxApp());
@@ -70,7 +71,17 @@ class OrelaxApp extends StatelessWidget {
           '/report': (_) => const ReportScreen(),
           '/notifications': (_) => const _ComingSoonScreen(title: 'Notifications'),
           '/profile': (_) => const ProfileScreen(),
-          '/guest_qr': (_) =>  const GuestQRFormScreen(),
+          '/guest_qr': (_) => const GuestQRFormScreen(),
+          '/guest_qr_view': (ctx) {
+            final args = ModalRoute.of(ctx)!.settings.arguments
+                as Map<String, dynamic>;
+            return GuestQRViewScreen(
+              qrData: args['qrData'] as String,
+              guestName: args['guestName'] as String? ?? '',
+              visitDate: args['visitDate'] as String?,
+              hostName: args['hostName'] as String?,
+            );
+          },
 
           // Resident shortcuts
           '/feed': (_) => const _ComingSoonScreen(title: 'Community Feed'),
