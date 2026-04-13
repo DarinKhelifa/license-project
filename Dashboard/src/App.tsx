@@ -11,6 +11,8 @@ import Register from './pages/Register';
 import DashboardLayout from './components/DashboardLayout';
 import Overview from './pages/Overview';
 import ManageAccounts from './pages/ManageAccounts';
+import Employees from './pages/Employees';
+import Report from './pages/Report';
 /*import Security from './pages/Security';
 import Community from './pages/Community';
 import Facilities from './pages/Facilities';
@@ -40,6 +42,20 @@ function App() {
               <AuthGuard>
                 <DashboardLayout>
                   <ManageAccounts />
+                </DashboardLayout>
+              </AuthGuard>
+            } />
+            <Route path="/employees" element={
+              <AuthGuard>
+                <DashboardLayout>
+                  <Employees />
+                </DashboardLayout>
+              </AuthGuard>
+            } />
+            <Route path="/report" element={
+              <AuthGuard>
+                <DashboardLayout>
+                  <Report />
                 </DashboardLayout>
               </AuthGuard>
             } />

@@ -7,16 +7,16 @@ const eventSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   time: { type: String, required: true },
   location: { type: String, required: true },
-  category: { 
-    type: String, 
+  category: {
+    type: String,
     enum: ['social', 'sports', 'educational', 'workshop', 'festival', 'other'],
     default: 'social'
   },
   imageBase64: { type: String },
   capacity: { type: Number, default: 0 },
   currentRegistrations: { type: Number, default: 0 },
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     enum: ['pending', 'approved', 'rejected', 'cancelled'],
     default: 'pending'
   },

@@ -25,7 +25,9 @@ import {
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
-  Person as PersonIcon, // Add this line
+  Person as PersonIcon,
+  Badge as BadgeIcon,
+  Assessment as AssessmentIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,6 +41,8 @@ const menuItems = [
   { text: 'Facilities', icon: <FacilitiesIcon />, path: '/facilities' },
   { text: 'Monitoring', icon: <MonitoringIcon />, path: '/monitoring' },
   { text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' },
+  { text: 'Employees', icon: <BadgeIcon />, path: '/employees' },
+  { text: 'Report', icon: <AssessmentIcon />, path: '/report' },
 ];
 
 
