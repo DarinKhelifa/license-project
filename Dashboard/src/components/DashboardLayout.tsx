@@ -28,9 +28,11 @@ import {
   Person as PersonIcon,
   Badge as BadgeIcon,
   Assessment as AssessmentIcon,
+  Event as EventIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 const drawerWidth = 280;
 
@@ -43,6 +45,7 @@ const menuItems = [
   { text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' },
   { text: 'Employees', icon: <BadgeIcon />, path: '/employees' },
   { text: 'Report', icon: <AssessmentIcon />, path: '/report' },
+  { text: 'Events', icon: <EventIcon />, path: '/events' },
 ];
 
 
@@ -50,9 +53,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+      setMobileOpen(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const drawer = (
@@ -139,14 +153,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
-          <ListItemButton sx={{
-            borderRadius: 2,
-            transition: 'all 0.2s',
-            '&:hover': {
-              bgcolor: 'rgba(255,215,0,0.1)',
-              transform: 'translateX(4px)'
-            }
-          }}>
+          <ListItemButton 
+            onClick={handleLogout}
+            sx={{
+              borderRadius: 2,
+              transition: 'all 0.2s',
+              '&:hover': {
+                bgcolor: 'rgba(255,215,0,0.1)',
+                transform: 'translateX(4px)'
+              }
+            }}>
             <ListItemIcon sx={{ color: 'rgba(255,215,0,0.7)', minWidth: 40 }}>
               <LogoutIcon />
             </ListItemIcon>

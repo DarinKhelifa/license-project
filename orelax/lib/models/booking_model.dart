@@ -72,4 +72,38 @@ class Booking {
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
   };
+
+  Booking copyWith({
+    String? id,
+    String? facilityId,
+    String? userId,
+    DateTime? bookingDate,
+    String? startTime,
+    String? endTime,
+    int? duration,
+    double? totalPrice,
+    String? status,
+    String? userName,
+    String? userEmail,
+    String? userPhone,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Booking(
+      id: id ?? this.id,
+      facilityId: facilityId ?? this.facilityId,
+      userId: userId ?? this.userId,
+      bookingDate: bookingDate ?? this.bookingDate,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      duration: duration ?? this.duration,
+      totalPrice: totalPrice ?? this.totalPrice,
+      status: status ?? this.status,
+      userName: userName ?? this.userName,
+      userEmail: userEmail ?? this.userEmail,
+      userPhone: userPhone ?? this.userPhone,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

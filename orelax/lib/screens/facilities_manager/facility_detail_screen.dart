@@ -151,12 +151,12 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A5C2A),
+                          color: Colors.green,
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(
-                          '₹${_facility!.pricePerHour}/hour',
-                          style: const TextStyle(
+                        child: const Text(
+                          'FREE',
+                          style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,

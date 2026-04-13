@@ -20,6 +20,7 @@ import 'screens/resident/helping_staff/helping_staff_home_screen.dart';
 import 'screens/resident/facilities/resident_facilities_screen.dart';
 import 'screens/facilities_manager/create_edit_facility_screen.dart';
 import 'screens/facilities_manager/facility_detail_screen.dart';
+import 'screens/facilities_manager/booking_history_screen.dart';
 import 'screens/resident/events/events_screen.dart';  // Add this import
 import 'providers/event_provider.dart';  // Add this import
 import 'providers/report_provider.dart';  // Add this import
@@ -105,6 +106,7 @@ class OrelaxApp extends StatelessWidget {
           // Facilities Manager
           '/create-facility': (_) =>const CreateEditFacilityScreen(),
           '/facility-detail': (_) => const _FacilityDetailWrapper(),
+          '/booking-history': (_) => const BookingHistoryScreen(),
 
           // Placeholders
           '/all-services': (_) => const _ComingSoonScreen(title: 'All Services'),

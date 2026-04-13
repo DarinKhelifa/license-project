@@ -112,4 +112,87 @@ class BookingApiService {
       rethrow;
     }
   }
+
+  // Get pending bookings (for facilities manager)
+  static Future<List<Booking>> getPendingBookings() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/bookings/manager/pending'),
+        headers: await _getHeaders(),
+      ).timeout(httpTimeout);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Booking.fromMap(json)).toList();
+      } else {
+        throw Exception('Failed to load pending bookings');
+      }
+    } on TimeoutException {
+      throw Exception('Request timeout while loading pending bookings');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Get booking history (for facilities manager)
+  static Future<List<Booking>> getBookingHistory() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/bookings/manager/history'),
+        headers: await _getHeaders(),
+      ).timeout(httpTimeout);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Booking.fromMap(json)).toList();
+      } else {
+        throw Exception('Failed to load booking history');
+      }
+    } on TimeoutException {
+      throw Exception('Request timeout while loading booking history');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Approve a booking (for facilities manager)
+  static Future<Booking> approveBooking(String bookingId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/bookings/$bookingId/approve'),
+        headers: await _getHeaders(),
+      ).timeout(httpTimeout);
+
+      if (response.statusCode == 200) {
+        return Booking.fromMap(jsonDecode(response.body)['booking']);
+      } else {
+        throw Exception('Failed to approve booking');
+      }
+    } on TimeoutException {
+      throw Exception('Request timeout while approving booking');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Reject a booking (for facilities manager)
+  static Future<Booking> rejectBooking(String bookingId, {String? reason}) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/bookings/$bookingId/reject'),
+        headers: await _getHeaders(),
+        body: jsonEncode({'reason': reason ?? 'Rejected by facilities manager'}),
+      ).timeout(httpTimeout);
+
+      if (response.statusCode == 200) {
+        return Booking.fromMap(jsonDecode(response.body)['booking']);
+      } else {
+        throw Exception('Failed to reject booking');
+      }
+    } on TimeoutException {
+      throw Exception('Request timeout while rejecting booking');
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

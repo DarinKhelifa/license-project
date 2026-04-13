@@ -10,14 +10,14 @@ const {
   deleteReport,
 } = require('../controllers/reportController');
 
-// User routes
+// Admin/Maintenance/Security routes (MUST BE BEFORE /:id routes)
+router.get('/admin/all', protect, authorize('admin', 'maintenance', 'security'), getAllReports);
+router.put('/:id/status', protect, authorize('admin', 'maintenance', 'security'), updateReportStatus);
+
+// User routes (MUST BE AFTER /admin routes)
 router.post('/', protect, createReport);
 router.get('/my-reports', protect, getMyReports);
 router.get('/:id', protect, getReportById);
-
-// Admin/Maintenance/Security routes
-router.get('/admin/all', protect, authorize('admin', 'maintenance', 'security'), getAllReports);
-router.put('/:id/status', protect, authorize('admin', 'maintenance', 'security'), updateReportStatus);
 router.delete('/:id', protect, authorize('admin'), deleteReport);
 
 module.exports = router;

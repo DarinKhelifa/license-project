@@ -99,6 +99,13 @@ class _HomeScreenState extends State<HomeScreen> {
         _role == 'facilities_manager';
   }
 
+  bool _isFacilitiesManager() {
+    return _role == 'facility manager' || 
+        _role == 'facilities manager' ||
+        _role == 'facility_manager' ||
+        _role == 'facilities_manager';
+  }
+
   void _navigateToPage(int index) {
     setState(() => _currentIndex = index);
 
@@ -106,7 +113,15 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         break;
       case 1:
-        Navigator.pushNamed(context, '/chat');
+        // For facilities managers, navigate to booking history
+        if (_role == 'facility manager' || 
+            _role == 'facilities manager' ||
+            _role == 'facility_manager' ||
+            _role == 'facilities_manager') {
+          Navigator.pushNamed(context, '/booking-history');
+        } else {
+          Navigator.pushNamed(context, '/chat');
+        }
         break;
       case 2:
         Navigator.pushNamed(
@@ -268,11 +283,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 isActive: _currentIndex == 0,
                 onTap: () => _navigateToPage(0),
               ),
-              _ChatNavItem(
-                isActive: _currentIndex == 1,
-                onTap: () => _navigateToPage(1),
-                showNotificationBadge: _usesNotificationsTab,
-              ),
+              // Booking History for Facilities Managers, Chat for others
+              _isFacilitiesManager()
+                  ? _NavItem(
+                      icon: 'assets/icon/calendar.svg',
+                      label: 'Bookings',
+                      isActive: _currentIndex == 1,
+                      onTap: () => _navigateToPage(1),
+                    )
+                  : _ChatNavItem(
+                      isActive: _currentIndex == 1,
+                      onTap: () => _navigateToPage(1),
+                      showNotificationBadge: _usesNotificationsTab,
+                    ),
               _NavItem(
                 icon: _usesNotificationsTab
                     ? 'assets/icon/bell.svg'
@@ -1021,19 +1044,20 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.currency_rupee, size: 14, color: Color(0xFF1A5C2A)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '₹${facility.pricePerHour}/hour',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: Color(0xFF1A5C2A),
-                                  ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'FREE',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Colors.green,
                                 ),
-                              ],
+                              ),
                             ),
                           ],
                         ),

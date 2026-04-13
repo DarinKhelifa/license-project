@@ -5,13 +5,13 @@ const Facility = require('../models/Facility');
 // @route   POST /api/bookings
 const createBooking = async (req, res) => {
   try {
-    const { id, facilityId, bookingDate, startTime, endTime, duration, totalPrice, userName, userEmail, userPhone } = req.body;
+    const { id, facilityId, bookingDate, startTime, endTime, duration, userName, userEmail, userPhone } = req.body;
 
-    // Validate required fields
-    if (!id || !facilityId || !bookingDate || !startTime || !endTime || !duration || !totalPrice || !userName || !userEmail || !userPhone) {
+    // Validate required fields (totalPrice removed since all bookings are free)
+    if (!id || !facilityId || !bookingDate || !startTime || !endTime || !duration || !userName || !userEmail || !userPhone) {
       return res.status(400).json({
         message: 'Missing required fields',
-        required: ['id', 'facilityId', 'bookingDate', 'startTime', 'endTime', 'duration', 'totalPrice', 'userName', 'userEmail', 'userPhone']
+        required: ['id', 'facilityId', 'bookingDate', 'startTime', 'endTime', 'duration', 'userName', 'userEmail', 'userPhone']
       });
     }
 
@@ -65,7 +65,7 @@ const createBooking = async (req, res) => {
       startTime: startTime.trim(),
       endTime: endTime.trim(),
       duration: parseInt(duration),
-      totalPrice: parseFloat(totalPrice),
+      totalPrice: 0, // All bookings are free now
       status: 'pending',
       userName: userName.trim(),
       userEmail: userEmail.trim(),
@@ -185,9 +185,92 @@ const cancelBooking = async (req, res) => {
   }
 };
 
+// @desc    Get all pending bookings (for facilities manager)
+// @route   GET /api/bookings/manager/pending
+const getPendingBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find({ status: 'pending' })
+      .sort({ bookingDate: -1 });
+    
+    console.log('✅ Fetched pending bookings count:', bookings.length);
+    res.json(bookings);
+  } catch (error) {
+    console.error('❌ Get pending bookings error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get all bookings with history (for facilities manager)
+// @route   GET /api/bookings/manager/history
+const getBookingHistory = async (req, res) => {
+  try {
+    const bookings = await Booking.find({})
+      .sort({ bookingDate: -1 });
+    
+    console.log('✅ Fetched booking history count:', bookings.length);
+    res.json(bookings);
+  } catch (error) {
+    console.error('❌ Get booking history error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Approve a booking (facilities manager)
+// @route   PUT /api/bookings/:bookingId/approve
+const approveBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findOneAndUpdate(
+      { id: bookingId },
+      { status: 'confirmed', updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    console.log('✅ Booking approved successfully:', booking.id);
+    res.json({ message: 'Booking approved successfully', booking });
+  } catch (error) {
+    console.error('❌ Approve booking error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Reject a booking (facilities manager)
+// @route   PUT /api/bookings/:bookingId/reject
+const rejectBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { reason } = req.body;
+
+    const booking = await Booking.findOneAndUpdate(
+      { id: bookingId },
+      { status: 'cancelled', reason: reason || 'Rejected by facilities manager', updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    console.log('✅ Booking rejected successfully:', booking.id);
+    res.json({ message: 'Booking rejected successfully', booking });
+  } catch (error) {
+    console.error('❌ Reject booking error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createBooking,
   getUserBookings,
   getAvailableSlots,
   cancelBooking,
+  getPendingBookings,
+  getBookingHistory,
+  approveBooking,
+  rejectBooking,
 };

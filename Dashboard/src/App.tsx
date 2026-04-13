@@ -13,6 +13,7 @@ import Overview from './pages/Overview';
 import ManageAccounts from './pages/ManageAccounts';
 import Employees from './pages/Employees';
 import Report from './pages/Report';
+import Events from './pages/Events';
 /*import Security from './pages/Security';
 import Community from './pages/Community';
 import Facilities from './pages/Facilities';
@@ -56,6 +57,13 @@ function App() {
               <AuthGuard>
                 <DashboardLayout>
                   <Report />
+                </DashboardLayout>
+              </AuthGuard>
+            } />
+            <Route path="/events" element={
+              <AuthGuard>
+                <DashboardLayout>
+                  <Events />
                 </DashboardLayout>
               </AuthGuard>
             } />

@@ -168,18 +168,11 @@ class _CreateEditFacilityScreenState extends State<CreateEditFacilityScreen> {
       
       // Parse with error handling
       int capacity;
-      double price;
       
       try {
         capacity = int.parse(_capacityController.text.trim());
       } catch (e) {
         throw Exception('Capacity must be a valid number');
-      }
-      
-      try {
-        price = double.parse(_priceController.text.trim());
-      } catch (e) {
-        throw Exception('Price must be a valid number');
       }
       
       final facility = Facility(
@@ -191,7 +184,7 @@ class _CreateEditFacilityScreenState extends State<CreateEditFacilityScreen> {
         imagesBase64: _imagesBase64,
         features: _features,
         rules: _rules,
-        pricePerHour: price,
+        pricePerHour: 0, // All facilities are free
         createdAt: widget.facility?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -308,16 +301,36 @@ class _CreateEditFacilityScreenState extends State<CreateEditFacilityScreen> {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _buildTextField(
-                          controller: _priceController,
-                          label: 'Price/Hour (₹)',
-                          icon: Icons.currency_rupee,
-                          keyboardType: TextInputType.number,
-                          validator: (v) {
-                            if (v?.isEmpty ?? true) return 'Required';
-                            if (double.tryParse(v!) == null) return 'Must be a number';
-                            return null;
-                          },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green, width: 2),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green, size: 28),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'FREE',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              const Text(
+                                'Complimentary',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],

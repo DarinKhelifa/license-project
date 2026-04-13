@@ -154,15 +154,15 @@ class _ResidentFacilitiesScreenState extends State<ResidentFacilitiesScreen> {
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF5C518),
+                                      color: Colors.green.withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Text(
-                                      '₹${facility.pricePerHour.toStringAsFixed(0)}/hr',
-                                      style: const TextStyle(
+                                    child: const Text(
+                                      'FREE',
+                                      style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.black,
+                                        color: Colors.green,
                                       ),
                                     ),
                                   ),

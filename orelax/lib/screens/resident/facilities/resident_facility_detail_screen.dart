@@ -157,39 +157,14 @@ class _ResidentFacilityDetailScreenState extends State<ResidentFacilityDetailScr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title and Price
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.facility.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A5C2A),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF5C518),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '₹${widget.facility.pricePerHour.toStringAsFixed(0)}/hr',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
+                  // Title
+                  Text(
+                    widget.facility.name,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A5C2A),
+                    ),
                   ),
 
                   const SizedBox(height: 12),
@@ -538,41 +513,57 @@ class _ResidentFacilityDetailScreenState extends State<ResidentFacilityDetailScr
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5C518),
+                        color: const Color(0xFF1A5C2A),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '$_duration hours × ₹${widget.facility.pricePerHour.toStringAsFixed(0)}/hr',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '$_duration hour${_duration! > 1 ? 's' : ''}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Total Price',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black.withOpacity(0.6),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Duration',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white70,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '₹${(_duration! * widget.facility.pricePerHour).toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              ],
                             ),
-                          ),
-                        ],
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                const Text(
+                                  'FREE',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFF5C518),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Complimentary',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -653,7 +644,7 @@ class _ResidentFacilityDetailScreenState extends State<ResidentFacilityDetailScr
         startTime: _selectedStartTime!,
         endTime: _selectedEndTime!,
         duration: _duration!,
-        totalPrice: _duration! * widget.facility.pricePerHour,
+        totalPrice: 0, // All bookings are free
         status: 'pending',
         userName: user['name'] ?? '',
         userEmail: user['email'] ?? '',

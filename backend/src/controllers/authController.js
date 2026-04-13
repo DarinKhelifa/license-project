@@ -28,8 +28,8 @@ const register = async (req, res) => {
       password,
       phone,
       apartment,
-      role: role || 'resident',
-      status: 'pending' // Admin needs to approve
+      role: role || 'resident', // Allow admin role to be set
+      status: role === 'admin' ? 'active' : 'pending' // Auto-approve admins
     });
 
     // Generate token
