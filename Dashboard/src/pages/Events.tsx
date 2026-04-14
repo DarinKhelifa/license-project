@@ -12,6 +12,10 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
@@ -26,8 +30,11 @@ import {
   LocationOn as LocationIcon,
   People as PeopleIcon,
   Info as InfoIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE = 'http://localhost:5000';
 
@@ -83,42 +90,66 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function Events() {
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [rejectDialog, setRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [editDialog, setEditDialog] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    date: '',
+    time: '',
+    location: '',
+    category: 'social',
+    capacity: 0,
+  });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   // ── Fetch events ──────────────────────────────────────────────────────────
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    if (user) {
+      fetchEvents();
+    }
+  }, [user]);
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('auth_token');
 
-      // Fetch pending events
-      const pendingRes = await fetch(`${API_BASE}/api/events/admin/pending`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      let eventsData: Event[] = [];
 
-      if (!pendingRes.ok) throw new Error('Failed to fetch pending events');
-      const pendingData = await pendingRes.json();
+      if (user?.role === 'admin') {
+        const pendingRes = await fetch(`${API_BASE}/api/events/admin/pending`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-      // Fetch all events (approved, rejected, etc.)
-      const allRes = await fetch(`${API_BASE}/api/events/admin/all`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+        if (!pendingRes.ok) throw new Error('Failed to fetch pending events');
+        const pendingData = await pendingRes.json();
 
-      if (!allRes.ok) throw new Error('Failed to fetch all events');
-      const allData = await allRes.json();
+        const allRes = await fetch(`${API_BASE}/api/events/admin/all`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-      // Combine all events
-      setEvents([...pendingData, ...allData]);
+        if (!allRes.ok) throw new Error('Failed to fetch all events');
+        const allData = await allRes.json();
+
+        eventsData = [...pendingData, ...allData];
+      } else {
+        const myRes = await fetch(`${API_BASE}/api/events/my-events`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!myRes.ok) throw new Error('Failed to fetch my events');
+        eventsData = await myRes.json();
+      }
+
+      setEvents(eventsData);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -152,7 +183,7 @@ export default function Events() {
 
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${API_BASE}/api/events/admin/${selectedEvent._id}/reject`, {
+      const response = await fetch(`${API_BASE}/api/events/admin/${selectedEvent.id}/reject`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -171,6 +202,53 @@ export default function Events() {
     } catch (error) {
       console.error('Error rejecting event:', error);
       setSnackbar({ open: true, message: 'Failed to reject event', severity: 'error' });
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    const confirmed = window.confirm('Are you sure you want to delete this event? This action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE}/api/events/${eventId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error('Failed to delete event');
+
+      setSnackbar({ open: true, message: 'Event deleted successfully', severity: 'success' });
+      fetchEvents();
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      setSnackbar({ open: true, message: 'Failed to delete event', severity: 'error' });
+    }
+  };
+
+  const handleSaveEventChanges = async () => {
+    if (!eventToEdit) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE}/api/events/${eventToEdit.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!response.ok) throw new Error('Failed to update event');
+
+      setSnackbar({ open: true, message: 'Event updated successfully', severity: 'success' });
+      setEditDialog(false);
+      setEventToEdit(null);
+      fetchEvents();
+    } catch (error) {
+      console.error('Error updating event:', error);
+      setSnackbar({ open: true, message: 'Failed to update event', severity: 'error' });
     }
   };
 
@@ -274,28 +352,66 @@ export default function Events() {
             </Typography>
 
             {event.status === 'pending' && (
-              <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={<ApproveIcon />}
-                  onClick={() => handleApproveEvent(event._id)}
-                  sx={{ bgcolor: '#4CAF50', '&:hover': { bgcolor: '#45a049' } }}
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={<RejectIcon />}
-                  onClick={() => {
-                    setSelectedEvent(event);
-                    setRejectDialog(true);
-                  }}
-                  sx={{ bgcolor: '#F44336', '&:hover': { bgcolor: '#da190b' } }}
-                >
-                  Reject
-                </Button>
+              <Box sx={{ display: 'flex', gap: 1, mt: 'auto', flexWrap: 'wrap' }}>
+                {user?.role === 'admin' && (
+                  <>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<ApproveIcon />}
+                      onClick={() => handleApproveEvent(event.id)}
+                      sx={{ bgcolor: '#4CAF50', '&:hover': { bgcolor: '#45a049' } }}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<RejectIcon />}
+                      onClick={() => {
+                        setSelectedEvent(event);
+                        setRejectDialog(true);
+                      }}
+                      sx={{ bgcolor: '#F44336', '&:hover': { bgcolor: '#da190b' } }}
+                    >
+                      Reject
+                    </Button>
+                  </>
+                )}
+                {event.createdBy === user?.id && (
+                  <>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<EditIcon />}
+                      onClick={() => {
+                        setEventToEdit(event);
+                        setEditForm({
+                          title: event.title,
+                          description: event.description,
+                          date: event.date.slice(0, 10),
+                          time: event.time,
+                          location: event.location,
+                          category: event.category,
+                          capacity: event.capacity,
+                        });
+                        setEditDialog(true);
+                      }}
+                      sx={{ borderColor: '#1976D2', color: '#1976D2' }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeleteEvent(event.id)}
+                      sx={{ borderColor: '#F44336', color: '#F44336' }}
+                    >
+                      Delete
+                    </Button>
+                  </>
+                )}
               </Box>
             )}
 
@@ -496,6 +612,87 @@ export default function Events() {
             disabled={!rejectionReason.trim()}
           >
             Reject
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={editDialog} onClose={() => setEditDialog(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ color: '#034808', fontWeight: 600 }}>
+          Edit Event
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2, display: 'grid', gap: 2 }}>
+          <TextField
+            label="Title"
+            fullWidth
+            value={editForm.title}
+            onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+          />
+          <TextField
+            label="Description"
+            fullWidth
+            multiline
+            rows={4}
+            value={editForm.description}
+            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+          />
+          <TextField
+            label="Location"
+            fullWidth
+            value={editForm.location}
+            onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+          />
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <TextField
+              label="Date"
+              fullWidth
+              type="date"
+              value={editForm.date}
+              onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Time"
+              fullWidth
+              type="time"
+              value={editForm.time}
+              onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel id="edit-category-label">Category</InputLabel>
+              <Select
+                labelId="edit-category-label"
+                value={editForm.category}
+                label="Category"
+                onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+              >
+                <MenuItem value="social">Social</MenuItem>
+                <MenuItem value="sports">Sports</MenuItem>
+                <MenuItem value="educational">Educational</MenuItem>
+                <MenuItem value="workshop">Workshop</MenuItem>
+                <MenuItem value="festival">Festival</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              label="Capacity"
+              fullWidth
+              type="number"
+              value={editForm.capacity}
+              onChange={(e) => setEditForm({ ...editForm, capacity: Number(e.target.value) })}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setEditDialog(false)}>Cancel</Button>
+          <Button
+            onClick={handleSaveEventChanges}
+            variant="contained"
+            sx={{ bgcolor: '#034808', '&:hover': { bgcolor: '#022205' } }}
+          >
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>

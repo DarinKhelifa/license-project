@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/employee_provider.dart';
+import '../../../models/employee_model.dart';
 
 class HelpingStaffListScreen extends StatefulWidget {
   final String categoryName;
@@ -16,13 +19,24 @@ class HelpingStaffListScreen extends StatefulWidget {
 }
 
 class _HelpingStaffListScreenState extends State<HelpingStaffListScreen> {
-  // Empty list until backend is connected
-  final List<dynamic> staffList = [];
+  @override
+  void initState() {
+    super.initState();
+    // Fetch employees when the screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<EmployeeProvider>().fetchEmployees();
+    });
+  }
+
+  List<Employee> get filteredEmployees {
+    final employeeProvider = context.watch<EmployeeProvider>();
+    return employeeProvider.employees.where((employee) => 
+      employee.workCategory.toLowerCase() == widget.categoryName.toLowerCase()
+    ).toList();
+  }
 
   Widget _buildStaffItem({
-    required String name,
-    required String rating,
-    required String avatarUrl,
+    required Employee employee,
   }) {
     return Column(
       children: [
@@ -32,18 +46,25 @@ class _HelpingStaffListScreenState extends State<HelpingStaffListScreen> {
             children: [
               // Avatar
               ClipOval(
-                child: Image.network(
-                  avatarUrl,
-                  width: 50,
-                  height: 50,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 50,
-                    height: 50,
-                    color: Colors.grey.shade200,
-                    child: const Icon(Icons.person, color: Colors.grey),
-                  ),
-                ),
+                child: employee.photo.isNotEmpty
+                  ? Image.network(
+                      employee.photo,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 50,
+                        height: 50,
+                        color: Colors.grey.shade200,
+                        child: const Icon(Icons.person, color: Colors.grey),
+                      ),
+                    )
+                  : Container(
+                      width: 50,
+                      height: 50,
+                      color: Colors.grey.shade200,
+                      child: const Icon(Icons.person, color: Colors.grey),
+                    ),
               ),
               const SizedBox(width: 16),
               // Name and Rating
@@ -52,7 +73,7 @@ class _HelpingStaffListScreenState extends State<HelpingStaffListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name,
+                      '${employee.firstName} ${employee.lastName}',
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -61,7 +82,7 @@ class _HelpingStaffListScreenState extends State<HelpingStaffListScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      rating,
+                      employee.experience,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.grey.shade500,
@@ -149,7 +170,7 @@ class _HelpingStaffListScreenState extends State<HelpingStaffListScreen> {
             child: Container(
               color: Colors.white,
               // If list is empty, show empty state
-              child: staffList.isEmpty
+              child: filteredEmployees.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.only(top: 80.0),
                       child: Column(
@@ -184,12 +205,10 @@ class _HelpingStaffListScreenState extends State<HelpingStaffListScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       padding: EdgeInsets.zero,
-                      itemCount: staffList.length,
+                      itemCount: filteredEmployees.length,
                       itemBuilder: (context, index) {
                         return _buildStaffItem(
-                          name: staffList[index]['name'],
-                          rating: staffList[index]['rating'],
-                          avatarUrl: staffList[index]['avatarUrl'],
+                          employee: filteredEmployees[index],
                         );
                       },
                     ),

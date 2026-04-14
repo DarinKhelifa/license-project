@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/facility_provider.dart';
 import 'providers/booking_provider.dart';
+import 'providers/employee_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
 import 'screens/Welcome/welcome_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -42,6 +43,7 @@ class OrelaxApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => AuthProvider()),
         ChangeNotifierProvider(create: (context) => FacilityProvider()),
         ChangeNotifierProvider(create: (context) => BookingProvider()),
+        ChangeNotifierProvider(create: (context) => EmployeeProvider()),
         ChangeNotifierProvider(create: (context) => EventProvider()),  // ADD THIS
         ChangeNotifierProvider(create: (context) => ReportProvider()), 
          // ADD THIS
