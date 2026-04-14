@@ -12,6 +12,12 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
   
+  // Convenience getters for social features
+  String? get userId => _user?['_id'] ?? _user?['id'];
+  String? get userName => _user?['name'];
+  String? get userAvatar => _user?['profileImage'];
+  String? get userEmail => _user?['email'];
+  
   AuthProvider() {
     _checkAuthStatus();
   }

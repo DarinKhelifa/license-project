@@ -19,6 +19,7 @@ const eventRoutes = require('./src/routes/eventRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const guestRoutes = require('./src/routes/guestRoutes');
 const employeeRoutes = require('./src/routes/employeeRoutes');
+const socialRoutes = require('./src/routes/socialRoutes');
 
 
 const app = express();
@@ -55,6 +56,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/guests', guestRoutes);
 app.use('/api/employees', employeeRoutes);
+app.use('/api/social', socialRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

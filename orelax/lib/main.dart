@@ -4,6 +4,7 @@ import 'providers/auth_provider.dart';
 import 'providers/facility_provider.dart';
 import 'providers/booking_provider.dart';
 import 'providers/employee_provider.dart';
+import 'providers/social_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
 import 'screens/Welcome/welcome_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -23,6 +24,7 @@ import 'screens/facilities_manager/create_edit_facility_screen.dart';
 import 'screens/facilities_manager/facility_detail_screen.dart';
 import 'screens/facilities_manager/booking_history_screen.dart';
 import 'screens/resident/events/events_screen.dart';  // Add this import
+import 'screens/resident/community/community_feed_screen.dart';
 import 'providers/event_provider.dart';  // Add this import
 import 'providers/report_provider.dart';  // Add this import
 import 'providers/alert_provider.dart';
@@ -44,6 +46,7 @@ class OrelaxApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => FacilityProvider()),
         ChangeNotifierProvider(create: (context) => BookingProvider()),
         ChangeNotifierProvider(create: (context) => EmployeeProvider()),
+        ChangeNotifierProvider(create: (context) => SocialProvider()),
         ChangeNotifierProvider(create: (context) => EventProvider()),  // ADD THIS
         ChangeNotifierProvider(create: (context) => ReportProvider()), 
          // ADD THIS
@@ -87,7 +90,7 @@ class OrelaxApp extends StatelessWidget {
           },
 
           // Resident shortcuts
-          '/feed': (_) => const _ComingSoonScreen(title: 'Community Feed'),
+          '/feed': (_) => const CommunityFeedScreen(),
           '/events': (_) => EventsScreen(),  // Add this line
           '/bookings': (_) => const _ComingSoonScreen(title: 'Bookings'),
           '/maintenance-request':
