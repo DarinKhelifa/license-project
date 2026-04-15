@@ -1237,6 +1237,13 @@ class _HomeScreenState extends State<HomeScreen> {
               subtitle: 'Check available spaces & hours',
               onTap: () => Navigator.pushNamed(context, '/facilities'),
             ),
+            _ServiceCard(
+              icon: Icons.bolt,
+              iconColor: const Color(0xFFF5C518),
+              title: 'Energy Monitoring',
+              subtitle: 'Track your energy consumption',
+              onTap: () => Navigator.pushNamed(context, '/monitoring'),
+            ),
           ],
         ),
 

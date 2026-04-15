@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/Welcome/welcome_screen.dart';
 import 'edit_profile_screen.dart';
 import 'change_password_screen.dart';
+import 'contact_us_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -42,9 +44,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
+    const Color darkGreen = Color(0xFF1A5C2A);
+    const Color lightGreen = Color(0xFFE8F5E9);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F5),
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1A5C2A)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'My Profile',
+          style: GoogleFonts.poppins(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: darkGreen,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _refreshData,
@@ -54,18 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Title ──
-                const Center(
-                  child: Text(
-                    'Profile',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 8),
 
                 // ── Profile Card ──
                 Container(
@@ -76,19 +86,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: Row(
                     children: [
-                      // Avatar with initials
-                      CircleAvatar(
-                        radius: 36,
-                        backgroundColor: const Color(0xFF1A6B2F),
-                        child: Text(
-                          _getInitials(_userData?['name'] ?? user?['name'] ?? 'U'),
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+                      // Avatar with image or initials
+                      _buildProfileAvatar(_userData, user),
                       const SizedBox(width: 16),
                       // Name & email
                       Expanded(
@@ -97,40 +96,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           children: [
                             Text(
                               _userData?['name'] ?? user?['name'] ?? 'Loading...',
-                              style: const TextStyle(
+                              style: GoogleFonts.poppins(
                                 fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w700,
                                 color: Colors.black87,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Text(
                               _userData?['email'] ?? user?['email'] ?? 'No email',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey,
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            if (_userData?['apartment'] != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF1A6B2F).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'Apartment ${_userData?['apartment']}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Color(0xFF1A6B2F),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ),
@@ -169,13 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onTap: () => _editPhoneNumber(),
                       ),
                       _divider(),
-                      _ProfileTile(
-                        icon: Icons.home_outlined,
-                        title: 'Apartment',
-                        trailing: _userData?['apartment'] ?? 'Not set',
-                        onTap: () => _editApartment(),
-                      ),
-                      _divider(),
+
                       _ProfileTile(
                         icon: Icons.badge_outlined,
                         title: 'Role',
@@ -233,6 +206,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       _divider(),
                       _ProfileTile(
+                        icon: Icons.contact_mail_outlined,
+                        title: 'Contact Us',
+                        onTap: () => _navigateToContactUs(),
+                      ),
+                      _divider(),
+                      _ProfileTile(
                         icon: Icons.logout,
                         title: 'Logout',
                         titleColor: Colors.red,
@@ -250,6 +229,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildProfileAvatar(Map<String, dynamic>? userData, Map<String, dynamic>? user) {
+    const Color darkGreen = Color(0xFF1A6B2F);
+    
+    // Check if profile image exists
+    final profileImage = userData?['profileImage'] ?? user?['profileImage'];
+    
+    if (profileImage != null && profileImage.toString().isNotEmpty) {
+      // Display network image if available
+      return CircleAvatar(
+        radius: 36,
+        backgroundImage: NetworkImage(profileImage),
+        backgroundColor: Colors.grey.shade300,
+      );
+    } else {
+      // Fall back to initials
+      return CircleAvatar(
+        radius: 36,
+        backgroundColor: darkGreen,
+        child: Text(
+          _getInitials(userData?['name'] ?? user?['name'] ?? 'U'),
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
   }
 
   String _getInitials(String name) {
@@ -283,6 +292,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (result == true) {
       _refreshData();
     }
+  }
+
+  void _navigateToContactUs() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ContactUsScreen(),
+      ),
+    );
   }
 
   void _editPhoneNumber() async {

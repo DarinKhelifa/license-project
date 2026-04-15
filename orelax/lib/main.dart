@@ -30,6 +30,8 @@ import 'providers/report_provider.dart';  // Add this import
 import 'providers/alert_provider.dart';
 import 'screens/resident/guest_qr/guest_qr_form_screen.dart';  // Add this import
 import 'screens/resident/guest_qr/guest_qr_view_screen.dart';
+import 'providers/energy_provider.dart';
+import 'screens/monitoring/energy_monitoring_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const OrelaxApp());
@@ -51,6 +53,7 @@ class OrelaxApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => ReportProvider()), 
          // ADD THIS
         ChangeNotifierProvider(create: (context) => AlertProvider()),  // ADD THIS
+        ChangeNotifierProvider(create: (context) => EnergyProvider()),  // ADD THIS
 
 
       ],
@@ -121,7 +124,7 @@ class OrelaxApp extends StatelessWidget {
               (_) => const _ComingSoonScreen(title: 'Manage Accounts'),
           '/security-management':
               (_) => const _ComingSoonScreen(title: 'Security Management'),
-          '/monitoring': (_) => const _ComingSoonScreen(title: 'Monitoring'),
+          '/monitoring': (_) => const EnergyMonitoringScreen(),
         },
       ),
     );

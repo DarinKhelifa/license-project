@@ -1,6 +1,10 @@
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 
 class ApiService {
   // Use your computer's IP for Android emulator, or localhost for Chrome
@@ -130,6 +134,65 @@ class ApiService {
       throw Exception('Failed to update profile');
     }
   }
+
+  // Update profile with photo upload (supports web and native platforms)
+  static Future<Map<String, dynamic>> updateProfileWithPhoto({
+    required String name,
+    required String phone,
+    required String apartment,
+    dynamic photoFile, // Can be File (native) or Uint8List (web)
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final request = http.MultipartRequest(
+      'PUT',
+      Uri.parse('$baseUrl/auth/profile'),
+    );
+
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['name'] = name;
+    request.fields['phone'] = phone;
+    request.fields['apartment'] = apartment;
+
+    // Add photo if provided
+    if (photoFile != null) {
+      if (kIsWeb) {
+        // Web: handle Uint8List
+        if (photoFile is Uint8List) {
+          request.files.add(http.MultipartFile.fromBytes(
+            'profileImage',
+            photoFile,
+            filename: 'profile_photo.jpg',
+            contentType: MediaType('image', 'jpeg'),
+          ));
+        }
+      } else {
+        // Native: handle File
+        if (photoFile is File) {
+          request.files.add(await http.MultipartFile.fromPath(
+            'profileImage',
+            photoFile.path,
+            contentType: MediaType('image', 'jpeg'),
+          ));
+        }
+      }
+    }
+
+    try {
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to update profile: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Profile update error: $e');
+    }
+  }
+
   
   static Future<void> changePassword({
     required String currentPassword,

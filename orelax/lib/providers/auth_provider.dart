@@ -129,11 +129,26 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     
     try {
-      final updatedUser = await ApiService.updateProfile(
-        name: data['name'],
-        phone: data['phone'],
-        apartment: data['apartment'],
-      );
+      final updatedUser;
+      
+      // Check if photo is included in data
+      if (data['photo'] != null) {
+        // Use multipart upload method if photo is present
+        updatedUser = await ApiService.updateProfileWithPhoto(
+          name: data['name'],
+          phone: data['phone'],
+          apartment: data['apartment'],
+          photoFile: data['photo'],
+        );
+      } else {
+        // Use regular JSON update if no photo
+        updatedUser = await ApiService.updateProfile(
+          name: data['name'],
+          phone: data['phone'],
+          apartment: data['apartment'],
+        );
+      }
+      
       _user = updatedUser;
       _isLoading = false;
       notifyListeners();
