@@ -6,6 +6,10 @@ const { v4: uuidv4 } = require('uuid');
 const QRCode = require('qrcode');
 const http = require('http');
 const socketIo = require('socket.io');
+const dns = require('dns');
+
+// Force public DNS servers for MongoDB SRV lookups (fixes corporate DNS issues)
+dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 
 // Load environment variables
 dotenv.config();
@@ -45,7 +49,16 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 // Database connection 
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGODB_URI, {
+  maxPoolSize: 10,
+  minPoolSize: 5,
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  family: 4,
+  retryWrites: true,
+  writeConcern: { w: 1 },
+  maxIdleTimeMS: 30000,
+})
   .then(() => console.log('✅ MongoDB connected successfully'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 

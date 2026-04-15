@@ -29,8 +29,10 @@ function initMQTT(io) {
       const reading = new EnergyReading(data);
       await reading.save();
       
-      // Update daily summary
-      await updateDailySummary(data);
+      // Update daily summary (non-blocking - fire and forget)
+      updateDailySummary(data).catch(err => {
+        console.error('Error updating daily summary:', err);
+      });
       
       // Emit via WebSocket to connected clients
       if (io) {
