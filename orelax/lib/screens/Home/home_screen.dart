@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/facility_provider.dart';
@@ -227,6 +228,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     const Spacer(),
+                    _AnimatedIconButton(
+                      icon: 'assets/icon/camera.svg',
+                      tooltip: 'Camera',
+                      onTap: () => Navigator.pushNamed(context, '/camera-live'),
+                    ),
+                    const SizedBox(width: 12),
                     _AnimatedIconButton(
                       icon: 'assets/icon/bell.svg',
                       tooltip: 'Notifications',
@@ -1178,156 +1185,12 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Modern Hero Announcement Card
-        TweenAnimationBuilder(
-          tween: Tween<double>(begin: 0, end: 1),
-          duration: const Duration(milliseconds: 1200),
-          curve: Curves.easeOut,
-          builder: (context, value, child) {
-            return Transform.translate(
-              offset: Offset(0, 30 * (1 - value)),
-              child: Opacity(
-                opacity: value,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF1A5C2A),
-                        const Color(0xFF2A7D3A),
-                        const Color(0xFF1A5C2A),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF1A5C2A).withOpacity(0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        right: -20,
-                        top: -20,
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.08),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 30,
-                        bottom: -30,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF5C518),
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      const Color(0xFFF5C518).withOpacity(0.3),
-                                  blurRadius: 8,
-                                ),
-                              ],
-                            ),
-                            child: const Text(
-                              'ANNOUNCEMENT',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Weekend Festival',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Join us this Saturday for the\ncommunity BBQ and music night.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.85),
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          GestureDetector(
-                            onTap: () =>
-                                Navigator.pushNamed(context, '/events'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5C518),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFF5C518)
-                                        .withOpacity(0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Learn More',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.arrow_forward,
-                                      color: Colors.black, size: 16),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
+        _BannerWithHover(
+          title: 'Weekend Festival',
+          subtitle:
+              'Join us this Saturday for the\ncommunity BBQ and music night.',
+          hoverText: 'orelax your comfort home security and',
         ),
-
         const SizedBox(height: 28),
 
         // Resident shortcuts header
@@ -2074,6 +1937,244 @@ class _AnimatedProfileButtonState extends State<_AnimatedProfileButton>
             ),
             child: const Icon(Icons.person, color: Colors.white, size: 18),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BannerWithHover extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final String hoverText;
+
+  const _BannerWithHover({
+    required this.title,
+    required this.subtitle,
+    required this.hoverText,
+  });
+
+  @override
+  State<_BannerWithHover> createState() => _BannerWithHoverState();
+}
+
+class _BannerWithHoverState extends State<_BannerWithHover> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeInOut,
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: _isHovered
+                ? [const Color(0xFF1A5C2A), const Color(0xFF2E7D32)]
+                : [
+                    const Color(0xFF1A5C2A),
+                    const Color(0xFF2A7D3A),
+                    const Color(0xFF1A5C2A)
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color:
+                  const Color(0xFF1A5C2A).withOpacity(_isHovered ? 0.3 : 0.2),
+              blurRadius: _isHovered ? 25 : 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // 4 Floating Circles - Kept and slowed down
+            ...List.generate(4, (index) {
+              final positions = [
+                const Offset(-20, -20),
+                const Offset(30, -30),
+                const Offset(-10, 50),
+                const Offset(100, 20),
+              ];
+              final sizes = [100.0, 80.0, 60.0, 120.0];
+              return Positioned(
+                right: positions[index].dx,
+                top: positions[index].dy,
+                child: _FloatingCircle(
+                  size: sizes[index],
+                  color: Colors.white.withOpacity(0.08),
+                  duration: Duration(seconds: 8 + index * 2), // Slow motion
+                ),
+              );
+            }),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 600),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              child: _isHovered
+                  ? Center(
+                      key: const ValueKey('hoverContent'),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "Orelax Real Estate",
+                            style: GoogleFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFF5C518),
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Your comfort, our priority. A secure and peaceful home for your family's brightest future.",
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withOpacity(0.9),
+                              fontStyle: FontStyle.italic,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      key: const ValueKey('normalContent'),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5C518),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'ANNOUNCEMENT',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.subtitle,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.85),
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5C518),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Learn More',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(Icons.arrow_forward,
+                                  color: Colors.black, size: 16),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FloatingCircle extends StatefulWidget {
+  final double size;
+  final Color color;
+  final Duration duration;
+
+  const _FloatingCircle({
+    required this.size,
+    required this.color,
+    required this.duration,
+  });
+
+  @override
+  State<_FloatingCircle> createState() => _FloatingCircleState();
+}
+
+class _FloatingCircleState extends State<_FloatingCircle>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    )..repeat(reverse: true);
+
+    _animation = Tween<Offset>(
+      begin: const Offset(-0.1, -0.1),
+      end: const Offset(0.2, 0.2),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOutSine,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _animation,
+      child: Container(
+        width: widget.size,
+        height: widget.size,
+        decoration: BoxDecoration(
+          color: widget.color,
+          shape: BoxShape.circle,
         ),
       ),
     );

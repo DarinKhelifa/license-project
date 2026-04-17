@@ -1,245 +1,326 @@
 import 'package:flutter/material.dart';
-import 'staff_member.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-class StaffProfileScreen extends StatelessWidget {
-  final StaffMember staff;
+class StaffProfileScreen extends StatefulWidget {
+  final String staffId;
+  final String staffName;
+  final String staffRating; 
+  final String staffAvatarUrl;
+  final String experience; 
+  final String profession;
+  final String price; 
+  final String about;
 
-  const StaffProfileScreen({super.key, required this.staff});
+  const StaffProfileScreen({
+    super.key,
+    required this.staffId,
+    required this.staffName,
+    required this.staffRating,
+    required this.staffAvatarUrl,
+    required this.experience,
+    required this.profession,
+    required this.price,
+    required this.about,
+  });
+
+  @override
+  State<StaffProfileScreen> createState() => _StaffProfileScreenState();
+}
+
+class _StaffProfileScreenState extends State<StaffProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final Color darkGreen = const Color(0xFF1A5C2A);
+  final Color primaryPurple = const Color(0xFF7B1FA2);
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF1A5C2A)),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          staff.name,
-          style: const TextStyle(color: Color(0xFF1A5C2A)),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile header
-            Container(
-              padding: const EdgeInsets.all(24),
-              child: Row(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Content
+          Column(
+            children: [
+              // Header Image Section
+              Stack(
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
+                    height: MediaQuery.of(context).size.height * 0.45,
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0F0F0),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      _getProfessionIcon(staff.profession),
-                      color: const Color(0xFF1A5C2A).withOpacity(0.6),
-                      size: 40,
+                      image: DecorationImage(
+                        image: NetworkImage(widget.staffAvatarUrl),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  // Back and Favorite buttons
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 10,
+                    left: 20,
+                    right: 20,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          staff.name,
-                          style: const TextStyle(
-                            color: Color(0xFF1A2A1A),
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                        CircleAvatar(
+                          backgroundColor: Colors.white.withOpacity(0.8),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.black),
+                            onPressed: () => Navigator.pop(context),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          staff.profession,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              color: Color(0xFFFFB74D),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              staff.rating.toString(),
-                              style: const TextStyle(
-                                color: Color(0xFF1A2A1A),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              '${staff.yearsOfExperience} years exp.',
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
+                        CircleAvatar(
+                          backgroundColor: Colors.white.withOpacity(0.8),
+                          child: const Icon(Icons.favorite, color: Colors.purple),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            const Divider(
-              color: Color(0xFFE0E0E0),
-              thickness: 1,
-              indent: 24,
-              endIndent: 24,
-            ),
-
-            // About section
-            Container(
-              margin: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'About',
-                    style: TextStyle(
-                      color: Color(0xFF1A2A1A),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _getAboutText(staff),
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 14,
-                      height: 1.5,
+                  // Image indicators (dots)
+                  Positioned(
+                    bottom: 20,
+                    left: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return Container(
+                          width: index == 0 ? 12 : 8,
+                          height: 8,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: index == 0 ? primaryPurple : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        );
+                      }),
                     ),
                   ),
                 ],
               ),
-            ),
 
-            // Price section
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(16),
+              // Staff Info Section
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  widget.staffName,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.amber, size: 20),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      widget.staffRating,
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Text(
+                              "${widget.profession} - ${widget.experience}",
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey.shade600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Tabs
+                      TabBar(
+                        controller: _tabController,
+                        labelColor: primaryPurple,
+                        unselectedLabelColor: Colors.grey,
+                        indicatorColor: primaryPurple,
+                        indicatorSize: TabBarIndicatorSize.label,
+                        tabs: const [
+                          Tab(text: 'About'),
+                          Tab(text: 'Reviews'),
+                        ],
+                      ),
+                      const SizedBox(height: 1),
+                      Divider(height: 1, color: Colors.grey.shade200),
+
+                      // Tab Views
+                      Expanded(
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            // About Tab
+                            SingleChildScrollView(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.about,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black87,
+                                      fontSize: 14,
+                                      height: 1.6,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  // Small profile card inside about
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundImage: NetworkImage(widget.staffAvatarUrl),
+                                        radius: 20,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                widget.staffName,
+                                                style: GoogleFonts.poppins(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              const Icon(Icons.check_circle, 
+                                                color: Colors.purple, size: 14),
+                                            ],
+                                          ),
+                                          Text(
+                                            "Service Provider",
+                                            style: GoogleFonts.poppins(
+                                              color: Colors.grey,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const Spacer(),
+                                      Row(
+                                        children: [
+                                          _buildActionIcon(Icons.chat_bubble, primaryPurple),
+                                          const SizedBox(width: 8),
+                                          _buildActionIcon(Icons.phone, primaryPurple),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 100), 
+                                ],
+                              ),
+                            ),
+                            // Reviews Tab
+                            const Center(child: Text("No reviews available yet.")),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Price and Bottom Button
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
                     blurRadius: 10,
-                    offset: const Offset(0, 2),
+                    offset: const Offset(0, -5),
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Price',
-                    style: TextStyle(
-                      color: Color(0xFF1A2A1A),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Price",
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          widget.price,
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: darkGreen,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    '\$${staff.hourlyRate}/hour',
-                    style: const TextStyle(
-                      color: Color(0xFF1A5C2A),
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(width: 24),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryPurple,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: Text(
+                          "Hire ${widget.staffName.split(' ')[0]}",
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Hire button
-            Container(
-              margin: const EdgeInsets.all(24),
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  _showHireDialog(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A5C2A),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Hire',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getAboutText(StaffMember staff) {
-    switch (staff.profession.toLowerCase()) {
-      case 'cleaning':
-        return '${staff.name} is a professional cleaner with ${staff.yearsOfExperience} years of experience. Specializes in residential and commercial cleaning services. Known for attention to detail, reliability, and using eco-friendly products.';
-      case 'plumber':
-        return '${staff.name} is a licensed plumber with ${staff.yearsOfExperience} years of experience. Expert in pipe repairs, installations, leak detection, and emergency plumbing services. Committed to quality work and customer satisfaction.';
-      case 'electrician':
-        return '${staff.name} is a certified electrician with ${staff.yearsOfExperience} years of experience. Specializes in wiring, installations, repairs, and electrical safety inspections. Dedicated to providing safe and reliable electrical services.';
-      default:
-        return '${staff.name} is a professional service provider with ${staff.yearsOfExperience} years of experience in ${staff.profession}. Committed to delivering high-quality service with professionalism and expertise.';
-    }
-  }
-
-  void _showHireDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: const Text(
-          'Request Sent!',
-          style: TextStyle(color: Color(0xFF1A5C2A)),
-        ),
-        content: Text(
-          'Your hiring request has been sent to ${staff.name}. They will contact you shortly.',
-          style: const TextStyle(color: Color(0xFF1A2A1A)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'OK',
-              style: TextStyle(color: Color(0xFF1A5C2A)),
             ),
           ),
         ],
@@ -247,16 +328,15 @@ class StaffProfileScreen extends StatelessWidget {
     );
   }
 
-  IconData _getProfessionIcon(String profession) {
-    switch (profession.toLowerCase()) {
-      case 'cleaning':
-        return Icons.cleaning_services;
-      case 'plumber':
-        return Icons.plumbing;
-      case 'electrician':
-        return Icons.electrical_services;
-      default:
-        return Icons.work;
-    }
+  Widget _buildActionIcon(IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: Colors.white, size: 18),
+    );
   }
 }
+

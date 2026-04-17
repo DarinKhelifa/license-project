@@ -27,14 +27,19 @@ class EmployeeApiService {
   // Get all employees
   static Future<List<Employee>> getAllEmployees() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/employees'),
-        headers: await _getHeaders(),
-      ).timeout(httpTimeout);
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/employees'),
+            headers: await _getHeaders(),
+          )
+          .timeout(httpTimeout);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final employees = (data['employees'] as List?)?.map((json) => Employee.fromMap(json)).toList() ?? [];
+        final employees = (data['employees'] as List?)
+                ?.map((json) => Employee.fromMap(json))
+                .toList() ??
+            [];
         return employees;
       } else {
         throw Exception('Failed to load employees');
@@ -61,7 +66,8 @@ class EmployeeApiService {
   }) async {
     try {
       final token = await _getToken();
-      final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/employees'));
+      final request =
+          http.MultipartRequest('POST', Uri.parse('$baseUrl/employees'));
 
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
@@ -121,10 +127,12 @@ class EmployeeApiService {
   // Delete employee
   static Future<void> deleteEmployee(String employeeId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/employees/$employeeId'),
-        headers: await _getHeaders(),
-      ).timeout(httpTimeout);
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/employees/$employeeId'),
+            headers: await _getHeaders(),
+          )
+          .timeout(httpTimeout);
 
       if (response.statusCode != 200) {
         try {
@@ -139,5 +147,13 @@ class EmployeeApiService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  // Get image URL
+  static String getImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+    // Replace localhost with internal IP if needed for physical devices
+    return '$baseUrl/uploads/$path'.replaceAll('/api/uploads/', '/uploads/');
   }
 }

@@ -9,7 +9,10 @@ function initMQTT(io) {
   const MQTT_BROKER = 'mqtt://localhost:1883';
   const TOPIC_PATTERN = 'orelax/energy/#';
   
-  mqttClient = mqtt.connect(MQTT_BROKER);
+  
+  mqttClient = mqtt.connect(MQTT_BROKER, {
+    reconnectPeriod: 0, // disable auto-retry for now
+  });
   
   mqttClient.on('connect', () => {
     console.log('✅ Backend connected to MQTT broker');
@@ -19,7 +22,11 @@ function initMQTT(io) {
       }
     });
   });
-  
+  mqttClient.on('error', (err) => {
+    console.warn('⚠️ MQTT unavailable - energy monitoring disabled');
+    mqttClient.end(true); // stop completely
+  });
+
   mqttClient.on('message', async (topic, message) => {
     try {
       const data = JSON.parse(message.toString());

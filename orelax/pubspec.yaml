@@ -10,6 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
 
+
+  web_socket_channel: ^3.0.1
   socket_io_client: ^2.0.3
   
   uuid: ^4.1.0
@@ -92,3 +94,11 @@ flutter:
     - assets/images/gym2.jpg
     - assets/images/gym3.jpg
     - assets/images/gym4.jpg
+    - assets/images/cleaning_staff.png
+    - assets/images/electrician_staff.png
+    - assets/images/plombier.png
+    - assets/images/repairing.png
+    - assets/images/cleaning.png
+    - assets/images/electricien.png
+    - assets/images/plimbierstaff.png
+
