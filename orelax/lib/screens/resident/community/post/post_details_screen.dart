@@ -35,9 +35,9 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
     if (_commentController.text.isEmpty) return;
 
     final success = await context.read<SocialProvider>().addComment(
-      widget.post.id,
-      _commentController.text,
-    );
+          widget.post.id,
+          _commentController.text,
+        );
 
     if (success) {
       _commentController.clear();
@@ -50,9 +50,10 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
 
   Future<void> _likePost() async {
     setState(() => _isLiking = true);
-    final success = await context.read<SocialProvider>().likePost(widget.post.id);
+    final success =
+        await context.read<SocialProvider>().likePost(widget.post.id);
     setState(() => _isLiking = false);
-    
+
     if (success) {
       _showSnackBar(widget.post.isLikedByCurrentUser ? 'Unliked' : 'Liked!');
     } else {
@@ -62,9 +63,10 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
 
   Future<void> _sharePost() async {
     setState(() => _isSharing = true);
-    final success = await context.read<SocialProvider>().sharePost(widget.post.id);
+    final success =
+        await context.read<SocialProvider>().sharePost(widget.post.id);
     setState(() => _isSharing = false);
-    
+
     if (success) {
       _showSnackBar('Post shared!');
     } else {
@@ -79,7 +81,8 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
           message,
           style: GoogleFonts.poppins(color: Colors.white),
         ),
-        backgroundColor: isError ? Colors.red.shade600 : const Color(0xFF1A5C2A),
+        backgroundColor:
+            isError ? Colors.red.shade600 : const Color(0xFF1A5C2A),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
@@ -149,10 +152,9 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                             CircleAvatar(
                               radius: 20,
                               backgroundColor: lightGreen,
-                              backgroundImage:
-                                  widget.post.userAvatar.isNotEmpty
-                                      ? NetworkImage(widget.post.userAvatar)
-                                      : null,
+                              backgroundImage: widget.post.userAvatar.isNotEmpty
+                                  ? NetworkImage(widget.post.userAvatar)
+                                  : null,
                               child: widget.post.userAvatar.isEmpty
                                   ? const Icon(Icons.person, color: darkGreen)
                                   : null,
@@ -292,8 +294,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                       return Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: FutureBuilder(
-                          future:
-                              socialProvider.getComments(widget.post.id),
+                          future: socialProvider.getComments(widget.post.id),
                           builder: (context, snapshot) {
                             if (!snapshot.hasData) {
                               return Center(
@@ -311,8 +312,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                                 child: Column(
                                   children: [
                                     Icon(Icons.comment_outlined,
-                                        size: 40,
-                                        color: Colors.grey.shade300),
+                                        size: 40, color: Colors.grey.shade300),
                                     const SizedBox(height: 8),
                                     Text(
                                       'No comments yet. Be the first!',
@@ -328,8 +328,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
 
                             return ListView.builder(
                               shrinkWrap: true,
-                              physics:
-                                  const NeverScrollableScrollPhysics(),
+                              physics: const NeverScrollableScrollPhysics(),
                               itemCount: commentsList.length,
                               itemBuilder: (context, index) {
                                 final comment = commentsList[index];

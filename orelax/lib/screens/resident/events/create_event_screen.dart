@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -6,8 +5,9 @@ import '../../../models/event_model.dart';
 import '../../../providers/event_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/api_service.dart';
-import 'dart:convert';  // For base64 image encoding
-import 'dart:io';       // For image picking
+import 'dart:convert'; // For base64 image encoding
+import 'dart:io'; // For image picking
+
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
 
@@ -21,7 +21,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
   final _capacityController = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   String _selectedCategory = 'social';
@@ -84,19 +84,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   Future<void> _pickImage() async {
     if (_isPickingImage) return;
-    
+
     setState(() => _isPickingImage = true);
-    
+
     try {
       final picker = ImagePicker();
       final image = await picker.pickImage(source: ImageSource.gallery);
-      
+
       if (image != null) {
         final bytes = await image.readAsBytes();
         setState(() {
           _imageBase64 = base64Encode(bytes);
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Image added successfully!')),
         );
@@ -110,12 +110,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   Future<void> _submitEvent() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final currentUser = authProvider.user;
-    
+
     final event = Event(
       id: '',
       title: _titleController.text.trim(),
@@ -133,12 +133,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       createdAt: DateTime.now(),
       isActive: true,
     );
-    
+
     final eventProvider = Provider.of<EventProvider>(context, listen: false);
     final success = await eventProvider.createEvent(event);
-    
+
     setState(() => _isLoading = false);
-    
+
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -215,7 +215,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Title
                   TextFormField(
                     controller: _titleController,
@@ -225,10 +225,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.title),
                     ),
-                    validator: (v) => v?.isEmpty ?? true ? 'Title required' : null,
+                    validator: (v) =>
+                        v?.isEmpty ?? true ? 'Title required' : null,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Description
                   TextFormField(
                     controller: _descriptionController,
@@ -239,10 +240,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.description),
                     ),
-                    validator: (v) => v?.isEmpty ?? true ? 'Description required' : null,
+                    validator: (v) =>
+                        v?.isEmpty ?? true ? 'Description required' : null,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Date and Time
                   Row(
                     children: [
@@ -250,14 +252,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                         child: GestureDetector(
                           onTap: _selectDate,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 16),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey.shade400),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.calendar_today, color: Color(0xFF034808)),
+                                const Icon(Icons.calendar_today,
+                                    color: Color(0xFF034808)),
                                 const SizedBox(width: 8),
                                 Text(
                                   '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
@@ -273,14 +277,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                         child: GestureDetector(
                           onTap: _selectTime,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 16),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey.shade400),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.access_time, color: Color(0xFF034808)),
+                                const Icon(Icons.access_time,
+                                    color: Color(0xFF034808)),
                                 const SizedBox(width: 8),
                                 Text(
                                   _selectedTime.format(context),
@@ -294,7 +300,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Location
                   TextFormField(
                     controller: _locationController,
@@ -304,10 +310,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.location_on),
                     ),
-                    validator: (v) => v?.isEmpty ?? true ? 'Location required' : null,
+                    validator: (v) =>
+                        v?.isEmpty ?? true ? 'Location required' : null,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Category
                   DropdownButtonFormField<String>(
                     value: _selectedCategory,
@@ -333,7 +340,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Capacity
                   TextFormField(
                     controller: _capacityController,
@@ -346,7 +353,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Submit Button
                   SizedBox(
                     width: double.infinity,
@@ -363,12 +370,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           ? const CircularProgressIndicator(color: Colors.white)
                           : const Text(
                               'Create Event',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Info Note
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -384,7 +392,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                         Expanded(
                           child: Text(
                             'Your event will be reviewed by an admin before being published to the community.',
-                            style: TextStyle(color: Colors.orange.shade700, fontSize: 12),
+                            style: TextStyle(
+                                color: Colors.orange.shade700, fontSize: 12),
                           ),
                         ),
                       ],

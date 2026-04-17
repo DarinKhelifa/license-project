@@ -151,11 +151,12 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
                               children: [
                                 CircleAvatar(
                                   radius: 16,
-                                  backgroundImage:
-                                      widget.story.userAvatar.isNotEmpty
-                                          ? NetworkImage(widget.story.userAvatar)
-                                          : null,
-                                  backgroundColor: Colors.white.withOpacity(0.2),
+                                  backgroundImage: widget
+                                          .story.userAvatar.isNotEmpty
+                                      ? NetworkImage(widget.story.userAvatar)
+                                      : null,
+                                  backgroundColor:
+                                      Colors.white.withOpacity(0.2),
                                   child: widget.story.userAvatar.isEmpty
                                       ? const Icon(Icons.person,
                                           color: Colors.white, size: 14)
