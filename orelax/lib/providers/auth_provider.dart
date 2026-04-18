@@ -44,9 +44,10 @@ class AuthProvider extends ChangeNotifier {
   
   // Initialize chat connection with user role
   Future<void> initializeChat() async {
-    if (_user != null && _user!['id'] != null) {
-      final role = _user!['role'] ?? 'resident';
-      await ChatService.connect(_user!['id'], role: role);
+    final id = userId;
+    if (_user != null && id != null) {
+      final role = (_user!['role'] ?? 'resident').toString();
+      await ChatService.connect(id, role: role);
     }
   }
   

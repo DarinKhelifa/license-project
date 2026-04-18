@@ -111,15 +111,19 @@ io.on('connection', (socket) => {
   // Send a message
   socket.on('send-message', async (data) => {
     try {
-      const { chatId, senderId, senderName, text, type = 'text' } = data;
-      console.log(`📤 receive send-message for chat=${chatId} sender=${senderId} text=${text}`);
+      const { chatId, senderId, senderName, text = '', type = 'text', mediaUrl } = data;
+      console.log(`📤 receive send-message for chat=${chatId} sender=${senderId} type=${type} text=${text}`);
+
+      const normalizedText = (typeof text === 'string') ? text.trim() : '';
+      const effectiveText = normalizedText || (type === 'image' ? '📷 Photo' : type === 'file' ? '📎 File' : '');
       
       const message = new Message({
         chatId,
         senderId,
         senderName,
-        text,
+        text: effectiveText,
         type,
+        mediaUrl,
         status: 'sent',
         readBy: [senderId],
       });
@@ -137,7 +141,7 @@ io.on('connection', (socket) => {
       console.log(`👥 recipientId=${recipientId}`);
       const updateOps = {
         $set: {
-          lastMessage: text,
+          lastMessage: effectiveText,
           lastMessageTime: new Date(),
           lastMessageSenderId: senderId,
         },

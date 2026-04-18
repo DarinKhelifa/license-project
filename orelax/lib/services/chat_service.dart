@@ -1,10 +1,15 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, ValueListenable, ValueNotifier;
 
 class ChatService {
   static IO.Socket? socket;
   static String? currentUserId;
   static String? currentUserRole;
+
+  // Presence
+  static final ValueNotifier<Set<String>> _onlineUserIds = ValueNotifier(<String>{});
+  static ValueListenable<Set<String>> get onlineUserIdsListenable => _onlineUserIds;
+  static bool isUserOnline(String? userId) => userId != null && _onlineUserIds.value.contains(userId);
   
   // Listeners
   static final List<Function(dynamic)> _newMessageListeners = [];
@@ -82,6 +87,16 @@ class ChatService {
   
   static void removeMessageErrorListener(Function(dynamic) listener) {
     _messageErrorListeners.remove(listener);
+  }
+
+  static void addUsersOnlineListener(Function(dynamic) listener) {
+    if (!_usersOnlineListeners.contains(listener)) {
+      _usersOnlineListeners.add(listener);
+    }
+  }
+
+  static void removeUsersOnlineListener(Function(dynamic) listener) {
+    _usersOnlineListeners.remove(listener);
   }
   
   static void addMessageReadListener(Function(dynamic) listener) {
@@ -176,6 +191,25 @@ class ChatService {
 
       socket?.on('users-online', (data) {
         print('👥 Users online: $data');
+
+        final updatedIds = <String>{};
+        if (data is List) {
+          for (final entry in data) {
+            if (entry is Map && entry['userId'] != null) {
+              updatedIds.add(entry['userId'].toString());
+            } else if (entry is String) {
+              updatedIds.add(entry);
+            }
+          }
+        } else if (data is Map && data['users'] is List) {
+          for (final entry in (data['users'] as List)) {
+            if (entry is Map && entry['userId'] != null) {
+              updatedIds.add(entry['userId'].toString());
+            }
+          }
+        }
+        _onlineUserIds.value = updatedIds;
+
         for (var listener in _usersOnlineListeners) {
           listener(data);
         }
@@ -250,6 +284,7 @@ class ChatService {
     required String senderName,
     required String text,
     String type = 'text',
+    String? mediaUrl,
   }) async {
     if (senderId == null) {
       print('❌ Cannot send message: senderId is null');
@@ -284,6 +319,7 @@ class ChatService {
       'senderName': senderName,
       'text': text,
       'type': type,
+      'mediaUrl': mediaUrl,
     });
   }
   
@@ -342,6 +378,7 @@ class ChatService {
     _newAlertListeners.clear();
     _alertStatusUpdateListeners.clear();
     _pendingMessages.clear();
+    _onlineUserIds.value = <String>{};
     
     if (socket != null) {
       socket?.disconnect();

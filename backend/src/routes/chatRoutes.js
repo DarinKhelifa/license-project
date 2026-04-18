@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 const Chat = require('../models/Chat');
 const Message = require('../models/Message');
 const User = require('../models/User');
@@ -29,6 +30,40 @@ router.get('/chats/:chatId/messages', protect, async (req, res) => {
     res.json(messages);
   } catch (error) {
     console.error('Get messages error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Upload chat media (image/file). Returns a URL that can be sent over socket in a message.
+router.post('/chats/:chatId/media', protect, upload.single('file'), async (req, res) => {
+  try {
+    const { chatId } = req.params;
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+
+    if (!chat.participants.includes(req.user.id)) {
+      return res.status(403).json({ message: 'Not authorized for this chat' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const mediaUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const type = (req.file.mimetype || '').startsWith('image/') ? 'image' : 'file';
+
+    res.json({
+      mediaUrl,
+      type,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+    });
+  } catch (error) {
+    console.error('Upload chat media error:', error);
     res.status(500).json({ message: error.message });
   }
 });

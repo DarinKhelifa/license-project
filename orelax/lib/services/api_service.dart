@@ -7,11 +7,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 
 class ApiService {
-  // Use your computer's IP for Android emulator, or localhost for Chrome
-  static const String baseUrl = 'http://localhost:5000/api';
-  
-  // For Android emulator, use: 'http://10.0.2.2:5000/api'
-  // For physical device, use: 'http://YOUR_COMPUTER_IP:5000/api'
+  // Server URL
+  // - Web: localhost
+  // - Android emulator: 10.0.2.2
+  // - Physical device: replace with your computer IP
+  static String get serverUrl => kIsWeb ? 'http://localhost:5000' : 'http://10.0.2.2:5000';
+  static String get baseUrl => '$serverUrl/api';
+
+  static MediaType _parseMediaType(String? mimeType) {
+    if (mimeType == null || !mimeType.contains('/')) {
+      return MediaType('application', 'octet-stream');
+    }
+    final parts = mimeType.split('/');
+    return MediaType(parts[0], parts[1]);
+  }
   
   static Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
@@ -274,6 +283,8 @@ class ApiService {
     if (token == null) throw Exception('Not authenticated');
     
     final currentUser = await getCurrentUser();
+    final currentUserId = (currentUser['_id'] ?? currentUser['id'])?.toString();
+    final currentUserName = (currentUser['name'] ?? '').toString();
     
     final response = await http.post(
       Uri.parse('$baseUrl/chat/chats'),
@@ -284,8 +295,8 @@ class ApiService {
       body: jsonEncode({
         'otherUserId': otherUserId,
         'otherUserName': otherUserName,
-        'currentUserId': currentUser['id'],
-        'currentUserName': currentUser['name'],
+        'currentUserId': currentUserId,
+        'currentUserName': currentUserName,
       }),
     );
     
@@ -313,6 +324,65 @@ class ApiService {
       return List<Map<String, dynamic>>.from(jsonDecode(response.body));
     } else {
       throw Exception('Failed to load users');
+    }
+  }
+
+  // Upload chat media (image/file). Returns { mediaUrl, type, originalName, ... }
+  // `file` can be `File` (native) or `Uint8List` (web).
+  static Future<Map<String, dynamic>> uploadChatMedia({
+    required String chatId,
+    required dynamic file,
+    required String filename,
+    String? mimeType,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/chat/chats/$chatId/media'),
+    );
+
+    request.headers['Authorization'] = 'Bearer $token';
+
+    final contentType = _parseMediaType(mimeType);
+
+    if (kIsWeb) {
+      if (file is Uint8List) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'file',
+          file,
+          filename: filename,
+          contentType: contentType,
+        ));
+      } else {
+        throw Exception('Invalid file type for web upload');
+      }
+    } else {
+      if (file is File) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'file',
+          file.path,
+          filename: filename,
+          contentType: contentType,
+        ));
+      } else {
+        throw Exception('Invalid file type for native upload');
+      }
+    }
+
+    final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    try {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Upload failed');
+    } catch (_) {
+      throw Exception('Upload failed: ${response.statusCode}');
     }
   }
 

@@ -41,6 +41,21 @@ class _ChatScreenState extends State<ChatScreen> {
     // Create the listener
     _newMessageListener = (message) {
       _loadChats(); // Refresh chat list when new message arrives
+
+      if (!mounted) return;
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final currentUserId = authProvider.userId;
+      final senderId = message is Map ? message['senderId']?.toString() : null;
+
+      if (currentUserId != null && senderId != null && senderId != currentUserId) {
+        final preview = (message['text'] ?? 'New message').toString();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     };
     
     // Add listener instead of replacing
@@ -62,7 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _startNewChat() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final currentUserId = authProvider.user?['id'];
+    final currentUserId = authProvider.userId;
     
     // Get all users except current user
     final users = await ApiService.getAllUsers();
@@ -122,12 +137,17 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _openChat(Map<String, dynamic> chat) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final currentUserId = authProvider.user?['id'];
+    final currentUserId = authProvider.userId;
     
-    final otherParticipantIndex = chat['participants'][0] == currentUserId ? 1 : 0;
+    if (currentUserId == null) return;
+
+    final participants = List<String>.from(chat['participants'] ?? const <String>[]);
+    final participantNames = List<String>.from(chat['participantNames'] ?? const <String>[]);
+
+    final otherParticipantIndex = participants.isNotEmpty && participants[0] == currentUserId ? 1 : 0;
     final otherUser = {
-      'id': chat['participants'][otherParticipantIndex],
-      'name': chat['participantNames'][otherParticipantIndex],
+      'id': participants[otherParticipantIndex],
+      'name': participantNames[otherParticipantIndex],
     };
     
     Navigator.push(
@@ -165,7 +185,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final currentUserId = authProvider.user?['id'];
+    final currentUserId = authProvider.userId;
     
     return Scaffold(
       appBar: AppBar(
@@ -194,47 +214,61 @@ class _ChatScreenState extends State<ChatScreen> {
                     ],
                   ),
                 )
-              : ListView.builder(
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: _chats.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final chat = _chats[index];
-                    final otherParticipantIndex = chat['participants'][0] == currentUserId ? 1 : 0;
-                    final otherName = chat['participantNames'][otherParticipantIndex];
-                    final unreadCount = chat['unreadCount']?[currentUserId] ?? 0;
-                    final isFromMe = chat['lastMessageSenderId'] == currentUserId;
+                    final participants = List<String>.from(chat['participants'] ?? const <String>[]);
+                    final participantNames = List<String>.from(chat['participantNames'] ?? const <String>[]);
+                    final otherParticipantIndex = (currentUserId != null && participants.isNotEmpty && participants[0] == currentUserId) ? 1 : 0;
+                    final otherName = participantNames.isNotEmpty ? participantNames[otherParticipantIndex] : 'User';
+
+                    final unreadMap = (chat['unreadCount'] is Map)
+                        ? (chat['unreadCount'] as Map).cast<String, dynamic>()
+                        : <String, dynamic>{};
+                    final dynamic unreadValue = currentUserId == null ? 0 : unreadMap[currentUserId] ?? 0;
+                    final unreadCount = (unreadValue is num) ? unreadValue.toInt() : 0;
+                    final isFromMe = currentUserId != null && chat['lastMessageSenderId'] == currentUserId;
                     
                     return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       leading: CircleAvatar(
+                        radius: 22,
                         backgroundColor: const Color(0xFF034808),
-                        child: Text(otherName[0].toUpperCase()),
+                        child: Text(otherName.isNotEmpty ? otherName[0].toUpperCase() : '?'),
                       ),
                       title: Text(
                         otherName,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: unreadCount > 0 ? FontWeight.w700 : FontWeight.w600,
+                        ),
                       ),
                       subtitle: Text(
-                        isFromMe ? 'You: ${chat['lastMessage']}' : chat['lastMessage'],
+                        isFromMe ? 'You: ${chat['lastMessage'] ?? ''}' : (chat['lastMessage'] ?? '').toString(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            _formatTime(chat['lastMessageTime']),
+                            _formatTime(chat['lastMessageTime']?.toString()),
                             style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                           ),
                           if (unreadCount > 0)
                             Container(
-                              margin: const EdgeInsets.only(top: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              margin: const EdgeInsets.only(top: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF034808),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(999),
                               ),
                               child: Text(
                                 '$unreadCount',
-                                style: const TextStyle(color: Colors.white, fontSize: 11),
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                               ),
                             ),
                         ],
