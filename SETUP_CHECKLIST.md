@@ -197,7 +197,7 @@ orelax/lib/
 1. **Basic Features Working** ← You are here
 2. Real-time updates (WebSocket)
 3. Image optimization/compression
-4. CDN for file storage (AWS S3/Firebase)
+4. CDN for file storage (e.g., AWS S3)
 5. Rate limiting
 6. Search & filters
 7. User notifications
@@ -228,7 +228,7 @@ flutter clean && flutter pub get   # Clean build
 Before declaring complete:
 
 - [ ] Backend running without errors
-- [ ] Firebase collections created
+- [ ] Database collections created
 - [ ] Frontend compiles without errors  
 - [ ] Can create posts with images
 - [ ] Can create stories

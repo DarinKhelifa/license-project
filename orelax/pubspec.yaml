@@ -32,16 +32,14 @@ dependencies:
   share_plus: ^12.0.2
   path_provider: ^2.1.0
   url_launcher: ^6.2.0
+
+  # Voice notes
+  record: ^6.0.0
+  audioplayers: ^6.1.0
   
   # State Management
   provider: ^6.1.5+1
-  
-  # Firebase (keep for now, remove when fully migrated)
-  firebase_core: ^4.6.0
-  firebase_auth: ^6.3.0
-  cloud_firestore: ^6.2.0
-  firebase_storage: ^13.2.0
-  google_sign_in: ^6.2.1
+
   fl_chart: ^1.2.0
   syncfusion_flutter_charts: ^33.1.49
 

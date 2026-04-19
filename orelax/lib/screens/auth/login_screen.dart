@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'dart:ui'; // Import dart:ui for ImageFilter
 
 import '../../providers/auth_provider.dart';
@@ -331,10 +329,10 @@ class _GoogleSignInButtonState extends State<_GoogleSignInButton> {
                   color: Colors.white,
                   border: Border.all(color: Colors.grey.shade200),
                 ),
-                child: SvgPicture.network(
-                  'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                  height: 24,
-                  width: 24,
+                child: const Icon(
+                  Icons.g_mobiledata,
+                  size: 24,
+                  color: kGreenMain,
                 ),
               ),
               const SizedBox(height: 4),

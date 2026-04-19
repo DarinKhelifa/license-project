@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
 
     // Debug: Print user data to console
-    print('=== USER DATA FROM FIREBASE ===');
+    print('=== USER DATA ===');
     print('Full user data: $data');
     print('Role field: ${data?['role']}');
     print('================================');

@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/chat_service.dart';
 import '../../services/api_service.dart';
@@ -33,6 +36,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isTyping = false;
   bool _isUploadingMedia = false;
   Timer? _typingTimer;
+
+  // Voice notes
+  final AudioRecorder _recorder = AudioRecorder();
+  bool _isRecordingVoice = false;
   
   // Store listener references
   late final Function(dynamic) _newMessageListener;
@@ -52,6 +59,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     _typingTimer?.cancel();
+    _recorder.dispose();
     
     // Remove listeners
     ChatService.removeNewMessageListener(_newMessageListener);
@@ -60,6 +68,125 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     ChatService.removeMessageReadListener(_messageReadListener);
     
     super.dispose();
+  }
+
+  String? _extractPhoneNumber(Map<String, dynamic> user) {
+    final candidates = [user['phone'], user['phoneNumber'], user['tel']];
+    for (final c in candidates) {
+      final value = c?.toString().trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  Future<void> _callOtherUser() async {
+    final phone = _extractPhoneNumber(widget.otherUser);
+    if (phone == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No phone number available for this user.')),
+      );
+      return;
+    }
+
+    final uri = Uri(scheme: 'tel', path: phone);
+    try {
+      final ok = await canLaunchUrl(uri);
+      if (!ok) throw Exception('Call not supported on this device');
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not start call: $e')),
+      );
+    }
+  }
+
+  Future<void> _toggleVoiceRecording() async {
+    if (_isUploadingMedia) return;
+
+    if (kIsWeb) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Voice messages are not supported on web yet.')),
+      );
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final senderId = authProvider.userId;
+    if (senderId == null) return;
+
+    if (_isRecordingVoice) {
+      await _stopAndSendVoiceNote(senderId: senderId, senderName: authProvider.userName ?? 'User');
+      return;
+    }
+
+    try {
+      final hasPermission = await _recorder.hasPermission();
+      if (!hasPermission) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Microphone permission is required to record voice messages.')),
+        );
+        return;
+      }
+
+      final dir = await getTemporaryDirectory();
+      final filename = 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path = '${dir.path}/$filename';
+
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: path,
+      );
+
+      if (mounted) setState(() => _isRecordingVoice = true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not start recording: $e')),
+      );
+    }
+  }
+
+  Future<void> _stopAndSendVoiceNote({required String senderId, required String senderName}) async {
+    try {
+      final recordedPath = await _recorder.stop();
+      if (mounted) setState(() => _isRecordingVoice = false);
+      if (recordedPath == null || recordedPath.isEmpty) return;
+
+      setState(() => _isUploadingMedia = true);
+      final file = File(recordedPath);
+      final filename = 'voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+      final uploaded = await ApiService.uploadChatMedia(
+        chatId: widget.chatId,
+        file: file,
+        filename: filename,
+        mimeType: 'audio/mp4',
+      );
+
+      ChatService.sendMessage(
+        chatId: widget.chatId,
+        senderId: senderId,
+        senderName: senderName,
+        text: '',
+        type: (uploaded['type'] ?? 'audio').toString(),
+        mediaUrl: uploaded['mediaUrl']?.toString(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Voice message failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isUploadingMedia = false);
+    }
   }
 
   void _setupSocketListeners() {
@@ -374,6 +501,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         ),
         backgroundColor: const Color(0xFF034808),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            onPressed: _callOtherUser,
+            icon: const Icon(Icons.call),
+            tooltip: 'Call',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -437,6 +571,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             onPressed: _isUploadingMedia ? null : _pickAndSendFile,
             icon: const Icon(Icons.attach_file, color: Color(0xFF034808)),
             tooltip: 'Send file',
+          ),
+          IconButton(
+            onPressed: _isUploadingMedia ? null : _toggleVoiceRecording,
+            icon: Icon(
+              _isRecordingVoice ? Icons.stop_circle : Icons.mic,
+              color: _isRecordingVoice ? Colors.red : const Color(0xFF034808),
+            ),
+            tooltip: _isRecordingVoice ? 'Stop recording' : 'Record voice message',
           ),
           Expanded(
             child: TextField(
@@ -529,6 +671,11 @@ class _MessageBubble extends StatelessWidget {
                   },
                 ),
               )
+            else if (type == 'audio' && mediaUrl != null)
+              _AudioMessageBubble(
+                url: mediaUrl,
+                isMe: isMe,
+              )
             else if (type == 'file' && mediaUrl != null)
               InkWell(
                 onTap: () async {
@@ -596,6 +743,114 @@ class _MessageBubble extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AudioMessageBubble extends StatefulWidget {
+  final String url;
+  final bool isMe;
+
+  const _AudioMessageBubble({
+    required this.url,
+    required this.isMe,
+  });
+
+  @override
+  State<_AudioMessageBubble> createState() => _AudioMessageBubbleState();
+}
+
+class _AudioMessageBubbleState extends State<_AudioMessageBubble> {
+  final AudioPlayer _player = AudioPlayer();
+  PlayerState _state = PlayerState.stopped;
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
+
+  StreamSubscription<PlayerState>? _stateSub;
+  StreamSubscription<Duration>? _durationSub;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<void>? _completeSub;
+
+  bool get _isPlaying => _state == PlayerState.playing;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _stateSub = _player.onPlayerStateChanged.listen((s) {
+      if (!mounted) return;
+      setState(() => _state = s);
+    });
+    _durationSub = _player.onDurationChanged.listen((d) {
+      if (!mounted) return;
+      setState(() => _duration = d);
+    });
+    _positionSub = _player.onPositionChanged.listen((p) {
+      if (!mounted) return;
+      setState(() => _position = p);
+    });
+    _completeSub = _player.onPlayerComplete.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _state = PlayerState.stopped;
+        _position = Duration.zero;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _stateSub?.cancel();
+    _durationSub?.cancel();
+    _positionSub?.cancel();
+    _completeSub?.cancel();
+    _player.dispose();
+    super.dispose();
+  }
+
+  String _fmt(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  Future<void> _togglePlay() async {
+    try {
+      if (_isPlaying) {
+        await _player.pause();
+      } else {
+        await _player.play(UrlSource(widget.url));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Audio playback failed: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = widget.isMe ? Colors.white : Colors.black87;
+    final sub = widget.isMe ? Colors.white70 : Colors.grey.shade700;
+    final shownTotal = _duration.inMilliseconds > 0 ? _duration : const Duration(seconds: 0);
+    final shownPos = _position.inMilliseconds > 0 ? _position : const Duration(seconds: 0);
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          onPressed: _togglePlay,
+          icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill, color: fg),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Voice message', style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text('${_fmt(shownPos)} / ${_fmt(shownTotal)}', style: TextStyle(color: sub, fontSize: 11)),
+          ],
+        ),
+      ],
     );
   }
 }

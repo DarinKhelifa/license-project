@@ -53,7 +53,8 @@ router.post('/chats/:chatId/media', protect, upload.single('file'), async (req, 
     }
 
     const mediaUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    const type = (req.file.mimetype || '').startsWith('image/') ? 'image' : 'file';
+    const mime = (req.file.mimetype || '');
+    const type = mime.startsWith('image/') ? 'image' : mime.startsWith('audio/') ? 'audio' : 'file';
 
     res.json({
       mediaUrl,

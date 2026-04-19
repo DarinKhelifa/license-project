@@ -247,7 +247,7 @@ provider: (already in pubspec.yaml)
 Before production:
 - [ ] Enable HTTPS on backend
 - [ ] Set up rate limiting on API endpoints
-- [ ] Move file uploads to CDN (AWS S3, Firebase Storage)
+- [ ] Move file uploads to CDN (e.g., AWS S3)
 - [ ] Enable CORS properly (don't use wildcard)
 - [ ] Add content moderation
 - [ ] Set up error logging (Sentry, DataDog)

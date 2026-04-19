@@ -313,14 +313,9 @@ curl http://localhost:5000/api/health
 git push heroku main
 ```
 
-### Deploy Firebase/Cloud Storage
+### Deploy Cloud Storage
 
-Instead of local `/uploads`:
-```javascript
-// Update upload.js to use Firebase Storage
-const admin = require('firebase-admin');
-const bucket = admin.storage().bucket();
-```
+Instead of local `/uploads`, configure a cloud storage provider and update `upload.js` accordingly.
 
 ### Configure CDN
 

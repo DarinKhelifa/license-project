@@ -224,7 +224,7 @@ export default function LandingPage() {
         </Grid>
 
         <Box sx={{ mt: { xs: 4, md: 6 }, textAlign: 'center', color: 'text.secondary' }}>
-          <Typography variant="body2">Secure gated access. Modern experience. Powered by Firebase.</Typography>
+          <Typography variant="body2">Secure gated access. Modern experience. Powered by Orelax.</Typography>
         </Box>
       </Container>
     </Box>

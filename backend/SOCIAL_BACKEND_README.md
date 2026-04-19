@@ -462,7 +462,7 @@ Error response format:
 - [ ] Add rate limiting middleware
 - [ ] Implement image optimization/compression
 - [ ] Set up CDN for uploaded files
-- [ ] Configure proper file storage (S3, Firebase, etc.)
+- [ ] Configure proper file storage (S3, etc.)
 - [ ] Add logging for all API operations
 - [ ] Implement database backup strategy
 - [ ] Add API monitoring/alerting

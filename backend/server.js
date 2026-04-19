@@ -115,7 +115,7 @@ io.on('connection', (socket) => {
       console.log(`📤 receive send-message for chat=${chatId} sender=${senderId} type=${type} text=${text}`);
 
       const normalizedText = (typeof text === 'string') ? text.trim() : '';
-      const effectiveText = normalizedText || (type === 'image' ? '📷 Photo' : type === 'file' ? '📎 File' : '');
+      const effectiveText = normalizedText || (type === 'image' ? '📷 Photo' : type === 'file' ? '📎 File' : type === 'audio' ? '🎤 Voice message' : '');
       
       const message = new Message({
         chatId,

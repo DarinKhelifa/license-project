@@ -5,7 +5,7 @@ const messageSchema = new mongoose.Schema({
   senderId: { type: String, required: true },
   senderName: { type: String, required: true },
   text: { type: String, required: true },
-  type: { type: String, enum: ['text', 'image', 'file'], default: 'text' },
+  type: { type: String, enum: ['text', 'image', 'file', 'audio'], default: 'text' },
   mediaUrl: { type: String },
   status: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' },
   readBy: [{ type: String }],

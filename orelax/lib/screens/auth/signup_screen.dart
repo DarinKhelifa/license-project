@@ -297,11 +297,10 @@ class _GoogleSignInButtonState extends State<_GoogleSignInButton> {
                   color: Colors.white,
                   border: Border.all(color: Colors.grey.shade200),
                 ),
-                child: SvgPicture.network(
-                  'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                  height: 24,
-                  width: 24,
-                  placeholderBuilder: (BuildContext context) => const Icon(Icons.account_circle, color: Colors.red),
+                child: const Icon(
+                  Icons.g_mobiledata,
+                  size: 24,
+                  color: Color(0xFF034808),
                 ),
               ),
               const SizedBox(height: 4),
