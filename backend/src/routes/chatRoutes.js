@@ -102,7 +102,6 @@ router.get('/users', protect, async (req, res) => {
   try {
     const users = await User.find({
       _id: { $ne: req.user.id },
-      role: 'resident',
       status: 'active',
     }).select('-password');
 

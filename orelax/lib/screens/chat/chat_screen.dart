@@ -14,7 +14,9 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   List<Map<String, dynamic>> _chats = [];
+  List<Map<String, dynamic>> _users = [];
   bool _isLoading = true;
+  bool _isUsersLoading = true;
   
   // Store listener reference for cleanup
   late final Function(dynamic) _newMessageListener;
@@ -34,7 +36,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _initChat() async {
     _setupSocketListeners();
-    await _loadChats();
+    await Future.wait([
+      _loadChats(),
+      _loadUsers(),
+    ]);
   }
 
   void _setupSocketListeners() {
@@ -73,6 +78,72 @@ class _ChatScreenState extends State<ChatScreen> {
       print('Error loading chats: $e');
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final users = await ApiService.getAllUsers();
+      setState(() {
+        _users = users;
+        _isUsersLoading = false;
+      });
+    } catch (e) {
+      print('Error loading users: $e');
+      setState(() => _isUsersLoading = false);
+    }
+  }
+
+  String? _resolveAvatarUrl(String? raw) {
+    if (raw == null) return null;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    if (trimmed.startsWith('/')) return '${ApiService.serverUrl}$trimmed';
+    return trimmed;
+  }
+
+  Widget _chatAvatar({
+    required String? userId,
+    required String displayName,
+    String? avatarUrl,
+  }) {
+    final initials = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
+    final resolvedUrl = _resolveAvatarUrl(avatarUrl);
+    final imageProvider = (resolvedUrl != null)
+        ? NetworkImage(resolvedUrl)
+        : null;
+
+    return Stack(
+      children: [
+        CircleAvatar(
+          radius: 22,
+          backgroundColor: const Color(0xFF034808),
+          backgroundImage: imageProvider,
+          child: imageProvider == null
+              ? Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))
+              : null,
+        ),
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: ValueListenableBuilder(
+            valueListenable: ChatService.onlineUserIdsListenable,
+            builder: (context, onlineIds, _) {
+              final isOnline = userId != null && onlineIds.contains(userId);
+              return Container(
+                width: 11,
+                height: 11,
+                decoration: BoxDecoration(
+                  color: isOnline ? Colors.greenAccent : Colors.grey.shade400,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _startNewChat() async {
@@ -135,6 +206,103 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _openOrCreateChatWithUser(Map<String, dynamic> user) async {
+    try {
+      final otherUserId = (user['id'] ?? user['_id'])?.toString();
+      final otherUserName = (user['name'] ?? 'User').toString();
+      if (otherUserId == null || otherUserId.isEmpty) return;
+
+      final chat = await ApiService.createChat(
+        otherUserId: otherUserId,
+        otherUserName: otherUserName,
+      );
+      await _loadChats();
+      if (!mounted) return;
+      _openChat(chat);
+    } catch (e) {
+      print('Failed to open chat with user: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open chat. Please try again.')),
+        );
+      }
+    }
+  }
+
+  Widget _availableUsersRow() {
+    if (_isUsersLoading) {
+      return const SizedBox(
+        height: 92,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_users.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return SizedBox(
+      height: 98,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        scrollDirection: Axis.horizontal,
+        itemCount: _users.length + 1,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          if (index == _users.length) {
+            return InkWell(
+              onTap: _startNewChat,
+              borderRadius: BorderRadius.circular(999),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircleAvatar(
+                    radius: 26,
+                    backgroundColor: Color(0xFF034808),
+                    child: Icon(Icons.add, color: Colors.white),
+                  ),
+                  const SizedBox(height: 6),
+                  Text('New', style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+                ],
+              ),
+            );
+          }
+
+          final user = _users[index];
+          final userId = (user['id'] ?? user['_id'])?.toString();
+          final name = (user['name'] ?? 'User').toString();
+          final avatarUrl = _resolveAvatarUrl(user['profileImage']?.toString());
+
+          return InkWell(
+            onTap: () => _openOrCreateChatWithUser(user),
+            borderRadius: BorderRadius.circular(999),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _chatAvatar(
+                  userId: userId,
+                  displayName: name,
+                  avatarUrl: avatarUrl,
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: 62,
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _openChat(Map<String, dynamic> chat) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final currentUserId = authProvider.userId;
@@ -192,91 +360,98 @@ class _ChatScreenState extends State<ChatScreen> {
         title: const Text('Messages'),
         backgroundColor: const Color(0xFF034808),
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            onPressed: _startNewChat,
-            icon: const Icon(Icons.edit),
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _chats.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text('No messages yet'),
-                      SizedBox(height: 8),
-                      Text('Start a conversation with your neighbors'),
-                    ],
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: _chats.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final chat = _chats[index];
-                    final participants = List<String>.from(chat['participants'] ?? const <String>[]);
-                    final participantNames = List<String>.from(chat['participantNames'] ?? const <String>[]);
-                    final otherParticipantIndex = (currentUserId != null && participants.isNotEmpty && participants[0] == currentUserId) ? 1 : 0;
-                    final otherName = participantNames.isNotEmpty ? participantNames[otherParticipantIndex] : 'User';
-
-                    final unreadMap = (chat['unreadCount'] is Map)
-                        ? (chat['unreadCount'] as Map).cast<String, dynamic>()
-                        : <String, dynamic>{};
-                    final dynamic unreadValue = currentUserId == null ? 0 : unreadMap[currentUserId] ?? 0;
-                    final unreadCount = (unreadValue is num) ? unreadValue.toInt() : 0;
-                    final isFromMe = currentUserId != null && chat['lastMessageSenderId'] == currentUserId;
-                    
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      leading: CircleAvatar(
-                        radius: 22,
-                        backgroundColor: const Color(0xFF034808),
-                        child: Text(otherName.isNotEmpty ? otherName[0].toUpperCase() : '?'),
-                      ),
-                      title: Text(
-                        otherName,
-                        style: TextStyle(
-                          fontWeight: unreadCount > 0 ? FontWeight.w700 : FontWeight.w600,
-                        ),
-                      ),
-                      subtitle: Text(
-                        isFromMe ? 'You: ${chat['lastMessage'] ?? ''}' : (chat['lastMessage'] ?? '').toString(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            _formatTime(chat['lastMessageTime']?.toString()),
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          : Column(
+              children: [
+                _availableUsersRow(),
+                const Divider(height: 1),
+                Expanded(
+                  child: _chats.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text('No messages yet'),
+                              SizedBox(height: 8),
+                              Text('Tap a user above to start chatting'),
+                            ],
                           ),
-                          if (unreadCount > 0)
-                            Container(
-                              margin: const EdgeInsets.only(top: 6),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF034808),
-                                borderRadius: BorderRadius.circular(999),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: _chats.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final chat = _chats[index];
+                            final participants = List<String>.from(chat['participants'] ?? const <String>[]);
+                            final participantNames = List<String>.from(chat['participantNames'] ?? const <String>[]);
+                            final participantAvatars = List<String>.from(chat['participantAvatars'] ?? const <String>[]);
+                            final otherParticipantIndex = (currentUserId != null && participants.isNotEmpty && participants[0] == currentUserId) ? 1 : 0;
+                            final otherName = participantNames.isNotEmpty ? participantNames[otherParticipantIndex] : 'User';
+                            final otherUserId = participants.isNotEmpty ? participants[otherParticipantIndex] : null;
+                            final otherAvatarUrl = participantAvatars.isNotEmpty && participantAvatars.length > otherParticipantIndex
+                                ? participantAvatars[otherParticipantIndex]
+                                : null;
+
+                            final unreadMap = (chat['unreadCount'] is Map)
+                                ? (chat['unreadCount'] as Map).cast<String, dynamic>()
+                                : <String, dynamic>{};
+                            final dynamic unreadValue = currentUserId == null ? 0 : unreadMap[currentUserId] ?? 0;
+                            final unreadCount = (unreadValue is num) ? unreadValue.toInt() : 0;
+                            final isFromMe = currentUserId != null && chat['lastMessageSenderId'] == currentUserId;
+                            
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              leading: _chatAvatar(
+                                userId: otherUserId,
+                                displayName: otherName,
+                                avatarUrl: otherAvatarUrl,
                               ),
-                              child: Text(
-                                '$unreadCount',
-                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                              title: Text(
+                                otherName,
+                                style: TextStyle(
+                                  fontWeight: unreadCount > 0 ? FontWeight.w700 : FontWeight.w600,
+                                ),
                               ),
-                            ),
-                        ],
-                      ),
-                      onTap: () => _openChat(chat),
-                    );
-                  },
+                              subtitle: Text(
+                                isFromMe ? 'You: ${chat['lastMessage'] ?? ''}' : (chat['lastMessage'] ?? '').toString(),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    _formatTime(chat['lastMessageTime']?.toString()),
+                                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                  ),
+                                  if (unreadCount > 0)
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 6),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF034808),
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        '$unreadCount',
+                                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              onTap: () => _openChat(chat),
+                            );
+                          },
+                        ),
                 ),
+              ],
+            ),
     );
   }
 }
