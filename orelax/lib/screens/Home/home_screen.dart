@@ -106,6 +106,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToPage(int index) {
+    if (index == 4) {
+      Navigator.pushNamed(context, '/portal');
+      return;
+    }
     setState(() => _currentIndex = index);
 
     switch (index) {
@@ -325,67 +329,148 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       // ── Modern Floating Bottom Navigation with Gradient ──
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Container(
-          height: 75,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color(0xFF1A5C2A),
-                const Color(0xFF2A7D3A),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(50),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1A5C2A).withOpacity(0.3),
-                blurRadius: 25,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _AnimatedNavItem(
-                icon: 'assets/icon/house.svg',
-                label: 'Home',
-                isActive: _currentIndex == 0,
-                onTap: () => _navigateToPage(0),
-              ),
-              _isFacilitiesManager()
-                  ? _AnimatedNavItem(
-                      icon: 'assets/icon/calendar.svg',
-                      label: 'Bookings',
-                      isActive: _currentIndex == 1,
-                      onTap: () => _navigateToPage(1),
-                    )
-                  : _AnimatedChatNavItem(
-                      isActive: _currentIndex == 1,
-                      onTap: () => _navigateToPage(1),
-                      showNotificationBadge: _usesNotificationsTab,
+      bottomNavigationBar: _role.toLowerCase() != 'resident'
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Container(
+                height: 75,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF1A5C2A),
+                      Color(0xFF2A7D3A),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(50),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1A5C2A).withOpacity(0.3),
+                      blurRadius: 25,
+                      offset: const Offset(0, 12),
                     ),
-              _AnimatedNavItem(
-                icon: _usesNotificationsTab
-                    ? 'assets/icon/bell.svg'
-                    : 'assets/icon/triangle-alert.svg',
-                label: _usesNotificationsTab ? 'Notifications' : 'Report',
-                isActive: _currentIndex == 2,
-                onTap: () => _navigateToPage(2),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _AnimatedNavItem(
+                      icon: 'assets/icon/house.svg',
+                      label: 'Home',
+                      isActive: _currentIndex == 0,
+                      onTap: () => _navigateToPage(0),
+                    ),
+                    _isFacilitiesManager()
+                        ? _AnimatedNavItem(
+                            icon: 'assets/icon/calendar.svg',
+                            label: 'Bookings',
+                            isActive: _currentIndex == 1,
+                            onTap: () => _navigateToPage(1),
+                          )
+                        : _AnimatedChatNavItem(
+                            isActive: _currentIndex == 1,
+                            onTap: () => _navigateToPage(1),
+                            showNotificationBadge: _usesNotificationsTab,
+                          ),
+                    _AnimatedNavItem(
+                      icon: _usesNotificationsTab
+                          ? 'assets/icon/bell.svg'
+                          : 'assets/icon/triangle-alert.svg',
+                      label: _usesNotificationsTab ? 'Notifications' : 'Report',
+                      isActive: _currentIndex == 2,
+                      onTap: () => _navigateToPage(2),
+                    ),
+                    _AnimatedNavItem(
+                      icon: 'assets/icon/user-round.svg',
+                      label: 'Profile',
+                      isActive: _currentIndex == 3,
+                      onTap: () => _navigateToPage(3),
+                    ),
+                  ],
+                ),
               ),
-              _AnimatedNavItem(
-                icon: 'assets/icon/user-round.svg',
-                label: 'Profile',
-                isActive: _currentIndex == 3,
-                onTap: () => _navigateToPage(3),
-              ),
-            ],
-          ),
-        ),
-      ),
+            )
+          : Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.bottomCenter,
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Container(
+                    height: 75,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF1A5C2A),
+                          Color(0xFF2A7D3A),
+                        ],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF1A5C2A).withOpacity(0.3),
+                          blurRadius: 25,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _AnimatedNavItem(
+                          icon: 'assets/icon/house.svg',
+                          label: 'Home',
+                          isActive: _currentIndex == 0,
+                          onTap: () => _navigateToPage(0),
+                        ),
+                        _AnimatedChatNavItem(
+                          isActive: _currentIndex == 1,
+                          onTap: () => _navigateToPage(1),
+                          showNotificationBadge: _usesNotificationsTab,
+                        ),
+                        const SizedBox(width: 60), // Space for QR button
+                        _AnimatedNavItem(
+                          icon: 'assets/icon/triangle-alert.svg',
+                          label: 'Report',
+                          isActive: _currentIndex == 2,
+                          onTap: () => _navigateToPage(2),
+                        ),
+                        _AnimatedNavItem(
+                          icon: 'assets/icon/user-round.svg',
+                          label: 'Profile',
+                          isActive: _currentIndex == 3,
+                          onTap: () => _navigateToPage(3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 35, // Adjust vertical positioning
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _HoverableQRButton(
+                        onTap: () => _navigateToPage(4),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Portal',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1A5C2A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -1409,6 +1494,58 @@ class _AnimatedChatNavItemState extends State<_AnimatedChatNavItem>
                     ),
                   ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HoverableQRButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _HoverableQRButton({required this.onTap});
+
+  @override
+  State<_HoverableQRButton> createState() => _HoverableQRButtonState();
+}
+
+class _HoverableQRButtonState extends State<_HoverableQRButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: _isHovered ? 78 : 70,
+          height: _isHovered ? 78 : 70,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: _isHovered
+                  ? const Color(0xFF1A5C2A)
+                  : const Color(0xFFE05C8A).withOpacity(0.5),
+              width: _isHovered ? 3 : 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(_isHovered ? 0.3 : 0.2),
+                blurRadius: _isHovered ? 20 : 15,
+                offset: Offset(0, _isHovered ? 10 : 8),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              Icons.qr_code_scanner_rounded,
+              size: _isHovered ? 38 : 32,
+              color: const Color(0xFF1A5C2A),
             ),
           ),
         ),

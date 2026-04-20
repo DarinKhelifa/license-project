@@ -33,6 +33,7 @@ import 'screens/resident/guest_qr/guest_qr_view_screen.dart';
 import 'providers/energy_provider.dart';
 import 'screens/monitoring/energy_monitoring_screen.dart';
 import 'screens/camera/camera_live_stream_screen.dart';
+import 'screens/resident/portal_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,6 +85,7 @@ class OrelaxApp extends StatelessWidget {
           '/notifications': (_) =>
               const _ComingSoonScreen(title: 'Notifications'),
           '/profile': (_) => const ProfileScreen(),
+          '/portal': (_) => const PortalScreen(),
           '/guest_qr': (_) => const GuestQRFormScreen(),
           '/guest_qr_view': (ctx) {
             final args =
