@@ -1,11 +1,30 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-// Generate JWT Token
+// Generate JWT Token (for auth login)
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
+};
+
+// ✅ Generate permanent QR token for resident (called once at approval)
+const generateResidentQR = async (user) => {
+  if (user.qrToken) return; // already has one → skip
+
+  const qrToken = jwt.sign(
+    {
+      userId: user._id.toString(),
+      name: user.name,
+      apartment: user.apartment,
+    },
+    process.env.JWT_SECRET
+    // no expiry → permanent QR
+  );
+
+  user.qrToken = qrToken;
+  user.qrGeneratedAt = new Date();
+  await user.save();
 };
 
 // @desc    Register user
@@ -28,7 +47,7 @@ const register = async (req, res) => {
       password,
       phone,
       apartment,
-      role: role || 'resident', // Allow admin role to be set
+      role: role || 'resident',
       status: role === 'admin' ? 'active' : 'pending' // Auto-approve admins
     });
 
@@ -100,9 +119,9 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Register error:', error);
+    console.error('Login error:', error);
     res.status(500).json({ message: error.message });
-    }
+  }
 };
 
 // @desc    Get current user
@@ -132,16 +151,16 @@ const getMe = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const { name, phone, apartment } = req.body;
-    
+
     const user = await User.findById(req.user.id);
-    
+
     if (name) user.name = name;
     if (phone) user.phone = phone;
     if (apartment) user.apartment = apartment;
     user.updatedAt = Date.now();
-    
+
     await user.save();
-    
+
     res.json({
       id: user._id,
       name: user.name,
@@ -162,19 +181,19 @@ const updateProfile = async (req, res) => {
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     const user = await User.findById(req.user.id).select('+password');
-    
+
     // Verify current password
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(401).json({ message: 'Current password is incorrect' });
     }
-    
+
     // Update password
     user.password = newPassword;
     await user.save();
-    
+
     res.json({ message: 'Password changed successfully' });
   } catch (error) {
     console.error('Change password error:', error);
@@ -206,11 +225,11 @@ const updateUserRole = async (req, res) => {
       { role, updatedAt: Date.now() },
       { new: true }
     ).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     res.json(user);
   } catch (error) {
     console.error('Update user role error:', error);
@@ -224,17 +243,27 @@ const updateUserRole = async (req, res) => {
 const updateUserStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { status, updatedAt: Date.now() },
-      { new: true }
-    ).select('-password');
-    
+
+    // Use findById (not findByIdAndUpdate) so we can call generateResidentQR
+    const user = await User.findById(req.params.id);
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
-    res.json(user);
+
+    user.status = status;
+    user.updatedAt = Date.now();
+
+    // ✅ Auto-generate QR when a resident is approved for the first time
+    if (status === 'active' && user.role === 'resident') {
+      await generateResidentQR(user);
+    }
+
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select('-password');
+    res.json(updatedUser);
+
   } catch (error) {
     console.error('Update user status error:', error);
     res.status(500).json({ message: error.message });

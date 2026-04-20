@@ -1,10 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/qr_api_service.dart';
 
-class PortalScreen extends StatelessWidget {
+class PortalScreen extends StatefulWidget {
   const PortalScreen({super.key});
+
+  @override
+  State<PortalScreen> createState() => _PortalScreenState();
+}
+
+class _PortalScreenState extends State<PortalScreen> {
+  String? _qrToken;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchQR();
+  }
+
+  Future<void> _fetchQR() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+      final data = await QrApiService.getMyQR();
+      setState(() {
+        _qrToken = data['qrToken'];
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString().replaceAll('Exception: ', '');
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,16 +84,18 @@ class PortalScreen extends StatelessWidget {
                       Text(
                         firstName,
                         style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          color: Colors.grey[600],
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black54,
                         ),
                       ),
                       Text(
                         lastName,
                         style: GoogleFonts.poppins(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
                           color: Colors.black,
+                          height: 1.1,
                         ),
                       ),
                     ],
@@ -74,42 +112,76 @@ class PortalScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 40),
-              // QR Card
+              // QR Card — updated design
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF034808), // Dark Green
-                  borderRadius: BorderRadius.circular(24),
+                  color: const Color(0xFF034808),
+                  borderRadius: BorderRadius.circular(40),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 25,
+                      offset: const Offset(0, 15),
                     ),
                   ],
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
+                    const SizedBox(height: 20),
+                    Text(
+                      'Welcome to Orelax',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const SizedBox(
-                        width: 200,
-                        height: 200,
-                        child: Center(
-                          child: Icon(
-                            Icons.qr_code_2_rounded,
-                            size: 150,
-                            color: Colors.black12,
-                          ),
-                        ),
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Smart. safe.confortabale',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.6),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: SizedBox(
+                        width: 200,
+                        height: 200,
+                        child: _isLoading
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF034808),
+                                ),
+                              )
+                            : _error != null
+                                ? const Center(
+                                    child: Icon(
+                                      Icons.qr_code_2_rounded,
+                                      size: 180,
+                                      color: Colors.black,
+                                    ),
+                                  )
+                                : QrImageView(
+                                    data: _qrToken!,
+                                    version: QrVersions.auto,
+                                    size: 200,
+                                    backgroundColor: Colors.white,
+                                  ),
+                      ),
+                    ),
+                    const SizedBox(height: 50),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -130,15 +202,16 @@ class PortalScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Text(
-                      'Scan to enter',
+                      'Scanne to enter',
                       style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 18,
+                        color: Colors.white.withOpacity(0.9),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),

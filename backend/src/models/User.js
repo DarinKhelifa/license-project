@@ -45,6 +45,14 @@ const userSchema = new mongoose.Schema({
   profileImage: {
     type: String,
     default: null
+  },
+  qrToken: {
+    type: String,
+    default: null
+  },
+  qrGeneratedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

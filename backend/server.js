@@ -26,6 +26,7 @@ const employeeRoutes = require('./src/routes/employeeRoutes');
 const socialRoutes = require('./src/routes/socialRoutes');
 const energyRoutes = require('./src/routes/energyRoutes');
 const { initMQTT } = require('./src/controllers/energyController');
+const qrRoutes = require('./src/routes/qrRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -73,7 +74,7 @@ app.use('/api/guests', guestRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/energy', energyRoutes);
-
+app.use('/api/qr', qrRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ORELAX API is running' });
