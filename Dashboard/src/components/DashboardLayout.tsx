@@ -19,6 +19,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import {
   Menu as MenuIcon,
+  Dashboard as DashboardIcon,
   People as PeopleIcon,
   MonitorHeart as MonitoringIcon,
   Notifications as NotificationsIcon,
@@ -39,6 +40,7 @@ import { useThemeMode } from '../context/ThemeModeContext';
 const drawerWidth = 280;
 
 const menuItems = [
+  { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Community', icon: <PeopleIcon />, path: '/community' },
   { text: 'Monitoring', icon: <MonitoringIcon />, path: '/monitoring' },
   { text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' },
@@ -59,7 +61,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isDark = theme.palette.mode === 'dark';
 
   const pageTitle = useMemo(() => {
-    if (location.pathname === '/dashboard') return 'Dashboard';
     const matched = menuItems.find((m) => m.path === location.pathname);
     return matched?.text ?? 'Dashboard';
   }, [location.pathname]);

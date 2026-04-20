@@ -6,10 +6,12 @@ import {
   Chip,
   Container,
   Grid,
+  IconButton,
   Paper,
   Toolbar,
   Typography,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -19,10 +21,11 @@ import {
   Chat as ChatIcon,
   Verified as VerifiedIcon,
   Shield as ShieldIcon,
-  ArrowDownward as ArrowDownwardIcon
+  ArrowDownward as ArrowDownwardIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
 } from '@mui/icons-material';
-
-import SoftAurora from './SoftAurora';
+import { useThemeMode } from '../context/ThemeModeContext';
 
 const MotionAppBar = motion(AppBar);
 
@@ -62,6 +65,10 @@ function RevealSection({ children, delay = 0 }: { children: React.ReactNode; del
 export default function LandingPage() {
   const navigate = useNavigate();
 
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const { mode, toggleMode } = useThemeMode();
+
     const prefersReducedMotion = useReducedMotion();
     const contentRef = useRef<HTMLDivElement | null>(null);
     const [scrolled, setScrolled] = useState(false);
@@ -75,12 +82,18 @@ export default function LandingPage() {
 
     const navAnimate = useMemo(
       () => ({
-        backgroundColor: scrolled ? 'rgba(3,72,8,0.82)' : 'rgba(3,72,8,0)',
+        backgroundColor: scrolled ? alpha(theme.palette.background.paper, isDark ? 0.76 : 0.86) : 'rgba(0,0,0,0)',
         backdropFilter: scrolled ? 'blur(10px)' : 'blur(0px)',
-        boxShadow: scrolled ? '0 10px 30px rgba(0,0,0,0.18)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255, 215, 0, 0.22)' : '1px solid rgba(255, 215, 0, 0)'
+        boxShadow: scrolled
+          ? isDark
+            ? '0 12px 34px rgba(0,0,0,0.55)'
+            : '0 10px 30px rgba(0,0,0,0.18)'
+          : 'none',
+        borderBottom: scrolled
+          ? `1px solid ${alpha(theme.palette.secondary.main, isDark ? 0.16 : 0.22)}`
+          : `1px solid ${alpha(theme.palette.secondary.main, 0)}`,
       }),
-      [scrolled]
+      [scrolled, theme, isDark]
     );
 
     const scrollToContent = () => {
@@ -112,6 +125,18 @@ export default function LandingPage() {
             </Box>
 
             <Box sx={{ display: 'flex', gap: 1.2, alignItems: 'center' }}>
+              <IconButton
+                onClick={toggleMode}
+                sx={{
+                  border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.16 : 0.12)}`,
+                  bgcolor: alpha(theme.palette.background.paper, scrolled ? 0.25 : 0.14),
+                  color: 'text.primary',
+                  '&:hover': { bgcolor: alpha(theme.palette.background.paper, scrolled ? 0.38 : 0.22) },
+                }}
+                aria-label={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+              </IconButton>
               <Button variant="contained" color="secondary" onClick={() => navigate('/login')} sx={{ fontWeight: 950 }}>
                 Login
               </Button>
@@ -130,33 +155,54 @@ export default function LandingPage() {
           }}
         >
           <Box sx={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-            <SoftAurora
-              speed={0.6}
-              scale={1.5}
-              brightness={1}
-              color1="#f7f7f7"
-              color2="#e100ff"
-              noiseFrequency={2.5}
-              noiseAmplitude={1}
-              bandHeight={0.5}
-              bandSpread={1}
-              octaveDecay={0.1}
-              layerOffset={0}
-              colorSpeed={1}
-              enableMouseInteraction
-              mouseInfluence={0.25}
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                bgcolor: 'background.default',
+                backgroundImage: `radial-gradient(900px 420px at 16% 16%, ${alpha(
+                  theme.palette.primary.main,
+                  isDark ? 0.22 : 0.16
+                )}, transparent 60%), radial-gradient(820px 380px at 92% 84%, ${alpha(
+                  theme.palette.secondary.main,
+                  isDark ? 0.14 : 0.18
+                )}, transparent 58%)`,
+              }}
+            />
+
+            {/* single moving center line */}
+            <motion.div
+              aria-hidden="true"
+              initial={false}
+              animate={
+                prefersReducedMotion
+                  ? undefined
+                  : {
+                      backgroundPosition: ['50% 0%', '50% 100%'],
+                    }
+              }
+              transition={prefersReducedMotion ? undefined : { duration: 3.8, repeat: Infinity, ease: 'linear' }}
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 2,
+                height: '72vh',
+                borderRadius: 2,
+                backgroundImage: `linear-gradient(180deg, transparent 0%, ${alpha(
+                  theme.palette.secondary.main,
+                  0.92
+                )} 30%, ${alpha(theme.palette.primary.main, 0.9)} 55%, transparent 100%)`,
+                backgroundSize: '100% 240%',
+                opacity: isDark ? 0.9 : 0.75,
+                boxShadow: `0 0 22px ${alpha(theme.palette.secondary.main, isDark ? 0.22 : 0.28)}, 0 0 28px ${alpha(
+                  theme.palette.primary.main,
+                  isDark ? 0.18 : 0.14
+                )}`,
+              }}
             />
           </Box>
-
-          {/* readability overlay */}
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 1,
-              background: 'linear-gradient(180deg, rgba(3,72,8,0.82) 0%, rgba(3,72,8,0.55) 45%, rgba(3,72,8,0.92) 100%)'
-            }}
-          />
 
           <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2, pt: { xs: 10, md: 12 }, pb: { xs: 6, md: 10 } }}>
             <Grid container spacing={4} alignItems="center">
@@ -183,14 +229,14 @@ export default function LandingPage() {
                       mt: 1.5,
                       fontSize: { xs: '1.05rem', md: '1.3rem' },
                       fontWeight: 900,
-                      color: 'common.white',
+                      color: 'text.primary',
                       opacity: 0.95
                     }}
                   >
                     SMART COMFORT · SAFE LIVING · REAL COMMUNITY
                   </Typography>
 
-                  <Typography sx={{ mt: 2.2, maxWidth: 620, color: 'rgba(255,255,255,0.92)', lineHeight: 1.8, fontWeight: 500 }}>
+                  <Typography sx={{ mt: 2.2, maxWidth: 620, color: 'text.secondary', lineHeight: 1.8, fontWeight: 600 }}>
                     A modern gated-community platform for incident reporting, verified staff workflows, and resident communication—fast,
                     organized, and built for everyday life.
                   </Typography>
@@ -204,16 +250,28 @@ export default function LandingPage() {
                       size="large"
                       onClick={scrollToContent}
                       endIcon={<ArrowDownwardIcon />}
-                      sx={{ color: 'common.white', fontWeight: 900, px: 2.5, py: 1.3, opacity: 0.95 }}
+                      sx={{ color: 'text.primary', fontWeight: 900, px: 2.5, py: 1.3, opacity: 0.95 }}
                     >
                       Learn more
                     </Button>
                   </Box>
 
                   <Box sx={{ mt: 3, display: 'flex', gap: 1.2, flexWrap: 'wrap' }}>
-                    <Chip icon={<ShieldIcon />} label="Secure access" sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'common.white' }} />
-                    <Chip icon={<VerifiedIcon />} label="Verified staff" sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'common.white' }} />
-                    <Chip icon={<ChatIcon />} label="Resident chat" sx={{ bgcolor: 'rgba(255,255,255,0.12)', color: 'common.white' }} />
+                    <Chip
+                      icon={<ShieldIcon />}
+                      label="Secure access"
+                      sx={{ bgcolor: alpha(theme.palette.background.paper, 0.55), color: 'text.primary' }}
+                    />
+                    <Chip
+                      icon={<VerifiedIcon />}
+                      label="Verified staff"
+                      sx={{ bgcolor: alpha(theme.palette.background.paper, 0.55), color: 'text.primary' }}
+                    />
+                    <Chip
+                      icon={<ChatIcon />}
+                      label="Resident chat"
+                      sx={{ bgcolor: alpha(theme.palette.background.paper, 0.55), color: 'text.primary' }}
+                    />
                   </Box>
                 </motion.div>
               </Grid>
@@ -229,10 +287,10 @@ export default function LandingPage() {
                     sx={{
                       p: 3.2,
                       borderRadius: 4,
-                      bgcolor: 'rgba(255,255,255,0.10)',
-                      border: '1px solid rgba(255,215,0,0.24)',
+                      bgcolor: alpha(theme.palette.background.paper, isDark ? 0.66 : 0.72),
+                      border: `1px solid ${alpha(theme.palette.secondary.main, isDark ? 0.16 : 0.22)}`,
                       backdropFilter: 'blur(12px)',
-                      color: 'common.white'
+                      color: 'text.primary'
                     }}
                   >
                     <Typography sx={{ fontWeight: 950, letterSpacing: 0.8, color: 'secondary.main' }}>ALL-IN-ONE</Typography>
@@ -247,8 +305,8 @@ export default function LandingPage() {
                             <Box
                               sx={{
                                 borderRadius: 3,
-                                border: '1px solid rgba(255,255,255,0.16)',
-                                bgcolor: 'rgba(0,0,0,0.12)',
+                                border: `1px solid ${alpha(theme.palette.text.primary, isDark ? 0.14 : 0.12)}`,
+                                bgcolor: alpha(theme.palette.background.paper, isDark ? 0.55 : 0.6),
                                 p: 1.8,
                                 textAlign: 'center'
                               }}
@@ -309,7 +367,7 @@ export default function LandingPage() {
                       sx={{
                         p: 3.2,
                         borderRadius: 4,
-                        border: '1px solid rgba(3,72,8,0.10)',
+                        border: `1px solid ${alpha(theme.palette.primary.main, isDark ? 0.20 : 0.12)}`,
                         bgcolor: 'background.paper'
                       }}
                     >
@@ -319,7 +377,7 @@ export default function LandingPage() {
                             width: 44,
                             height: 44,
                             borderRadius: 3,
-                            bgcolor: 'rgba(255,215,0,0.18)',
+                            bgcolor: alpha(theme.palette.secondary.main, 0.18),
                             display: 'grid',
                             placeItems: 'center'
                           }}

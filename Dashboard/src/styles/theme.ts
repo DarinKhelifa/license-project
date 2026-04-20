@@ -69,9 +69,9 @@ export function createOrelaxTheme(mode: PaletteMode) {
           fontWeight: 800,
         },
         containedPrimary: {
-          backgroundColor: '#034808',
+          backgroundColor: isDark ? '#22c55e' : '#034808',
           '&:hover': {
-            backgroundColor: '#023206',
+            backgroundColor: isDark ? '#15803d' : '#023206',
           },
         },
         containedSecondary: {

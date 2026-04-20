@@ -241,7 +241,7 @@ export default function Overview() {
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', md: 'center' }} sx={{ mb: 3 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="h4" sx={{ mb: 0.4 }}>
-            Dashboard
+            Overview
           </Typography>
           <Typography sx={{ color: 'text.secondary', fontWeight: 650 }}>
             Live status from your Orelax backend (reports, events, employees, energy).
