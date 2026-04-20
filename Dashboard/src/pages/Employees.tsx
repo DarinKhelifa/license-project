@@ -23,6 +23,7 @@ import Alert from '@mui/material/Alert';
 import Menu from '@mui/material/Menu';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
+import { alpha, useTheme } from '@mui/material/styles';
 import {
   Add as AddIcon,
   MoreVert as MoreVertIcon,
@@ -58,13 +59,6 @@ interface Employee {
 
 const WORK_CATEGORIES = ['Cleaning', 'Plumber', 'Electrician', 'Repair'];
 
-const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
-  Cleaning: { bg: '#E8F5E9', color: '#2E7D32' },
-  Plumber: { bg: '#E3F2FD', color: '#1565C0' },
-  Electrician: { bg: '#FFF3E0', color: '#E65100' },
-  Repair: { bg: '#F3E5F5', color: '#6A1B9A' },
-};
-
 // ── Empty form state ──────────────────────────────────────────────────────────
 const emptyForm = {
   firstName: '',
@@ -85,11 +79,24 @@ function EmployeeCard({
   employee: Employee;
   onDelete: (id: string) => void;
 }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const fullName = `${employee.firstName} ${employee.lastName}`;
   const initials = `${employee.firstName[0] ?? ''}${employee.lastName[0] ?? ''}`.toUpperCase();
   const photoUrl = employee.photo ? `${API_BASE}/uploads/${employee.photo}` : '';
-  const catColor = CATEGORY_COLORS[employee.workCategory] ?? { bg: '#F5F5F5', color: '#555' };
+  const categoryTone =
+    employee.workCategory === 'Cleaning'
+      ? theme.palette.success.main
+      : employee.workCategory === 'Plumber'
+        ? theme.palette.info.main
+        : employee.workCategory === 'Electrician'
+          ? theme.palette.warning.main
+          : theme.palette.secondary.main;
+
+  const categoryBg = alpha(categoryTone, isDark ? 0.18 : 0.12);
+  const categoryBorder = alpha(categoryTone, isDark ? 0.28 : 0.22);
   const hiredFormatted = employee.hiredDate
     ? new Date(employee.hiredDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
@@ -154,10 +161,11 @@ function EmployeeCard({
                 sx={{
                   width: 72,
                   height: 72,
-                  bgcolor: '#034808',
+                  bgcolor: 'primary.main',
                   fontSize: 24,
                   fontWeight: 700,
-                  border: '3px solid #f5f5f5',
+                  border: '3px solid',
+                  borderColor: 'background.default',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                 }}
               >
@@ -173,13 +181,14 @@ function EmployeeCard({
                   height: 14,
                   borderRadius: '50%',
                   bgcolor: employee.status === 'online' ? '#4CAF50' : '#9E9E9E',
-                  border: '2px solid white',
+                  border: '2px solid',
+                  borderColor: 'background.paper',
                 }}
               />
             </Box>
 
             {/* Name */}
-            <Typography variant="body1" fontWeight={700} textAlign="center" sx={{ color: '#1a1a1a', lineHeight: 1.2 }}>
+            <Typography variant="body1" fontWeight={700} textAlign="center" sx={{ color: 'text.primary', lineHeight: 1.2 }}>
               {fullName}
             </Typography>
 
@@ -189,8 +198,9 @@ function EmployeeCard({
               size="small"
               sx={{
                 mt: 0.75,
-                bgcolor: catColor.bg,
-                color: catColor.color,
+                bgcolor: categoryBg,
+                color: categoryTone,
+                border: `1px solid ${categoryBorder}`,
                 fontWeight: 600,
                 fontSize: 11,
                 height: 22,
@@ -206,7 +216,7 @@ function EmployeeCard({
               label={employee.workCategory}
               size="small"
               variant="outlined"
-              sx={{ borderColor: '#034808', color: '#034808', fontSize: 10, height: 20 }}
+              sx={{ borderColor: 'primary.main', color: 'primary.main', fontSize: 10, height: 20 }}
             />
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
               Hired {hiredFormatted}
@@ -215,12 +225,12 @@ function EmployeeCard({
 
           {/* Email */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
-            <EmailIcon sx={{ fontSize: 14, color: '#757575', flexShrink: 0 }} />
+            <EmailIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
             <Tooltip title={employee.email}>
               <Typography
                 variant="caption"
                 noWrap
-                sx={{ fontSize: 12, color: '#555', maxWidth: '90%' }}
+                sx={{ fontSize: 12, color: 'text.secondary', maxWidth: '90%' }}
               >
                 {employee.email}
               </Typography>
@@ -229,8 +239,8 @@ function EmployeeCard({
 
           {/* Phone */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <PhoneIcon sx={{ fontSize: 14, color: '#757575', flexShrink: 0 }} />
-            <Typography variant="caption" sx={{ fontSize: 12, color: '#555' }}>
+            <PhoneIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
+            <Typography variant="caption" sx={{ fontSize: 12, color: 'text.secondary' }}>
               {employee.phone}
             </Typography>
           </Box>
@@ -242,6 +252,9 @@ function EmployeeCard({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Employees() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
@@ -398,11 +411,11 @@ export default function Employees() {
         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
           <Typography
             variant="h4"
-            sx={{ color: '#034808', fontWeight: 700 }}
+            sx={{ color: 'primary.main', fontWeight: 900 }}
           >
             {employees.length}
           </Typography>
-          <Typography variant="h4" sx={{ color: '#034808' }}>
+          <Typography variant="h4" sx={{ color: 'text.primary' }}>
             Employees
           </Typography>
         </Box>
@@ -411,9 +424,12 @@ export default function Employees() {
             variant="outlined"
             startIcon={<FilterIcon />}
             sx={{
-              borderColor: '#034808',
-              color: '#034808',
-              '&:hover': { borderColor: '#023206', bgcolor: 'rgba(3,72,8,0.04)' },
+              borderColor: alpha(theme.palette.primary.main, isDark ? 0.55 : 0.45),
+              color: 'text.primary',
+              '&:hover': {
+                borderColor: alpha(theme.palette.primary.main, isDark ? 0.75 : 0.55),
+                bgcolor: alpha(theme.palette.primary.main, isDark ? 0.10 : 0.06),
+              },
             }}
           >
             Filter
@@ -423,10 +439,10 @@ export default function Employees() {
             startIcon={<AddIcon />}
             onClick={handleOpenModal}
             sx={{
-              bgcolor: '#FFD700',
-              color: '#034808',
+              bgcolor: 'secondary.main',
+              color: 'primary.dark',
               fontWeight: 700,
-              '&:hover': { bgcolor: '#CCAC00' },
+              '&:hover': { bgcolor: 'secondary.dark' },
               boxShadow: '0 2px 8px rgba(255,215,0,0.4)',
             }}
           >
@@ -438,7 +454,7 @@ export default function Employees() {
       {/* ── Content ── */}
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-          <CircularProgress sx={{ color: '#034808' }} />
+          <CircularProgress sx={{ color: 'primary.main' }} />
         </Box>
       ) : employees.length === 0 ? (
         /* ── Empty State ── */
@@ -457,13 +473,13 @@ export default function Employees() {
               width: 100,
               height: 100,
               borderRadius: '50%',
-              bgcolor: 'rgba(3,72,8,0.06)',
+              bgcolor: alpha(theme.palette.primary.main, isDark ? 0.12 : 0.06),
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <BadgeIcon sx={{ fontSize: 48, color: '#034808', opacity: 0.4 }} />
+            <BadgeIcon sx={{ fontSize: 48, color: 'primary.main', opacity: 0.55 }} />
           </Box>
           <Typography variant="h6" color="text.secondary">
             No employees yet
@@ -474,15 +490,15 @@ export default function Employees() {
               startIcon={<AddIcon />}
               onClick={handleOpenModal}
               sx={{
-                bgcolor: '#FFD700',
-                color: '#034808',
+                bgcolor: 'secondary.main',
+                color: 'primary.dark',
                 fontWeight: 700,
                 px: 4,
                 py: 1.5,
                 fontSize: 16,
                 borderRadius: 3,
                 boxShadow: '0 4px 20px rgba(255,215,0,0.5)',
-                '&:hover': { bgcolor: '#CCAC00' },
+                '&:hover': { bgcolor: 'secondary.dark' },
               }}
             >
               + Add Employee
@@ -518,8 +534,8 @@ export default function Employees() {
       >
         <DialogTitle
           sx={{
-            bgcolor: '#034808',
-            color: 'white',
+            bgcolor: 'primary.main',
+            color: 'primary.contrastText',
             fontWeight: 700,
             display: 'flex',
             alignItems: 'center',
@@ -534,7 +550,7 @@ export default function Employees() {
           {/* ── Personal Information ── */}
           <Typography
             variant="overline"
-            sx={{ color: '#034808', fontWeight: 700, letterSpacing: 1.2, display: 'block', mb: 1.5 }}
+            sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 1.2, display: 'block', mb: 1.5 }}
           >
             Personal Information
           </Typography>
@@ -552,7 +568,7 @@ export default function Employees() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar
                   src={photoPreview}
-                  sx={{ width: 56, height: 56, bgcolor: '#034808', fontSize: 20 }}
+                  sx={{ width: 56, height: 56, bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: 20 }}
                 >
                   {!photoPreview && (formData.firstName[0] ?? '') + (formData.lastName[0] ?? '')}
                 </Avatar>
@@ -569,7 +585,7 @@ export default function Employees() {
                     startIcon={<CloudUploadIcon />}
                     onClick={() => photoInputRef.current?.click()}
                     size="small"
-                    sx={{ borderColor: '#034808', color: '#034808', mb: 0.5 }}
+                    sx={{ borderColor: 'primary.main', color: 'primary.main', mb: 0.5, '&:hover': { borderColor: 'primary.dark' } }}
                   >
                     Upload Photo
                   </Button>
@@ -601,7 +617,7 @@ export default function Employees() {
           {/* ── Professional Information ── */}
           <Typography
             variant="overline"
-            sx={{ color: '#034808', fontWeight: 700, letterSpacing: 1.2, display: 'block', mb: 1.5 }}
+            sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: 1.2, display: 'block', mb: 1.5 }}
           >
             Professional Information
           </Typography>
@@ -642,7 +658,7 @@ export default function Employees() {
 
             {/* Criminal Record PDF */}
             <Grid item xs={12}>
-              <Typography variant="body2" sx={{ mb: 1, color: '#555', fontWeight: 500 }}>
+              <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary', fontWeight: 600 }}>
                 Criminal Record / Casier judiciaire — Bulletin n°3{' '}
                 <Typography component="span" variant="caption" color="text.secondary">
                   (PDF only, optional)
@@ -657,13 +673,13 @@ export default function Employees() {
               />
               <Button
                 variant="outlined"
-                startIcon={pdfFile ? <PdfIcon sx={{ color: '#f44336' }} /> : <CloudUploadIcon />}
+                startIcon={pdfFile ? <PdfIcon sx={{ color: 'error.main' }} /> : <CloudUploadIcon />}
                 onClick={() => pdfInputRef.current?.click()}
                 sx={{
-                  borderColor: pdfFile ? '#f44336' : '#034808',
-                  color: pdfFile ? '#f44336' : '#034808',
+                  borderColor: pdfFile ? 'error.main' : 'primary.main',
+                  color: pdfFile ? 'error.main' : 'primary.main',
                   '&:hover': {
-                    borderColor: pdfFile ? '#c62828' : '#023206',
+                    borderColor: pdfFile ? 'error.dark' : 'primary.dark',
                     bgcolor: 'transparent',
                   },
                 }}
@@ -684,11 +700,14 @@ export default function Employees() {
             disabled={submitting}
             startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <AddIcon />}
             sx={{
-              bgcolor: '#FFD700',
-              color: '#034808',
+              bgcolor: 'secondary.main',
+              color: 'secondary.contrastText',
               fontWeight: 700,
-              '&:hover': { bgcolor: '#CCAC00' },
-              '&:disabled': { bgcolor: '#e0c800', color: '#034808' },
+              '&:hover': { bgcolor: 'secondary.dark' },
+              '&.Mui-disabled': {
+                bgcolor: alpha(theme.palette.secondary.main, isDark ? 0.22 : 0.35),
+                color: theme.palette.text.disabled,
+              },
             }}
           >
             {submitting ? 'Adding...' : 'Add Employee'}

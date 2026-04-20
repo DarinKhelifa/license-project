@@ -1,5 +1,5 @@
 // src/services/api.ts
-const API_URL = 'http://localhost:5000/api';
+export const API_URL = 'http://localhost:5000/api';
 
 // Store token in localStorage
 const getToken = () => localStorage.getItem('auth_token');
@@ -7,7 +7,7 @@ const setToken = (token: string) => localStorage.setItem('auth_token', token);
 const removeToken = () => localStorage.removeItem('auth_token');
 
 // API helper function
-async function request<T>(
+export async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {

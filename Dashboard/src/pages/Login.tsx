@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Link, Alert, Paper, Grid, CircularProgress, Container } from '@mui/material';
+import { Box, TextField, Button, Typography, Alert, Paper, Grid, CircularProgress, Container } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Login as LoginIcon, Security as SecurityIcon, Verified as VerifiedIcon } from '@mui/icons-material';
@@ -84,11 +84,6 @@ export default function Login() {
                   </Button>
                 </Box>
 
-                <Box sx={{ mt: 2, textAlign: 'center' }}>
-                  <Link component="button" variant="body2" onClick={() => navigate('/register')} sx={{ color: GREEN, fontWeight: 800 }}>
-                    Don't have an account? Sign Up
-                  </Link>
-                </Box>
               </Paper>
             </motion.div>
           </Grid>

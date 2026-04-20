@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Grid from '@mui/material/Grid';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -38,6 +36,7 @@ import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 
 // Types
@@ -76,6 +75,9 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function ManageAccounts() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   const {
     user,
     getAllUsers,
@@ -110,7 +112,7 @@ export default function ManageAccounts() {
   const isAdmin = user?.role === 'admin';
 
   // Load users from API
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
       const allUsers = await getAllUsers();
@@ -135,13 +137,13 @@ export default function ManageAccounts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAllUsers]);
 
   useEffect(() => {
     if (isAdmin) {
       loadUsers();
     }
-  }, [isAdmin]);
+  }, [isAdmin, loadUsers]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -272,10 +274,17 @@ export default function ManageAccounts() {
 
   const getRoleChipColor = (role: string) => {
     switch(role) {
-      case 'admin': return { bg: '#034808', color: 'white' };
-      case 'security': return { bg: '#FFD700', color: '#034808' };
-      case 'maintenance': return { bg: '#FF6B6B', color: 'white' };
-      default: return { bg: '#E0E0E0', color: '#333' };
+      case 'admin':
+        return { bg: theme.palette.primary.main, color: theme.palette.primary.contrastText };
+      case 'security':
+        return { bg: theme.palette.secondary.main, color: theme.palette.primary.dark };
+      case 'maintenance':
+        return { bg: theme.palette.error.main, color: theme.palette.error.contrastText };
+      default:
+        return {
+          bg: alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08),
+          color: theme.palette.text.primary,
+        };
     }
   };
 
@@ -324,7 +333,7 @@ export default function ManageAccounts() {
     <Box>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ color: '#034808' }}>
+        <Typography variant="h4" sx={{ color: 'text.primary' }}>
           Manage Accounts
         </Typography>
         <Button
@@ -332,8 +341,9 @@ export default function ManageAccounts() {
           startIcon={<AddIcon />}
           onClick={handleOpenAddDialog}
           sx={{
-            bgcolor: '#034808',
-            '&:hover': { bgcolor: '#023206' }
+            bgcolor: 'primary.main',
+            color: 'primary.contrastText',
+            '&:hover': { bgcolor: 'primary.dark' }
           }}
         >
           Add New Account
@@ -351,7 +361,7 @@ export default function ManageAccounts() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
-                startAdornment: <SearchIcon sx={{ mr: 1, color: 'gray' }} />,
+                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
               }}
             />
           </Grid>
@@ -360,17 +370,17 @@ export default function ManageAccounts() {
               <Chip
                 icon={<PersonIcon />}
                 label={`Total: ${users.length}`}
-                sx={{ bgcolor: '#034808', color: 'white' }}
+                sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }}
               />
               <Chip
                 icon={<PersonIcon />}
                 label={`Residents: ${users.filter(u => u.role === 'resident').length}`}
-                sx={{ bgcolor: '#FFD700', color: '#034808' }}
+                sx={{ bgcolor: 'secondary.main', color: 'primary.dark' }}
               />
               <Chip
                 icon={<SecurityIcon />}
                 label={`Staff: ${users.filter(u => u.role !== 'resident').length}`}
-                sx={{ bgcolor: '#E0E0E0' }}
+                sx={{ bgcolor: alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08) }}
               />
               <IconButton onClick={loadUsers} size="small">
                 <RefreshIcon />
@@ -388,8 +398,8 @@ export default function ManageAccounts() {
           sx={{
             borderBottom: 1,
             borderColor: 'divider',
-            '& .MuiTab-root.Mui-selected': { color: '#034808' },
-            '& .MuiTabs-indicator': { bgcolor: '#034808' },
+            '& .MuiTab-root.Mui-selected': { color: theme.palette.primary.main },
+            '& .MuiTabs-indicator': { bgcolor: theme.palette.primary.main },
           }}
         >
           <Tab label="All Accounts" />

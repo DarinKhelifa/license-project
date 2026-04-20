@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -24,17 +24,13 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import {
   Edit as EditIcon,
-  CheckCircle as ResolveIcon,
-  Cancel as RejectIcon,
   LocationOn as LocationIcon,
-  Category as CategoryIcon,
-  Notes as NotesIcon,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_BASE = 'http://localhost:5000';
 
-interface Report {
+interface ReportItem {
   _id: string;
   id: string;
   category: string;
@@ -82,21 +78,16 @@ const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
 };
 
 export default function Report() {
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
   const [statusDialog, setStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState<'in-progress' | 'resolved' | 'rejected'>('in-progress');
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
-  // ── Fetch reports ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('auth_token');
@@ -114,7 +105,12 @@ export default function Report() {
       setSnackbar({ open: true, message: 'Failed to fetch reports', severity: 'error' });
       setLoading(false);
     }
-  };
+  }, []);
+
+  // ── Fetch reports ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
 
   // ── Update report status ──────────────────────────────────────────────────
   const handleUpdateStatus = async () => {
@@ -153,7 +149,7 @@ export default function Report() {
   const allReports = reports;
 
   // ── Render report card ────────────────────────────────────────────────────
-  const renderReportCard = (report: Report) => {
+  const renderReportCard = (report: ReportItem) => {
     const statusColor = STATUS_COLORS[report.status];
     const imageUrl = report.photoBase64 ? `data:image/jpeg;base64,${report.photoBase64}` : null;
     const reportDate = new Date(report.createdAt).toLocaleDateString('en-GB', {
@@ -197,7 +193,7 @@ export default function Report() {
           <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
               <Box>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: '#034808' }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary' }}>
                   {report.category} - {report.subCategory}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -216,12 +212,21 @@ export default function Report() {
               />
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, color: '#666', fontSize: '0.875rem' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                mb: 2,
+                color: 'text.secondary',
+                fontSize: '0.875rem',
+              }}
+            >
               <LocationIcon sx={{ fontSize: 18 }} />
               <span>{report.location}</span>
             </Box>
 
-            <Typography variant="body2" sx={{ mb: 2, flex: 1, color: '#333' }}>
+            <Typography variant="body2" sx={{ mb: 2, flex: 1, color: 'text.primary' }}>
               {report.description}
             </Typography>
 
@@ -230,11 +235,11 @@ export default function Report() {
             </Typography>
 
             {report.status !== 'pending' && report.resolutionNotes && (
-              <Paper sx={{ p: 1.5, bgcolor: '#F5F5F5', borderRadius: 1, mb: 2 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, color: '#034808' }}>
+              <Paper sx={{ p: 1.5, bgcolor: 'background.default', borderRadius: 1, mb: 2 }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.primary' }}>
                   Resolution Notes:
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#666', display: 'block' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
                   {report.resolutionNotes}
                 </Typography>
               </Paper>
@@ -256,7 +261,12 @@ export default function Report() {
                   setNewStatus(report.status === 'pending' ? 'in-progress' : 'resolved');
                   setStatusDialog(true);
                 }}
-                sx={{ mt: 'auto', bgcolor: '#034808', '&:hover': { bgcolor: '#022205' } }}
+                sx={{
+                  mt: 'auto',
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  '&:hover': { bgcolor: 'primary.dark' },
+                }}
               >
                 Update Status
               </Button>
@@ -269,7 +279,7 @@ export default function Report() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ color: '#034808', mb: 4, fontWeight: 700 }}>
+      <Typography variant="h4" sx={{ color: 'text.primary', mb: 4, fontWeight: 900 }}>
         Manage Reports
       </Typography>
 
@@ -286,8 +296,8 @@ export default function Report() {
               indicatorColor="primary"
               textColor="inherit"
               sx={{
-                bgcolor: '#F5F5F5',
-                '& .MuiTabs-indicator': { bgcolor: '#034808', height: 3 },
+                bgcolor: 'background.default',
+                '& .MuiTabs-indicator': { bgcolor: 'primary.main', height: 3 },
               }}
             >
               <Tab label={`Pending (${pendingReports.length})`} />
@@ -439,7 +449,7 @@ export default function Report() {
 
       {/* Status Update Dialog */}
       <Dialog open={statusDialog} onClose={() => setStatusDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ color: '#034808', fontWeight: 600 }}>
+        <DialogTitle sx={{ color: 'text.primary', fontWeight: 900 }}>
           Update Report Status
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
@@ -468,7 +478,7 @@ export default function Report() {
           <Button
             onClick={handleUpdateStatus}
             variant="contained"
-            sx={{ bgcolor: '#034808', '&:hover': { bgcolor: '#022205' } }}
+            sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
             disabled={!resolutionNotes.trim()}
           >
             Update Status

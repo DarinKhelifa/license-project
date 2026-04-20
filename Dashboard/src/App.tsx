@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { orelaxTheme } from './styles/theme';
+import type { PaletteMode } from '@mui/material';
+import { createOrelaxTheme } from './styles/theme';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeModeProvider } from './context/ThemeModeContext';
 import AuthGuard from './components/AuthGuard';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
@@ -19,86 +21,103 @@ import Community from './pages/Community';
 import Facilities from './pages/Facilities';
 import Monitoring from './pages/Monitoring';*/
 
+const THEME_MODE_STORAGE_KEY = 'orelax-dashboard-theme-mode';
+
+function getInitialMode(): PaletteMode {
+  const raw = window.localStorage.getItem(THEME_MODE_STORAGE_KEY);
+  if (raw === 'light' || raw === 'dark') return raw;
+  return 'dark';
+}
+
 function App() {
+  const [mode, setMode] = useState<PaletteMode>(() => getInitialMode());
+
+  const theme = useMemo(() => createOrelaxTheme(mode), [mode]);
+  const themeModeValue = useMemo(
+    () => ({
+      mode,
+      setMode: (m: PaletteMode) => {
+        window.localStorage.setItem(THEME_MODE_STORAGE_KEY, m);
+        setMode(m);
+      },
+      toggleMode: () => {
+        const next: PaletteMode = mode === 'dark' ? 'light' : 'dark';
+        window.localStorage.setItem(THEME_MODE_STORAGE_KEY, next);
+        setMode(next);
+      },
+    }),
+    [mode]
+  );
+
   return (
-    <ThemeProvider theme={orelaxTheme}>
-      <CssBaseline />
-      <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Public Routes - NO DASHBOARD LAYOUT */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            {/* Protected Routes - WITH DASHBOARD LAYOUT AND AUTH GUARD */}
-            <Route path="/dashboard" element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Overview />
-                </DashboardLayout>
-              </AuthGuard>
-            } />
-            <Route path="/accounts" element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <ManageAccounts />
-                </DashboardLayout>
-              </AuthGuard>
-            } />
-            <Route path="/employees" element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Employees />
-                </DashboardLayout>
-              </AuthGuard>
-            } />
-            <Route path="/report" element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Report />
-                </DashboardLayout>
-              </AuthGuard>
-            } />
-            <Route path="/events" element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Events />
-                </DashboardLayout>
-              </AuthGuard>
-            } />
-            {/*<Route path="/security" element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Security />
-                </DashboardLayout>
-              </AuthGuard>
-            } />
-            <Route path="/community" element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Community />
-                </DashboardLayout>
-              </AuthGuard>
-            } />
-            <Route path="/facilities" element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Facilities />
-                </DashboardLayout>
-              </AuthGuard>
-            } />
-            <Route path="/monitoring" element={
-              <AuthGuard>
-                <DashboardLayout>
-                  <Monitoring />
-                </DashboardLayout>
-              </AuthGuard>
-            } />*/}
-          </Routes>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+    <ThemeModeProvider value={themeModeValue}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <Router>
+            <Routes>
+              {/* Public Routes - NO DASHBOARD LAYOUT */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+
+              {/* Protected Routes - WITH DASHBOARD LAYOUT AND AUTH GUARD */}
+              <Route
+                path="/dashboard"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <Overview />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/accounts"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <ManageAccounts />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/employees"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <Employees />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/report"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <Report />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/events"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <Events />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              {/* Security / Facilities removed from UI */}
+            </Routes>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
+    </ThemeModeProvider>
   );
 }
 
