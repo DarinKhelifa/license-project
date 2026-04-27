@@ -146,160 +146,137 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ── Animated Top Bar with Gradient ──
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF1A5C2A).withOpacity(0.98),
-                    const Color(0xFF2A7D3A),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    TweenAnimationBuilder(
-                      tween: Tween<double>(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 800),
-                      curve: Curves.easeOut,
-                      builder: (context, value, child) {
-                        return Transform.translate(
-                          offset: Offset(-20 * (1 - value), 0),
-                          child: Opacity(
-                            opacity: value,
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(Icons.shield,
-                                  color: Colors.white, size: 22),
-                            ),
-                          ),
-                        );
-                      },
+            // ── Top Image with Search Bar Overlay ──
+            Stack(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  height: 240,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        TweenAnimationBuilder(
-                          tween: Tween<double>(begin: 0.8, end: 1.0),
-                          duration: const Duration(milliseconds: 1500),
-                          curve: Curves.elasticOut,
-                          builder: (context, value, child) {
-                            return Transform.scale(
-                              scale: value,
-                              child: ShaderMask(
-                                shaderCallback: (bounds) => LinearGradient(
-                                  colors: [Colors.white, Colors.white70],
-                                ).createShader(bounds),
-                                child: const Text(
-                                  'ORELAX',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 24,
-                                    color: Colors.white,
-                                    letterSpacing: 1.5,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+                        Image.asset(
+                          'assets/images/homescreen.jpg',
+                          fit: BoxFit.cover,
                         ),
-                        Text(
-                          _tagline,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withOpacity(0.8),
-                            fontWeight: FontWeight.w500,
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.black.withOpacity(0.35),
+                                Colors.transparent,
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const Spacer(),
-                    _AnimatedIconButton(
-                      icon: 'assets/icon/camera.svg',
-                      tooltip: 'Camera',
-                      onTap: () => Navigator.pushNamed(context, '/camera-live'),
-                    ),
-                    const SizedBox(width: 12),
-                    _AnimatedIconButton(
-                      icon: 'assets/icon/bell.svg',
-                      tooltip: 'Notifications',
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/notifications'),
-                    ),
-                    const SizedBox(width: 12),
-                    _AnimatedProfileButton(
-                      onTap: () => Navigator.pushNamed(context, '/profile'),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-
-            // ── Animated Search Bar ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: TweenAnimationBuilder(
-                tween: Tween<double>(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 1000),
-                curve: Curves.easeOut,
-                builder: (context, value, child) {
-                  return Transform.scale(
-                    scale: 0.9 + (value * 0.1),
-                    child: Opacity(
-                      opacity: value,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF1A5C2A).withOpacity(0.1),
-                              blurRadius: 15,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.shield, color: Colors.white, size: 22),
                         ),
-                        child: Row(
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.search,
-                                color: Colors.grey, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _searchHint,
-                                style: const TextStyle(
-                                    color: Colors.grey, fontSize: 14),
+                            Text(
+                              'ORELAX',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 24,
+                                color: Colors.white,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            Text(
+                              _tagline,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white.withOpacity(0.8),
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
+                        const Spacer(),
+                        _AnimatedIconButton(
+                          icon: 'assets/icon/camera.svg',
+                          tooltip: 'Camera',
+                          onTap: () => Navigator.pushNamed(context, '/camera-live'),
+                        ),
+                        const SizedBox(width: 12),
+                        _AnimatedIconButton(
+                          icon: 'assets/icon/bell.svg',
+                          tooltip: 'Notifications',
+                          onTap: () => Navigator.pushNamed(context, '/notifications'),
+                        ),
+                        const SizedBox(width: 12),
+                        _AnimatedProfileButton(
+                          onTap: () => Navigator.pushNamed(context, '/profile'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Search Bar Overlay
+                Positioned(
+                  left: 32,
+                  right: 32,
+                  bottom: 18,
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.search, color: Colors.grey, size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: _searchHint,
+                                border: InputBorder.none,
+                                isDense: true,
+                              ),
+                              onSubmitted: (query) {
+                                // TODO: Implement search logic
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-
             // ── Scrollable Content ──
             Expanded(
               child: !_roleResolved
@@ -327,8 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
-      // ── Modern Floating Bottom Navigation with Gradient ──
+      // ...existing code for bottomNavigationBar...
       bottomNavigationBar: _role.toLowerCase() != 'resident'
           ? Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -1266,122 +1242,135 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Resident Dashboard
   Widget _buildResidentHomeContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Modern Hero Announcement Card
-        _BannerWithHover(
-          title: 'Weekend Festival',
-          subtitle:
-              'Join us this Saturday for the\ncommunity BBQ and music night.',
-          hoverText: 'orelax your comfort home security and',
-        ),
-        const SizedBox(height: 28),
+    final List<Map<String, dynamic>> cards = [
+      {
+        'icon': Icons.support_agent,
+        'iconColor': const Color(0xFF5B8DEF),
+        'title': 'Helping Staff',
+        'subtitle': 'Request cleaning, repair, or service',
+        'route': '/helping-staff',
+      },
+      {
+        'icon': Icons.event,
+        'iconColor': const Color(0xFFE07B3F),
+        'title': 'Events',
+        'subtitle': 'Community gatherings & workshops',
+        'route': '/events',
+      },
+      {
+        'icon': Icons.qr_code_2_rounded,
+        'iconColor': const Color(0xFF1A5C2A),
+        'title': 'QR code',
+        'subtitle': 'Generate Qr code for guests',
+        'route': '/guest_qr',
+      },
+      {
+        'icon': Icons.place,
+        'iconColor': const Color(0xFF9B59B6),
+        'title': 'Facilities',
+        'subtitle': 'Check available spaces & hours',
+        'route': '/facilities',
+      },
+      {
+        'icon': Icons.bolt,
+        'iconColor': const Color(0xFFF5C518),
+        'title': 'Energy Monitoring',
+        'subtitle': 'Track your energy consumption',
+        'route': '/monitoring',
+      },
+      {
+        'icon': Icons.feed,
+        'iconColor': const Color(0xFF1A5C2A),
+        'title': 'Feed',
+        'subtitle': 'See community posts',
+        'route': '/feed',
+      },
+    ];
 
-        // Resident shortcuts header
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    bool showAll = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'RESIDENT SERVICES',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-                letterSpacing: 0.5,
-              ),
+            // Modern Hero Announcement Card (original style/animation)
+            _BannerWithHover(
+              title: 'Weekend Festival',
+              subtitle: 'Join us this Saturday for the\ncommunity BBQ and music night.',
+              hoverText: 'orelax your comfort home security and',
             ),
-            GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/helping-staff'),
-              child: const Text(
-                'View All',
-                style: TextStyle(
-                  color: Color(0xFF1A5C2A),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+            const SizedBox(height: 28),
+
+            // Resident shortcuts header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'RESIDENT SERVICES',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    letterSpacing: 0.5,
+                  ),
                 ),
+                GestureDetector(
+                  onTap: () => setState(() => showAll = !showAll),
+                  child: Text(
+                    showAll ? 'Hide' : 'View All',
+                    style: const TextStyle(
+                      color: Color(0xFF1A5C2A),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Resident Shortcut Grid with Animations (toggle all/first 4)
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.3,
+              children: List.generate(
+                showAll ? cards.length : 4,
+                (index) {
+                  final card = cards[index];
+                  return _AnimatedServiceCard(
+                    delay: Duration(milliseconds: 80 * index),
+                    icon: card['icon'] as IconData,
+                    iconColor: card['iconColor'] as Color,
+                    title: card['title'] as String,
+                    subtitle: card['subtitle'] as String,
+                    onTap: () => Navigator.pushNamed(context, card['route'] as String),
+                  );
+                },
               ),
             ),
+
+            const SizedBox(height: 24),
+
+            // Community Post Card with Animation (real post placeholder)
+            _AnimatedInfoCard(
+              icon: Icons.people,
+              title: 'Community Post',
+              subtitle: '2 hours ago • General',
+              buttonLabel: 'GO TO FEED',
+              content: '"Does anyone know a good local tutor for mathematics? My daughter needs some help with her finals..."',
+              onButtonTap: () => Navigator.pushNamed(context, '/feed'),
+              delay: const Duration(milliseconds: 400),
+            ),
+
+            const SizedBox(height: 100),
           ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Resident Shortcut Grid with Animations
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.3,
-          children: List.generate(5, (index) {
-            final cards = [
-              {
-                'icon': Icons.support_agent,
-                'iconColor': const Color(0xFF5B8DEF),
-                'title': 'Helping Staff',
-                'subtitle': 'Request cleaning, repair, or service',
-                'route': '/helping-staff',
-              },
-              {
-                'icon': Icons.event,
-                'iconColor': const Color(0xFFE07B3F),
-                'title': 'Events',
-                'subtitle': 'Community gatherings & workshops',
-                'route': '/events',
-              },
-              {
-                'icon': Icons.qr_code_2_rounded,
-                'iconColor': const Color(0xFF1A5C2A),
-                'title': 'QR code',
-                'subtitle': 'Generate Qr code for guests',
-                'route': '/guest_qr',
-              },
-              {
-                'icon': Icons.place,
-                'iconColor': const Color(0xFF9B59B6),
-                'title': 'Facilities',
-                'subtitle': 'Check available spaces & hours',
-                'route': '/facilities',
-              },
-              {
-                'icon': Icons.bolt,
-                'iconColor': const Color(0xFFF5C518),
-                'title': 'Energy Monitoring',
-                'subtitle': 'Track your energy consumption',
-                'route': '/monitoring',
-              },
-            ];
-
-            final card = cards[index];
-            return _AnimatedServiceCard(
-              delay: Duration(milliseconds: 80 * index),
-              icon: card['icon'] as IconData,
-              iconColor: card['iconColor'] as Color,
-              title: card['title'] as String,
-              subtitle: card['subtitle'] as String,
-              onTap: () =>
-                  Navigator.pushNamed(context, card['route'] as String),
-            );
-          }),
-        ),
-
-        const SizedBox(height: 24),
-
-        // Community Post Card with Animation
-        _AnimatedInfoCard(
-          icon: Icons.people,
-          title: 'Community Post',
-          subtitle: '2 hours ago • General',
-          buttonLabel: 'GO TO FEED',
-          content:
-              '"Does anyone know a good local tutor for mathematics? My daughter needs some help with her finals..."',
-          onButtonTap: () => Navigator.pushNamed(context, '/feed'),
-          delay: const Duration(milliseconds: 400),
-        ),
-
-        const SizedBox(height: 100),
-      ],
+        );
+      },
     );
   }
 }

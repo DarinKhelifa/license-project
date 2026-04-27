@@ -57,7 +57,7 @@ class _EnergyMonitoringScreenState extends State<EnergyMonitoringScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            children: [ 
               // Total Consumption Card
               _buildTotalCard(provider),
               const SizedBox(height: 20),
