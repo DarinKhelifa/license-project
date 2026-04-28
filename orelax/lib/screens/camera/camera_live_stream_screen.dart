@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Add this import
+import 'dart:io'; // Add this import
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:typed_data';
 
@@ -18,8 +20,9 @@ class _CameraLiveStreamScreenState extends State<CameraLiveStreamScreen> {
   int _totalFrames = 0;
 
   // Update this with your server IP address
-  final String _serverUrl =
-      'ws://192.168.1.100:8080'; // CHANGE THIS TO YOUR SERVER IP
+  final String _serverUrl = kIsWeb
+      ? 'ws://localhost:8080'
+      : (Platform.isAndroid ? 'ws://10.0.2.2:8080' : 'ws://192.168.1.100:8080');
 
   @override
   void initState() {

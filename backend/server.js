@@ -8,6 +8,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const dns = require('dns');
 
+
 // Force public DNS servers for MongoDB SRV lookups (fixes corporate DNS issues)
 dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 
@@ -27,9 +28,15 @@ const socialRoutes = require('./src/routes/socialRoutes');
 const energyRoutes = require('./src/routes/energyRoutes');
 const { initMQTT } = require('./src/controllers/energyController');
 const qrRoutes = require('./src/routes/qrRoutes');
+const initSurveillance = require('./src/routes/surveillanceRoutes');
 
 const app = express();
 const server = http.createServer(app);
+
+// --- ADDED CAMERA PART HERE ---
+initSurveillance(server); 
+// ------------------------------
+
 const io = socketIo(server, {
   cors: {
     origin: ['http://localhost:3000', 'http://localhost:8080','http://localhost:58010/', 'http://localhost:5000', 'http://127.0.0.1:5000', 'http://127.0.0.1:8080'],
