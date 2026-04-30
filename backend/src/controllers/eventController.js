@@ -1,5 +1,10 @@
 const Event = require('../models/Event');
 const { v4: uuidv4 } = require('uuid');
+const { saveAndEmitToAllResidents } = require('../helpers/notificationHelper');
+
+// Store io instance for real-time notifications
+let io;
+const setIo = (ioInstance) => { io = ioInstance; };
 
 // @desc    Create a new event (Resident)
 // @route   POST /api/events
@@ -181,6 +186,17 @@ const approveEvent = async (req, res) => {
     event.approvedAt = new Date();
     await event.save();
     
+    await saveAndEmitToAllResidents(io, {
+      type: 'event_approved',
+      title: 'Event Approved',
+      body: `${event.title} has been approved and is now available!`,
+      metadata: {
+        eventTitle: event.title,
+        eventDate: event.date,
+        eventLocation: event.location
+      }
+    });
+    
     res.json({ message: 'Event approved successfully', event });
   } catch (error) {
     console.error('Approve event error:', error);
@@ -242,4 +258,5 @@ module.exports = {
   approveEvent,
   rejectEvent,
   deleteEvent,
+  setIo,
 };

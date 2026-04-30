@@ -1,5 +1,10 @@
 const Employee = require('../models/Employee');
 const path = require('path');
+const { saveAndEmitToAllResidents } = require('../helpers/notificationHelper');
+
+// Store io instance for real-time notifications
+let io;
+const setIo = (ioInstance) => { io = ioInstance; };
 
 // GET /api/employees — return all employees
 const getAllEmployees = async (req, res) => {
@@ -48,6 +53,20 @@ const createEmployee = async (req, res) => {
     });
 
     const saved = await employee.save();
+    
+        // Notify all residents about new staff member (only if admin is adding)
+        if (req.user && req.user.role === 'admin') {
+          await saveAndEmitToAllResidents(io, {
+            type: 'staff_added',
+            title: 'New Staff Member Added',
+            body: `${firstName} ${lastName} (${workCategory}) has been added to the team!`,
+            metadata: {
+              staffName: `${firstName} ${lastName}`,
+              staffRole: workCategory
+            }
+          });
+        }
+    
     res.status(201).json({ success: true, employee: saved });
   } catch (err) {
     console.error('createEmployee error:', err);
@@ -70,4 +89,4 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
-module.exports = { getAllEmployees, createEmployee, deleteEmployee };
+module.exports = { getAllEmployees, createEmployee, deleteEmployee, setIo };

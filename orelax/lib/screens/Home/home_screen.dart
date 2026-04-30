@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/facility_provider.dart';
+import '../../widgets/notification_bell.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -185,7 +186,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   right: 0,
                   top: 0,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     child: Row(
                       children: [
                         Container(
@@ -195,7 +197,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.shield, color: Colors.white, size: 22),
+                          child: const Icon(Icons.shield,
+                              color: Colors.white, size: 22),
                         ),
                         const SizedBox(width: 12),
                         Column(
@@ -224,14 +227,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         _AnimatedIconButton(
                           icon: 'assets/icon/camera.svg',
                           tooltip: 'Camera',
-                          onTap: () => Navigator.pushNamed(context, '/camera-live'),
+                          onTap: () =>
+                              Navigator.pushNamed(context, '/camera-live'),
                         ),
                         const SizedBox(width: 12),
-                        _AnimatedIconButton(
-                          icon: 'assets/icon/bell.svg',
-                          tooltip: 'Notifications',
-                          onTap: () => Navigator.pushNamed(context, '/notifications'),
-                        ),
+                        const NotificationBell(),
                         const SizedBox(width: 12),
                         _AnimatedProfileButton(
                           onTap: () => Navigator.pushNamed(context, '/profile'),
@@ -249,14 +249,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     elevation: 8,
                     borderRadius: BorderRadius.circular(18),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.search, color: Colors.grey, size: 22),
+                          const Icon(Icons.search,
+                              color: Colors.grey, size: 22),
                           const SizedBox(width: 10),
                           Expanded(
                             child: TextField(
@@ -1297,7 +1299,8 @@ class _HomeScreenState extends State<HomeScreen> {
             // Modern Hero Announcement Card (original style/animation)
             _BannerWithHover(
               title: 'Weekend Festival',
-              subtitle: 'Join us this Saturday for the\ncommunity BBQ and music night.',
+              subtitle:
+                  'Join us this Saturday for the\ncommunity BBQ and music night.',
               hoverText: 'orelax your comfort home security and',
             ),
             const SizedBox(height: 28),
@@ -1348,7 +1351,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     iconColor: card['iconColor'] as Color,
                     title: card['title'] as String,
                     subtitle: card['subtitle'] as String,
-                    onTap: () => Navigator.pushNamed(context, card['route'] as String),
+                    onTap: () =>
+                        Navigator.pushNamed(context, card['route'] as String),
                   );
                 },
               ),
@@ -1362,7 +1366,8 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Community Post',
               subtitle: '2 hours ago • General',
               buttonLabel: 'GO TO FEED',
-              content: '"Does anyone know a good local tutor for mathematics? My daughter needs some help with her finals..."',
+              content:
+                  '"Does anyone know a good local tutor for mathematics? My daughter needs some help with her finals..."',
               onButtonTap: () => Navigator.pushNamed(context, '/feed'),
               delay: const Duration(milliseconds: 400),
             ),

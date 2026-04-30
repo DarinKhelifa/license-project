@@ -5,6 +5,7 @@ import 'providers/facility_provider.dart';
 import 'providers/booking_provider.dart';
 import 'providers/employee_provider.dart';
 import 'providers/social_provider.dart';
+import 'providers/notification_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
 import 'screens/Welcome/welcome_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -34,6 +35,8 @@ import 'providers/energy_provider.dart';
 import 'screens/monitoring/energy_monitoring_screen.dart';
 import 'screens/camera/camera_live_stream_screen.dart';
 import 'screens/resident/portal_screen.dart';
+import 'screens/notification_screen.dart';
+import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +58,7 @@ class OrelaxApp extends StatelessWidget {
         ChangeNotifierProvider(
             create: (context) => EventProvider()), // ADD THIS
         ChangeNotifierProvider(create: (context) => ReportProvider()),
+        ChangeNotifierProvider(create: (context) => NotificationProvider()),
         // ADD THIS
         ChangeNotifierProvider(
             create: (context) => AlertProvider()), // ADD THIS
@@ -76,14 +80,18 @@ class OrelaxApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
+        builder: (context, child) {
+          return NotificationBootstrapper(
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
         home: const WelcomeScreen(),
         routes: {
           '/auth': (_) => const AuthWrapper(),
           '/onboarding': (_) => const OnboardingScreen(),
           '/chat': (_) => const ChatScreen(),
           '/report': (_) => const ReportScreen(),
-          '/notifications': (_) =>
-              const _ComingSoonScreen(title: 'Notifications'),
+          '/notifications': (_) => const NotificationScreen(),
           '/profile': (_) => const ProfileScreen(),
           '/portal': (_) => const PortalScreen(),
           '/guest_qr': (_) => const GuestQRFormScreen(),
@@ -136,6 +144,70 @@ class OrelaxApp extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+class NotificationBootstrapper extends StatefulWidget {
+  final Widget child;
+
+  const NotificationBootstrapper({super.key, required this.child});
+
+  @override
+  State<NotificationBootstrapper> createState() =>
+      _NotificationBootstrapperState();
+}
+
+class _NotificationBootstrapperState extends State<NotificationBootstrapper> {
+  AuthProvider? _authProvider;
+  String? _connectedUserId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final currentAuthProvider = context.read<AuthProvider>();
+    if (_authProvider != currentAuthProvider) {
+      _authProvider?.removeListener(_syncNotificationSocket);
+      _authProvider = currentAuthProvider;
+      _authProvider?.addListener(_syncNotificationSocket);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncNotificationSocket();
+    });
+  }
+
+  Future<void> _syncNotificationSocket() async {
+    if (!mounted) return;
+
+    final authProvider = context.read<AuthProvider>();
+    final userId = authProvider.userId;
+    final notificationProvider = context.read<NotificationProvider>();
+
+    if (userId == null) {
+      if (_connectedUserId != null) {
+        notificationProvider.disconnect();
+        _connectedUserId = null;
+      }
+      return;
+    }
+
+    if (_connectedUserId == userId) {
+      return;
+    }
+
+    await notificationProvider.initialize(ApiService.serverUrl, userId);
+    _connectedUserId = userId;
+  }
+
+  @override
+  void dispose() {
+    _authProvider?.removeListener(_syncNotificationSocket);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
   }
 }
 

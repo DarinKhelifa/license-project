@@ -77,6 +77,7 @@ flutter:
     - assets/icon/shield-check.svg
     - assets/icon/log-out.svg
     - assets/icon/message-circle-question-mark.svg
+    - assets/icon/camera.svg
     - assets/images/Google_logo.svg
     - assets/images/pool1.jpg
     - assets/images/pool2.jpg

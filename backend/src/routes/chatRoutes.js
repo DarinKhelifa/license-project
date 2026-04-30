@@ -100,10 +100,25 @@ router.post('/chats', protect, async (req, res) => {
 // Get all chat users for starting a new conversation
 router.get('/users', protect, async (req, res) => {
   try {
-    const users = await User.find({
+    const { search } = req.query;
+    
+    // Build filter: exclude self, active status, and residents only
+    let filter = {
       _id: { $ne: req.user.id },
       status: 'active',
-    }).select('-password');
+      role: 'resident' // Only show residents
+    };
+    
+    // Add search filter if provided
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      filter.$or = [
+        { name: { $regex: searchTerm, $options: 'i' } }, // Case-insensitive search
+        { email: { $regex: searchTerm, $options: 'i' } }
+      ];
+    }
+    
+    const users = await User.find(filter).select('-password');
 
     const mappedUsers = users.map(user => ({
       id: user._id.toString(),

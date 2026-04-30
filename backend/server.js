@@ -29,13 +29,14 @@ const energyRoutes = require('./src/routes/energyRoutes');
 const { initMQTT } = require('./src/controllers/energyController');
 const qrRoutes = require('./src/routes/qrRoutes');
 const initSurveillance = require('./src/routes/surveillanceRoutes');
+const notificationRoutes = require('./src/routes/notificationRoutes');
 
 const app = express();
 const server = http.createServer(app);
 
-// --- ADDED CAMERA PART HERE ---
-initSurveillance(server); 
-// ------------------------------
+// --- SURVEILLANCE DISABLED FOR NOW ---
+// initSurveillance(server); 
+// ----------------------------------------
 
 const io = socketIo(server, {
   cors: {
@@ -82,6 +83,7 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/energy', energyRoutes);
 app.use('/api/qr', qrRoutes);
+app.use('/api/notifications', notificationRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ORELAX API is running' });
@@ -93,6 +95,14 @@ const Message = require('./src/models/Message');
 const Report = require('./src/models/Report');
 const reportController = require('./src/controllers/reportController');
 reportController.setIo(io);
+const { initNotificationSocket } = require('./src/socket/notificationSocket');
+initNotificationSocket(io);
+const User = require('./src/models/User');
+const eventController = require('./src/controllers/eventController');
+const employeeController = require('./src/controllers/employeeController');
+const { saveAndEmitNotification } = require('./src/helpers/notificationHelper');
+eventController.setIo(io);
+employeeController.setIo(io);
 
 // Store online users
 const onlineUsers = new Map();
@@ -161,6 +171,21 @@ io.on('connection', (socket) => {
 
       await Chat.findByIdAndUpdate(chatId, updateOps);
       console.log(`✅ Chat metadata updated`);
+      // Send message received notification to recipient
+      if (recipientId) {
+        await saveAndEmitNotification(io, {
+          type: 'message_received',
+          userId: recipientId,
+          title: 'New Message',
+          body: `${senderName}: ${effectiveText.substring(0, 50)}${effectiveText.length > 50 ? '...' : ''}`,
+          metadata: {
+            senderName: senderName,
+            senderPreview: effectiveText,
+            messageId: savedMessage._id
+          }
+        });
+      }
+
 
       const recipientData = onlineUsers.get(recipientId);
       const recipientSocketId = recipientData?.socketId;
