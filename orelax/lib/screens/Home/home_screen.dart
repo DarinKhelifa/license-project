@@ -224,13 +224,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         const Spacer(),
-                        _AnimatedIconButton(
-                          icon: 'assets/icon/camera.svg',
-                          tooltip: 'Camera',
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/camera-live'),
-                        ),
-                        const SizedBox(width: 12),
                         const NotificationBell(),
                         const SizedBox(width: 12),
                         _AnimatedProfileButton(
@@ -330,28 +323,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _AnimatedNavItem(
+                child: DockNavBar(
+                  items: [
+                    _DockNavBarItem(
                       icon: 'assets/icon/house.svg',
                       label: 'Home',
                       isActive: _currentIndex == 0,
                       onTap: () => _navigateToPage(0),
                     ),
                     _isFacilitiesManager()
-                        ? _AnimatedNavItem(
+                        ? _DockNavBarItem(
                             icon: 'assets/icon/calendar.svg',
                             label: 'Bookings',
                             isActive: _currentIndex == 1,
                             onTap: () => _navigateToPage(1),
                           )
-                        : _AnimatedChatNavItem(
+                        : _DockNavBarChatItem(
                             isActive: _currentIndex == 1,
                             onTap: () => _navigateToPage(1),
                             showNotificationBadge: _usesNotificationsTab,
                           ),
-                    _AnimatedNavItem(
+                    _DockNavBarItem(
                       icon: _usesNotificationsTab
                           ? 'assets/icon/bell.svg'
                           : 'assets/icon/triangle-alert.svg',
@@ -359,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       isActive: _currentIndex == 2,
                       onTap: () => _navigateToPage(2),
                     ),
-                    _AnimatedNavItem(
+                    _DockNavBarItem(
                       icon: 'assets/icon/user-round.svg',
                       label: 'Profile',
                       isActive: _currentIndex == 3,
@@ -396,28 +388,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _AnimatedNavItem(
+                    child: DockNavBar(
+                      items: [
+                        _DockNavBarItem(
                           icon: 'assets/icon/house.svg',
                           label: 'Home',
                           isActive: _currentIndex == 0,
                           onTap: () => _navigateToPage(0),
                         ),
-                        _AnimatedChatNavItem(
+                        _DockNavBarChatItem(
                           isActive: _currentIndex == 1,
                           onTap: () => _navigateToPage(1),
                           showNotificationBadge: _usesNotificationsTab,
                         ),
-                        const SizedBox(width: 60), // Space for QR button
-                        _AnimatedNavItem(
+                        _DockNavBarSpacerItem(),
+                        _DockNavBarItem(
                           icon: 'assets/icon/triangle-alert.svg',
                           label: 'Report',
                           isActive: _currentIndex == 2,
                           onTap: () => _navigateToPage(2),
                         ),
-                        _AnimatedNavItem(
+                        _DockNavBarItem(
                           icon: 'assets/icon/user-round.svg',
                           label: 'Profile',
                           isActive: _currentIndex == 3,
@@ -428,7 +419,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Positioned(
-                  bottom: 35, // Adjust vertical positioning
+                  bottom: 35,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1267,11 +1258,11 @@ class _HomeScreenState extends State<HomeScreen> {
         'route': '/guest_qr',
       },
       {
-        'icon': Icons.place,
-        'iconColor': const Color(0xFF9B59B6),
-        'title': 'Facilities',
-        'subtitle': 'Check available spaces & hours',
-        'route': '/facilities',
+        'icon': Icons.videocam,
+        'iconColor': const Color(0xFFE05C8A),
+        'title': 'Camera',
+        'subtitle': 'View live camera feed',
+        'route': '/camera-live',
       },
       {
         'icon': Icons.bolt,
@@ -1286,6 +1277,13 @@ class _HomeScreenState extends State<HomeScreen> {
         'title': 'Feed',
         'subtitle': 'See community posts',
         'route': '/feed',
+      },
+      {
+        'icon': Icons.place,
+        'iconColor': const Color(0xFF9B59B6),
+        'title': 'Facilities',
+        'subtitle': 'Check available spaces & hours',
+        'route': '/facilities',
       },
     ];
 
@@ -2306,6 +2304,308 @@ class _FloatingCircleState extends State<_FloatingCircle>
         decoration: BoxDecoration(
           color: widget.color,
           shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Dock Nav Bar Item ──
+abstract class _DockNavBarItemBase {
+  const _DockNavBarItemBase();
+}
+
+class _DockNavBarItem extends _DockNavBarItemBase {
+  final String icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _DockNavBarItem({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+}
+
+class _DockNavBarChatItem extends _DockNavBarItemBase {
+  final bool isActive;
+  final VoidCallback onTap;
+  final bool showNotificationBadge;
+
+  const _DockNavBarChatItem({
+    required this.isActive,
+    required this.onTap,
+    required this.showNotificationBadge,
+  });
+}
+
+class _DockNavBarSpacerItem extends _DockNavBarItemBase {
+  const _DockNavBarSpacerItem();
+}
+
+// ── Dock Navigation Bar with Magnification Animation ──
+class DockNavBar extends StatefulWidget {
+  final List<_DockNavBarItemBase> items;
+
+  const DockNavBar({
+    required this.items,
+  });
+
+  @override
+  State<DockNavBar> createState() => _DockNavBarState();
+}
+
+class _DockNavBarState extends State<DockNavBar>
+    with TickerProviderStateMixin {
+  late List<AnimationController> _scaleControllers;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleControllers = List.generate(
+      widget.items.length,
+      (index) => AnimationController(
+        duration: const Duration(milliseconds: 150),
+        vsync: this,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (var controller in _scaleControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _handleItemTap(int index, _DockNavBarItemBase item) {
+
+    // Trigger magnification animation on tapped item
+    _scaleControllers[index].forward().then((_) {
+      if (mounted) {
+        _scaleControllers[index].reverse();
+      }
+    });
+
+    // Trigger neighbor magnification animations
+    for (int i = 0; i < _scaleControllers.length; i++) {
+      if (i != index) {
+        final distance = (i - index).abs();
+        if (distance <= 2) {
+          final neighborScale = 1.0 - (distance * 0.15);
+          _scaleControllers[i]
+              .forward(from: 1.0 - (neighborScale - 1.0) * 0.6)
+              .then((_) {
+            if (mounted) {
+              _scaleControllers[i].reverse();
+            }
+          });
+        }
+      }
+    }
+
+    // Execute the tap callback
+    if (item is _DockNavBarItem) {
+      item.onTap();
+    } else if (item is _DockNavBarChatItem) {
+      item.onTap();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: List.generate(widget.items.length, (index) {
+        final item = widget.items[index];
+
+        if (item is _DockNavBarSpacerItem) {
+          return const SizedBox(width: 60);
+        }
+
+        if (item is _DockNavBarChatItem) {
+          return _DockMagnifiedChatItem(
+            item: item,
+            scaleController: _scaleControllers[index],
+            onTap: () => _handleItemTap(index, item),
+          );
+        }
+
+        if (item is _DockNavBarItem) {
+          return _DockMagnifiedItem(
+            item: item,
+            scaleController: _scaleControllers[index],
+            onTap: () => _handleItemTap(index, item),
+          );
+        }
+
+        return const SizedBox.shrink();
+      }),
+    );
+  }
+}
+
+// ── Dock Magnified Item ──
+class _DockMagnifiedItem extends StatelessWidget {
+  final _DockNavBarItem item;
+  final AnimationController scaleController;
+  final VoidCallback onTap;
+
+  const _DockMagnifiedItem({
+    required this.item,
+    required this.scaleController,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Tooltip(
+        message: item.label,
+        child: AnimatedBuilder(
+          animation: scaleController,
+          builder: (context, _) {
+            final progress = scaleController.value;
+            final scale = 1.0 + (0.25 * progress);
+
+            return Transform.scale(
+              scale: scale,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: item.isActive
+                      ? Colors.white.withOpacity(0.25)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Row(
+                  children: [
+                    SvgPicture.asset(
+                      item.icon,
+                      width: 22,
+                      height: 22,
+                      colorFilter: ColorFilter.mode(
+                        item.isActive
+                            ? Colors.white
+                            : Colors.white60,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    if (item.isActive) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        item.label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ── Dock Magnified Chat Item ──
+class _DockMagnifiedChatItem extends StatelessWidget {
+  final _DockNavBarChatItem item;
+  final AnimationController scaleController;
+  final VoidCallback onTap;
+
+  const _DockMagnifiedChatItem({
+    required this.item,
+    required this.scaleController,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Tooltip(
+        message: 'Chat',
+        child: AnimatedBuilder(
+          animation: scaleController,
+          builder: (context, _) {
+            final progress = scaleController.value;
+            final scale = 1.0 + (0.25 * progress);
+
+            return Transform.scale(
+              scale: scale,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: item.isActive
+                      ? Colors.white.withOpacity(0.25)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Row(
+                      children: [
+                        SvgPicture.asset(
+                          'assets/icon/message-circle.svg',
+                          width: 22,
+                          height: 22,
+                          colorFilter: ColorFilter.mode(
+                            item.isActive
+                                ? Colors.white
+                                : Colors.white60,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        if (item.isActive) ...[
+                          const SizedBox(width: 6),
+                          const Text(
+                            'Chat',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (item.showNotificationBadge)
+                          Positioned(
+                            right: -8,
+                            top: -8,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.red,
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+          },
         ),
       ),
     );
