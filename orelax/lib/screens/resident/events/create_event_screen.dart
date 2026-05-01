@@ -5,6 +5,7 @@ import '../../../models/event_model.dart';
 import '../../../providers/event_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../services/api_service.dart';
+import '../../../widgets/custom_bottom_nav_bar.dart';
 import 'dart:convert'; // For base64 image encoding
 import 'dart:io'; // For image picking
 
@@ -160,6 +161,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         title: const Text('Create Event'),
         backgroundColor: const Color(0xFF034808),

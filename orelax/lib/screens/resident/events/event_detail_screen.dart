@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import '../../../widgets/custom_bottom_nav_bar.dart';
 import '../../../models/event_model.dart';
 
 class EventDetailScreen extends StatelessWidget {
@@ -17,6 +18,7 @@ class EventDetailScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF034808),
         foregroundColor: Colors.white,
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

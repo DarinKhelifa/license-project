@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/report_provider.dart';
 import '../../models/report_model.dart';
+import '../../widgets/custom_bottom_nav_bar.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -46,6 +47,7 @@ class _ReportScreenState extends State<ReportScreen> {
         ),
         centerTitle: true,
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

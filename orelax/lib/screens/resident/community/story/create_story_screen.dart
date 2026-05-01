@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -83,6 +84,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     const Color lightGreen = Color(0xFFE8F5E9);
 
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         backgroundColor: Colors.white,

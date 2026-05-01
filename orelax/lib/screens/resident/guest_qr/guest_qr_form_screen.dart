@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -243,6 +244,7 @@ class _GuestQRFormScreenState extends State<GuestQRFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(

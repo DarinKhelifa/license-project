@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart'; // Add this import
 import 'dart:io'; // Add this import
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:typed_data';
+import '../../widgets/custom_bottom_nav_bar.dart';
 
 class CameraLiveStreamScreen extends StatefulWidget {
   const CameraLiveStreamScreen({super.key});
@@ -163,6 +164,7 @@ class _CameraLiveStreamScreenState extends State<CameraLiveStreamScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: Column(
         children: [
           // Camera feed

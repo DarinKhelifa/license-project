@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
@@ -33,6 +34,7 @@ class _EventsScreenState extends State<EventsScreen> {
     final currentEvents = _showMyEvents ? eventProvider.myEvents : eventProvider.events;
 
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Community Events'),

@@ -6,6 +6,7 @@ import '../../screens/Welcome/welcome_screen.dart';
 import 'edit_profile_screen.dart';
 import 'change_password_screen.dart';
 import 'contact_us_screen.dart';
+import '../../widgets/custom_bottom_nav_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -48,6 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     const Color lightGreen = Color(0xFFE8F5E9);
 
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         backgroundColor: Colors.white,

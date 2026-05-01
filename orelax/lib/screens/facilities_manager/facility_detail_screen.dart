@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../models/facility_model.dart';
+import '../../widgets/custom_bottom_nav_bar.dart';
 import '../../../providers/facility_provider.dart';
 import 'create_edit_facility_screen.dart';
 
@@ -96,6 +97,7 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         title: Text(_facility!.name),
         backgroundColor: Colors.white,

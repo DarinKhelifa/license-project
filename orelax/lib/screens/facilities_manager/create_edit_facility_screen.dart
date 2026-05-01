@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import '../../../models/facility_model.dart';
 import '../../../providers/facility_provider.dart';
 
@@ -234,6 +235,7 @@ class _CreateEditFacilityScreenState extends State<CreateEditFacilityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: CustomBottomNavBar(currentIndex: 0),
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(

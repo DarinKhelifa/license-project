@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -60,6 +61,7 @@ class _PortalScreenState extends State<PortalScreen> {
     }
 
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(

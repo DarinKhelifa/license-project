@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../models/facility_model.dart';
 import '../../../providers/facility_provider.dart';
 import 'resident_facility_detail_screen.dart';
+import '../../../widgets/custom_bottom_nav_bar.dart';
 
 class ResidentFacilitiesScreen extends StatefulWidget {
   const ResidentFacilitiesScreen({super.key});
@@ -38,6 +39,7 @@ class _ResidentFacilitiesScreenState extends State<ResidentFacilitiesScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: Consumer<FacilityProvider>(
         builder: (context, facilityProvider, child) {
           if (facilityProvider.isLoading) {

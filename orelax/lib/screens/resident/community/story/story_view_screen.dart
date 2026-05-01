@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../../models/story_model.dart';
@@ -64,6 +65,7 @@ class _StoryViewScreenState extends State<StoryViewScreen> {
     const Color darkGreen = Color(0xFF1A5C2A);
 
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       backgroundColor: Colors.black,
       body: GestureDetector(
         onTapDown: (details) {

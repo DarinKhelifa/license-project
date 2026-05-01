@@ -6,6 +6,7 @@ import '../../../models/facility_model.dart';
 import '../../../models/booking_model.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../widgets/custom_bottom_nav_bar.dart';
 
 class ResidentFacilityDetailScreen extends StatefulWidget {
   final Facility facility;
@@ -52,6 +53,7 @@ class _ResidentFacilityDetailScreenState extends State<ResidentFacilityDetailScr
           ),
         ],
       ),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

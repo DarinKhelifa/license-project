@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/custom_bottom_nav_bar.dart';
 import '../providers/notification_provider.dart';
 import '../models/notification_model.dart';
 
@@ -90,6 +91,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(

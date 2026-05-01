@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../widgets/custom_bottom_nav_bar.dart';
 import '../../providers/energy_provider.dart';
 
 class EnergyMonitoringScreen extends StatefulWidget {
@@ -31,6 +32,7 @@ class _EnergyMonitoringScreenState extends State<EnergyMonitoringScreen> {
     final provider = Provider.of<EnergyProvider>(context);
 
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Energy Monitoring'),

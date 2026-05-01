@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 
 /// The screen shown to the GUEST after the resident shares the QR code.
 /// Design matches the "Welcome to Orelax" mockup exactly.
@@ -20,6 +21,7 @@ class GuestQRViewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       // Light grey page background — same as mockup
       backgroundColor: const Color(0xFFEEEEEE),
       body: SafeArea(

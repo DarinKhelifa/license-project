@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/custom_bottom_nav_bar.dart';
 import '../../services/chat_service.dart';
 import '../../services/api_service.dart';
 import 'chat_room_screen.dart';
@@ -422,6 +423,7 @@ class _ChatScreenState extends State<ChatScreen>
     final currentUserId = authProvider.userId;
     
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
       appBar: AppBar(
         title: const Text('Messages'),
         backgroundColor: Colors.white,

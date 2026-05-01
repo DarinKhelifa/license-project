@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import '../../providers/alert_provider.dart';
 import '../../models/alert_model.dart';
 import 'report_detail_screen.dart';
@@ -42,6 +43,7 @@ class _AlertsScreenState extends State<AlertsScreen> with SingleTickerProviderSt
     }
 
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text(

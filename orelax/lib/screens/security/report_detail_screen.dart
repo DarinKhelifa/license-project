@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import '../../models/alert_model.dart';
@@ -86,11 +87,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
+        bottomNavigationBar: CustomBottomNavBar(currentIndex: 2),
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Report Details'),
