@@ -2,10 +2,19 @@ const mongoose = require('mongoose');
 
 const reportSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
-  category: { type: String, required: true, enum: ['Security', 'Maintenance'] },
-  subCategory: { type: String, required: true, enum: ['Noise', 'Other'] },
+  category: { type: String, required: true, enum: ['security', 'maintenance', 'noise', 'other'] },
+  subCategory: { 
+    type: String, 
+    required: true, 
+    enum: [
+      'theft','suspicious','assault',
+      'plumbing','electrical','pest','structural',
+      'loud_music','party','construction',
+      'other'
+    ]
+  },
   location: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, required: false },
   photoBase64: { type: String },
   timeIsNow: { type: Boolean, default: true },
   customTime: { type: String },

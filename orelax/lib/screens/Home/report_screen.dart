@@ -17,14 +17,67 @@ class ReportScreen extends StatefulWidget {
 }
 
 class _ReportScreenState extends State<ReportScreen> {
-  String? _selectedCategory;
-  String? _selectedSubCategory;
+  String? _selectedCategoryKey;
+  String? _selectedSubCategoryKey;
+
+  // Location dropdown selections (any one optional, but at least one required)
+  String? _selectedStreet;
+  String? _selectedBlock;
+  String? _selectedApartment;
+
+  // Category definitions: backend keys -> display, color, icon, subcategories (display->key)
+  final Map<String, Map<String, dynamic>> _categories = {
+    'security': {
+      'label': 'Security',
+      'color': const Color(0xFFEF5350),
+      'icon': Icons.shield_outlined,
+      'subs': {
+        'theft': 'Theft',
+        'suspicious': 'Suspicious Activity',
+        'assault': 'Assault',
+      }
+    },
+    'maintenance': {
+      'label': 'Maintenance',
+      'color': const Color(0xFFFFA726),
+      'icon': Icons.build_outlined,
+      'subs': {
+        'plumbing': 'Plumbing',
+        'electrical': 'Electrical',
+        'pest': 'Pest',
+        'structural': 'Structural',
+      }
+    },
+    'noise': {
+      'label': 'Noise',
+      'color': const Color(0xFF42A5F5),
+      'icon': Icons.volume_up_outlined,
+      'subs': {
+        'loud_music': 'Loud Music',
+        'party': 'Party',
+        'construction': 'Construction',
+      }
+    },
+    'other': {
+      'label': 'Other',
+      'color': const Color(0xFF9E9E9E),
+      'icon': Icons.report_problem_outlined,
+      'subs': {
+        'other': 'Other',
+      }
+    },
+  };
   bool _isTimeNow = true;
   TimeOfDay? _selectedTime;
   String? _photoBase64;
   bool _isPickingPhoto = false;
-  final TextEditingController _locationController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  // static lists for dropdowns
+  final List<String> _streets = List.generate(10, (i) => 'Street ${i + 1}');
+  final List<String> _blocks = List.generate(20, (i) => 'Block ${String.fromCharCode(65 + (i % 26))}${i + 1}');
+  final List<String> _apartments = List.generate(20, (i) => 'Apt ${i + 1}');
 
   @override
   Widget build(BuildContext context) {
@@ -53,116 +106,192 @@ class _ReportScreenState extends State<ReportScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. INCIDENT CATEGORY
-            const Text(
-              '1. INCIDENT CATEGORY',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Security / Maintenance Row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCategoryButton(
-                    label: 'Security',
-                    iconAsset: 'assets/icon/brick-wall-shield.svg',
-                    isSelected: _selectedCategory == 'Security',
-                    onTap: () => setState(() => _selectedCategory = 'Security'),
+            Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '1. INCIDENT CATEGORY',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildCategoryButton(
-                    label: 'Maintenance',
-                    iconAsset: 'assets/icon/toolbox.svg',
-                    isSelected: _selectedCategory == 'Maintenance',
-                    onTap: () =>
-                        setState(() => _selectedCategory = 'Maintenance'),
+                  const SizedBox(height: 12),
+
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Category selection as colored icon cards
+                          Row(
+                            children: _categories.keys.map((key) {
+                              final meta = _categories[key]!;
+                              final label = meta['label'] as String;
+                              final color = meta['color'] as Color;
+                              final icon = meta['icon'] as IconData;
+                              final selected = _selectedCategoryKey == key;
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() {
+                                    _selectedCategoryKey = key;
+                                    _selectedSubCategoryKey = null;
+                                  }),
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    decoration: BoxDecoration(
+                                      color: selected ? color : Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: selected ? [BoxShadow(color: Colors.black12, blurRadius: 6)] : null,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 20,
+                                          backgroundColor: selected ? Colors.white24 : Colors.white,
+                                          child: Icon(icon, color: selected ? Colors.white : Colors.black87),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          label,
+                                          style: TextStyle(
+                                            color: selected ? Colors.white : Colors.black87,
+                                            fontWeight: selected ? FontWeight.bold : FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          if (_selectedCategoryKey != null) ...[
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: (_categories[_selectedCategoryKey]!['subs'] as Map<String, String>)
+                                  .entries
+                                  .map((entry) {
+                                final subKey = entry.key;
+                                final subLabel = entry.value;
+                                final chosen = _selectedSubCategoryKey == subKey;
+                                return ChoiceChip(
+                                  label: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.label, size: 16, color: chosen ? Colors.white : Colors.black54),
+                                      const SizedBox(width: 6),
+                                      Text(subLabel, style: TextStyle(color: chosen ? Colors.white : Colors.black87)),
+                                    ],
+                                  ),
+                                  selected: chosen,
+                                  onSelected: (_) => setState(() => _selectedSubCategoryKey = subKey),
+                                  selectedColor: (_categories[_selectedCategoryKey]!['color'] as Color),
+                                  backgroundColor: Colors.grey[100],
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
 
-            // Noise / Other Row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildSubCategoryButton(
-                    label: 'Noise',
-                    iconAsset: 'assets/icon/audio-lines.svg',
-                    isSelected: _selectedSubCategory == 'Noise',
-                    onTap: () => setState(() => _selectedSubCategory = 'Noise'),
+                  const SizedBox(height: 20),
+
+                  const Text(
+                    '2. INCIDENT DETAILS',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildSubCategoryButton(
-                    label: 'Other',
-                    iconAsset: 'assets/icon/triangle-alert.svg',
-                    isSelected: _selectedSubCategory == 'Other',
-                    onTap: () => setState(() => _selectedSubCategory = 'Other'),
+                  const SizedBox(height: 12),
+
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Location dropdowns (choose any one or multiple)
+                          DropdownButtonFormField<String>(
+                            value: _selectedStreet,
+                            hint: const Text('None'),
+                            decoration: InputDecoration(
+                              labelText: 'Street (optional)',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                            ),
+                            items: _streets.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                            onChanged: (v) => setState(() => _selectedStreet = v),
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _selectedBlock,
+                            hint: const Text('None'),
+                            decoration: InputDecoration(
+                              labelText: 'Block (optional)',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                            ),
+                            items: _blocks.map((b) => DropdownMenuItem(value: b, child: Text(b))).toList(),
+                            onChanged: (v) => setState(() => _selectedBlock = v),
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _selectedApartment,
+                            hint: const Text('None'),
+                            decoration: InputDecoration(
+                              labelText: 'Apartment (optional)',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                            ),
+                            items: _apartments.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
+                            onChanged: (v) => setState(() => _selectedApartment = v),
+                          ),
+                          const SizedBox(height: 12),
+
+                          TextFormField(
+                            controller: _descriptionController,
+                            maxLines: 4,
+                            decoration: InputDecoration(
+                              labelText: 'Description',
+                              hintText: 'Describe what happened...',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                              contentPadding: const EdgeInsets.all(12),
+                            ),
+                            validator: (v) => v == null || v.trim().isEmpty ? 'Please add a brief description' : null,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 32),
-
-            // 2. INCIDENT DETAILS
-            const Text(
-              '2. INCIDENT DETAILS',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Specific Location
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  hintText: 'Specific Location (e.g. Block B, Lobby)',
-                  hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                  border: InputBorder.none,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Description
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _descriptionController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  hintText: 'Describe what happened...',
-                  hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 32),
 
             // Buttons row - Add Photos / Time
             Row(
@@ -286,21 +415,23 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<void> _submitReport() async {
-    // Validate form
-    if (_selectedCategory == null) {
-      _showError('Please select an incident category');
+    // Validate form fields (category, subcategory, location)
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      _showError('Please complete the required fields');
       return;
     }
-    if (_selectedSubCategory == null) {
-      _showError('Please select a sub-category');
+
+    // ensure at least one location field is provided
+    final street = _selectedStreet?.trim() ?? '';
+    final block = _selectedBlock?.trim() ?? '';
+    final apt = _selectedApartment?.trim() ?? '';
+    if (street.isEmpty && block.isEmpty && apt.isEmpty) {
+      _showError('Please provide at least one location (street, block, or apartment)');
       return;
     }
-    if (_locationController.text.trim().isEmpty) {
-      _showError('Please enter the location');
-      return;
-    }
-    if (_descriptionController.text.trim().isEmpty) {
-      _showError('Please describe the incident');
+
+    if (_selectedCategoryKey == null || _selectedSubCategoryKey == null) {
+      _showError('Please select a category and a subcategory');
       return;
     }
 
@@ -314,11 +445,16 @@ class _ReportScreenState extends State<ReportScreen> {
       return;
     }
 
+    final locationParts = <String>[];
+    if (street.isNotEmpty) locationParts.add('Street: $street');
+    if (block.isNotEmpty) locationParts.add('Block: $block');
+    if (apt.isNotEmpty) locationParts.add('Apartment: $apt');
+
     final report = Report(
       id: '',
-      category: _selectedCategory!,
-      subCategory: _selectedSubCategory!,
-      location: _locationController.text.trim(),
+      category: _selectedCategoryKey!,
+      subCategory: _selectedSubCategoryKey!,
+      location: locationParts.join(' | '),
       description: _descriptionController.text.trim(),
       photoBase64: _photoBase64,
       timeIsNow: _isTimeNow,
@@ -522,7 +658,6 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   void dispose() {
-    _locationController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
