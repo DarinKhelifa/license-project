@@ -590,4 +590,26 @@ static Future<void> updateReportStatus(String reportId, String status) async {
     throw Exception('Failed to update status');
   }
 }
+
+// ========== ENVIRONMENT METHODS ==========
+
+  static Future<List<Map<String, dynamic>>> getEnvironmentCurrent() async {
+    final token = await ApiService.getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('${ApiService.baseUrl}/environment/current'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load environment readings');
+    }
+  }
+
 }

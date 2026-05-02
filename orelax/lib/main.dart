@@ -36,6 +36,7 @@ import 'screens/monitoring/energy_monitoring_screen.dart';
 import 'screens/camera/camera_live_stream_screen.dart';
 import 'screens/resident/portal_screen.dart';
 import 'screens/notification_screen.dart';
+import 'screens/Environment/temperature_screen.dart';
 import 'services/api_service.dart';
 
 void main() async {
@@ -141,6 +142,7 @@ class OrelaxApp extends StatelessWidget {
           '/security-management': (_) =>
               const _ComingSoonScreen(title: 'Security Management'),
           '/monitoring': (_) => const EnergyMonitoringScreen(),
+          '/temperature': (_) => const TemperatureScreen(),
         },
       ),
     );

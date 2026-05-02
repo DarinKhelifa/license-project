@@ -64,6 +64,7 @@ flutter:
     - assets/icon/message-circle.svg
     - assets/icon/user-round.svg
     - assets/icon/users.svg
+    - assets/icon/thermometer-sun.svg
     - assets/icon/triangle-alert.svg
     - assets/icon/audio-lines.svg
     - assets/icon/brick-wall-shield.svg
