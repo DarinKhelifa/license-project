@@ -70,11 +70,8 @@ const register = async (req, res) => {
         apartment: user.apartment,
         role: user.role,
         status: user.status,
-<<<<<<< HEAD
+        isEmailVerified: user.isEmailVerified,
         profileImage: user.profileImage
-=======
-        isEmailVerified: user.isEmailVerified
->>>>>>> darine
       }
     });
   } catch (error) {
@@ -242,11 +239,8 @@ const login = async (req, res) => {
         apartment: user.apartment,
         role: user.role,
         status: user.status,
-<<<<<<< HEAD
+        isEmailVerified: user.isEmailVerified,
         profileImage: user.profileImage
-=======
-        isEmailVerified: user.isEmailVerified
->>>>>>> darine
       }
     });
   } catch (error) {
@@ -267,11 +261,8 @@ const getMe = async (req, res) => {
       apartment: user.apartment,
       role: user.role,
       status: user.status,
-<<<<<<< HEAD
+      isEmailVerified: user.isEmailVerified,
       profileImage: user.profileImage
-=======
-      isEmailVerified: user.isEmailVerified
->>>>>>> darine
     });
   } catch (error) {
     console.error('Get me error:', error);
@@ -306,11 +297,8 @@ const updateProfile = async (req, res) => {
       phone: user.phone,
       apartment: user.apartment,
       role: user.role,
-<<<<<<< HEAD
+      isEmailVerified: user.isEmailVerified,
       profileImage: user.profileImage
-=======
-      isEmailVerified: user.isEmailVerified
->>>>>>> darine
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -389,17 +377,11 @@ const updateUserStatus = async (req, res) => {
     user.updatedAt = Date.now();
     await user.save();
 
-<<<<<<< HEAD
-    const updatedUser = await User.findById(user._id).select('-password');
+    const updatedUser = await User.findById(user._id).select('-password -otp');
     // Include profileImage in response
     const userObj = updatedUser.toObject();
     userObj.profileImage = updatedUser.profileImage;
     res.json(userObj);
-
-=======
-    const updatedUser = await User.findById(user._id).select('-password -otp');
-    res.json(updatedUser);
->>>>>>> darine
   } catch (error) {
     console.error('Update user status error:', error);
     res.status(500).json({ message: error.message });
