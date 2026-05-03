@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/alert_model.dart';
 import '../services/chat_service.dart';
-import '../services/api_service.dart';
+import '../models/alert_model.dart';
 
 class AlertProvider extends ChangeNotifier {
   List<Alert> _alerts = [];
@@ -14,52 +13,69 @@ class AlertProvider extends ChangeNotifier {
   String? get error => _error;
 
   AlertProvider() {
-    _setupAlertListener();
+    _setupListeners();
     fetchAlerts();
   }
 
-  void _setupAlertListener() {
-    ChatService.addNewAlertListener((data) {
-      final alert = Alert.fromMap(data);
+  void _setupListeners() {
+    // Listen for new alerts from WebSocket
+    ChatService.addNewAlertListener((alertData) {
+      final alert = Alert(
+        id: alertData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        title: alertData['title'] ?? 'New Alert',
+        message: alertData['message'] ?? '',
+        category: alertData['category'] ?? 'Security',
+        subCategory: alertData['subCategory'] ?? 'Alert',
+        location: alertData['location'] ?? 'Unknown',
+        reportedBy: alertData['reportedBy'] ?? 'System',
+        createdAt: DateTime.parse(alertData['timestamp'] ?? DateTime.now().toIso8601String()),
+        status: 'pending',
+        reportId: alertData['id'] ?? '',
+        alertType: alertData['alertType'] ?? 'report',
+        gasPpm: alertData['gasPpm'],
+        isRead: false,
+      );
       _alerts.insert(0, alert);
       notifyListeners();
-      
-      // Show notification
-      _showNotification(alert);
     });
-  }
 
-  void _showNotification(Alert alert) {
-    // You can use flutter_local_notifications package here
-    print('🔔 ALERT: ${alert.title} - ${alert.message}');
+    // Listen for gas updates - TODO: Implement gas listener in ChatService
+    // ChatService.addGasUpdateListener((data) {
+    //   print('Gas update received: $data');
+    //   // Optionally create an alert for warning/danger levels
+    //   if (data['status'] == 'danger') {
+    //     // Auto-create alert for dangerous gas levels
+    //     final alert = Alert(
+    //       id: DateTime.now().millisecondsSinceEpoch.toString(),
+    //       title: '⚠️ GAS LEAK DETECTED!',
+    //       message: 'Gas concentration at ${data['gas_ppm']} ppm - DANGER LEVEL!',
+    //       category: 'Safety',
+    //       subCategory: 'Gas Leak',
+    //       location: 'Building A - Kitchen',
+    //       reportedBy: 'Gas Sensor',
+    //       createdAt: DateTime.now(),
+    //       status: 'pending',
+    //       reportId: '',
+    //       alertType: 'gas',
+    //       gasPpm: data['gas_ppm'],
+    //       isRead: false,
+    //     );
+    //     _alerts.insert(0, alert);
+    //     notifyListeners();
+    //   }
+    // });
   }
 
   Future<void> fetchAlerts() async {
     _isLoading = true;
     notifyListeners();
-
-    try {
-      final reports = await ApiService.getReportsForRole();
-      _alerts = reports.map((r) => Alert(
-        id: r['id'],
-        title: '${r['category']} Report',
-        message: '${r['subCategory']} issue at ${r['location']}',
-        category: r['category'],
-        subCategory: r['subCategory'],
-        location: r['location'],
-        reportedBy: r['createdByName'],
-        createdAt: DateTime.parse(r['createdAt']),
-        status: r['status'],
-        reportId: r['id'],
-        isRead: false,
-      )).toList();
-    } catch (e) {
-      _error = e.toString();
-      print('Error fetching alerts: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    
+    // Simulate fetching alerts from API
+    // In production, fetch from your backend
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    _isLoading = false;
+    notifyListeners();
   }
 
   Future<void> markAsRead(String alertId) async {
@@ -77,23 +93,28 @@ class AlertProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void removeAlert(String alertId) {
-    _alerts.removeWhere((a) => a.id == alertId);
-    notifyListeners();
-  }
-
   Future<void> updateAlertStatus(String reportId, String newStatus) async {
-    try {
-      await ApiService.updateReportStatus(reportId, newStatus);
-      
-      // Update local alert
-      final index = _alerts.indexWhere((a) => a.reportId == reportId);
-      if (index != -1) {
-        _alerts[index].status = newStatus;
-        notifyListeners();
-      }
-    } catch (e) {
-      print('Error updating alert status: $e');
-    }
+    final index = _alerts.indexWhere(
+      (a) => a.reportId == reportId || a.id == reportId,
+    );
+    if (index == -1) return;
+
+    final existing = _alerts[index];
+    _alerts[index] = Alert(
+      id: existing.id,
+      title: existing.title,
+      message: existing.message,
+      category: existing.category,
+      subCategory: existing.subCategory,
+      location: existing.location,
+      reportedBy: existing.reportedBy,
+      createdAt: existing.createdAt,
+      status: newStatus,
+      reportId: existing.reportId,
+      alertType: existing.alertType,
+      gasPpm: existing.gasPpm,
+      isRead: existing.isRead,
+    );
+    notifyListeners();
   }
 }

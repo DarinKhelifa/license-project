@@ -10,19 +10,23 @@ const {
   changePassword,
   getAllUsers,
   updateUserRole,
-  updateUserStatus
+  updateUserStatus,
+  verifyOTP,
+  resendOTP
 } = require('../controllers/authController');
 
 // Public routes
 router.post('/register', register);
 router.post('/login', login);
+router.post('/verify-otp', verifyOTP);
+router.post('/resend-otp', resendOTP);
 
-// Protected routes (require authentication)
+// Protected routes
 router.get('/me', protect, getMe);
 router.put('/profile', protect, upload.single('profileImage'), updateProfile);
 router.put('/change-password', protect, changePassword);
 
-// Admin only routes
+// Admin routes
 router.get('/users', protect, authorize('admin'), getAllUsers);
 router.put('/users/:id/role', protect, authorize('admin'), updateUserRole);
 router.put('/users/:id/status', protect, authorize('admin'), updateUserStatus);

@@ -1,46 +1,34 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const generateOTP = require('../utils/otpGenerator');
+const { sendOTPEmail } = require('../utils/emailService');
 
-// Generate JWT Token (for auth login)
+// Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN
   });
 };
 
-// ✅ Generate permanent QR token for resident (called once at approval)
-const generateResidentQR = async (user) => {
-  if (user.qrToken) return; // already has one → skip
-
-  const qrToken = jwt.sign(
-    {
-      userId: user._id.toString(),
-      name: user.name,
-      apartment: user.apartment,
-    },
-    process.env.JWT_SECRET
-    // no expiry → permanent QR
-  );
-
-  user.qrToken = qrToken;
-  user.qrGeneratedAt = new Date();
-  await user.save();
-};
-
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
+// ========== REGISTER ==========
 const register = async (req, res) => {
   try {
     const { name, email, password, phone, apartment, role } = req.body;
 
-    // Check if user already exists
+    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // Create user
+    // Generate OTP
+    const otp = generateOTP();
+    const salt = await bcrypt.genSalt(10);
+    const hashedOTP = await bcrypt.hash(otp, salt);
+    const otpExpire = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Create user (unverified)
     const user = await User.create({
       name,
       email,
@@ -48,14 +36,31 @@ const register = async (req, res) => {
       phone,
       apartment,
       role: role || 'resident',
-      status: role === 'admin' ? 'active' : 'pending' // Auto-approve admins
+      status: role === 'admin' ? 'active' : 'pending',
+      isEmailVerified: false,
+      otp: hashedOTP,
+      otpExpire: otpExpire
     });
+
+    // Send OTP email
+    const emailSent = await sendOTPEmail({
+      email: user.email,
+      name: user.name,
+      otp: otp
+    });
+
+    if (!emailSent) {
+      // Rollback user creation if email fails
+      await User.findByIdAndDelete(user._id);
+      return res.status(500).json({ message: 'Failed to send verification email. Please try again.' });
+    }
 
     // Generate token
     const token = generateToken(user._id);
 
     res.status(201).json({
       success: true,
+      message: 'Registration successful. Please check your email for verification OTP.',
       token,
       user: {
         id: user._id,
@@ -65,7 +70,11 @@ const register = async (req, res) => {
         apartment: user.apartment,
         role: user.role,
         status: user.status,
+<<<<<<< HEAD
         profileImage: user.profileImage
+=======
+        isEmailVerified: user.isEmailVerified
+>>>>>>> darine
       }
     });
   } catch (error) {
@@ -74,36 +83,152 @@ const register = async (req, res) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
+// ========== VERIFY OTP ==========
+const verifyOTP = async (req, res) => {
+  try {
+    const { userId, otp } = req.body;
+
+    if (!userId || !otp) {
+      return res.status(400).json({ message: 'User ID and OTP are required' });
+    }
+
+    const user = await User.findById(userId).select('+otp +otpExpire');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    // Check if OTP is expired
+    if (user.otpExpire < Date.now()) {
+      return res.status(400).json({ 
+        message: 'OTP has expired. Please request a new one.',
+        expired: true
+      });
+    }
+
+    // Verify OTP
+    const isValid = await bcrypt.compare(otp, user.otp);
+    if (!isValid) {
+      return res.status(400).json({ message: 'Invalid OTP' });
+    }
+
+    // Mark as verified
+    user.isEmailVerified = true;
+    user.otp = null;
+    user.otpExpire = null;
+    user.status = 'active';
+    await user.save();
+
+    // Generate new token
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        apartment: user.apartment,
+        role: user.role,
+        status: user.status,
+        isEmailVerified: user.isEmailVerified
+      }
+    });
+  } catch (error) {
+    console.error('OTP verification error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ========== RESEND OTP ==========
+const resendOTP = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    // Generate new OTP
+    const newOtp = generateOTP();
+    const salt = await bcrypt.genSalt(10);
+    const hashedOTP = await bcrypt.hash(newOtp, salt);
+    
+    user.otp = hashedOTP;
+    user.otpExpire = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+
+    // Send new OTP
+    const emailSent = await sendOTPEmail({
+      email: user.email,
+      name: user.name,
+      otp: newOtp,
+    });
+
+    if (!emailSent) {
+      return res.status(500).json({ message: 'Failed to send verification email' });
+    }
+
+    res.json({
+      success: true,
+      message: 'New verification code sent to your email',
+    });
+  } catch (error) {
+    console.error('Resend OTP error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ========== LOGIN ==========
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate email and password
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    // Check for user
     const user = await User.findOne({ email }).select('+password');
+
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
     const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Check if user is active
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+      return res.status(401).json({ 
+        message: 'Please verify your email address before logging in.',
+        requiresVerification: true,
+        userId: user._id
+      });
+    }
+
     if (user.status !== 'active') {
       return res.status(401).json({ message: 'Account is pending approval. Please wait for admin approval.' });
     }
 
-    // Generate token
     const token = generateToken(user._id);
 
     res.json({
@@ -117,7 +242,11 @@ const login = async (req, res) => {
         apartment: user.apartment,
         role: user.role,
         status: user.status,
+<<<<<<< HEAD
         profileImage: user.profileImage
+=======
+        isEmailVerified: user.isEmailVerified
+>>>>>>> darine
       }
     });
   } catch (error) {
@@ -126,9 +255,7 @@ const login = async (req, res) => {
   }
 };
 
-// @desc    Get current user
-// @route   GET /api/auth/me
-// @access  Private
+// ========== GET CURRENT USER ==========
 const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -140,7 +267,11 @@ const getMe = async (req, res) => {
       apartment: user.apartment,
       role: user.role,
       status: user.status,
+<<<<<<< HEAD
       profileImage: user.profileImage
+=======
+      isEmailVerified: user.isEmailVerified
+>>>>>>> darine
     });
   } catch (error) {
     console.error('Get me error:', error);
@@ -148,9 +279,7 @@ const getMe = async (req, res) => {
   }
 };
 
-// @desc    Update user profile
-// @route   PUT /api/auth/profile
-// @access  Private
+// ========== UPDATE PROFILE ==========
 const updateProfile = async (req, res) => {
   try {
     const { name, phone, apartment } = req.body;
@@ -177,7 +306,11 @@ const updateProfile = async (req, res) => {
       phone: user.phone,
       apartment: user.apartment,
       role: user.role,
+<<<<<<< HEAD
       profileImage: user.profileImage
+=======
+      isEmailVerified: user.isEmailVerified
+>>>>>>> darine
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -185,22 +318,18 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// @desc    Change password
-// @route   PUT /api/auth/change-password
-// @access  Private
+// ========== CHANGE PASSWORD ==========
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
     const user = await User.findById(req.user.id).select('+password');
 
-    // Verify current password
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(401).json({ message: 'Current password is incorrect' });
     }
 
-    // Update password
     user.password = newPassword;
     await user.save();
 
@@ -211,12 +340,10 @@ const changePassword = async (req, res) => {
   }
 };
 
-// @desc    Get all users (Admin only)
-// @route   GET /api/auth/users
-// @access  Private/Admin
+// ========== GET ALL USERS (Admin) ==========
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select('-password');
+    const users = await User.find({}).select('-password -otp');
     res.json(users);
   } catch (error) {
     console.error('Get all users error:', error);
@@ -224,9 +351,7 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// @desc    Update user role (Admin only)
-// @route   PUT /api/auth/users/:id/role
-// @access  Private/Admin
+// ========== UPDATE USER ROLE (Admin) ==========
 const updateUserRole = async (req, res) => {
   try {
     const { role } = req.body;
@@ -234,7 +359,7 @@ const updateUserRole = async (req, res) => {
       req.params.id,
       { role, updatedAt: Date.now() },
       { new: true }
-    ).select('-password');
+    ).select('-password -otp');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -250,36 +375,31 @@ const updateUserRole = async (req, res) => {
   }
 };
 
-// @desc    Update user status (Admin only)
-// @route   PUT /api/auth/users/:id/status
-// @access  Private/Admin
+// ========== UPDATE USER STATUS (Admin) ==========
 const updateUserStatus = async (req, res) => {
   try {
     const { status } = req.body;
-
-    // Use findById (not findByIdAndUpdate) so we can call generateResidentQR
+    
     const user = await User.findById(req.params.id);
-
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     user.status = status;
     user.updatedAt = Date.now();
-
-    // ✅ Auto-generate QR when a resident is approved for the first time
-    if (status === 'active' && user.role === 'resident') {
-      await generateResidentQR(user);
-    }
-
     await user.save();
 
+<<<<<<< HEAD
     const updatedUser = await User.findById(user._id).select('-password');
     // Include profileImage in response
     const userObj = updatedUser.toObject();
     userObj.profileImage = updatedUser.profileImage;
     res.json(userObj);
 
+=======
+    const updatedUser = await User.findById(user._id).select('-password -otp');
+    res.json(updatedUser);
+>>>>>>> darine
   } catch (error) {
     console.error('Update user status error:', error);
     res.status(500).json({ message: error.message });
@@ -294,5 +414,7 @@ module.exports = {
   changePassword,
   getAllUsers,
   updateUserRole,
-  updateUserStatus
+  updateUserStatus,
+  verifyOTP,
+  resendOTP
 };

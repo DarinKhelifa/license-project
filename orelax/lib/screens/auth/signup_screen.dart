@@ -37,7 +37,26 @@ class _SignupScreenState extends State<SignupScreen> {
       _showError('Please enter your full name');
       return;
     }
-    // ... logic for other fields ...
+    if (_emailController.text.trim().isEmpty) {
+      _showError('Please enter your email');
+      return;
+    }
+    if (_phoneController.text.trim().isEmpty) {
+      _showError('Please enter your phone number');
+      return;
+    }
+    if (_apartmentController.text.trim().isEmpty) {
+      _showError('Please enter your apartment number');
+      return;
+    }
+    if (_passwordController.text.isEmpty) {
+      _showError('Please enter a password');
+      return;
+    }
+    if (_passwordController.text.length < 6) {
+      _showError('Password must be at least 6 characters');
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -54,6 +73,20 @@ class _SignupScreenState extends State<SignupScreen> {
     );
 
     if (success && mounted) {
+      final user = authProvider.user;
+      final userId = user?['_id'] ?? user?['id'];
+      final email = user?['email'];
+
+      if (userId != null && email != null) {
+        // Navigate to OTP verification screen
+        Navigator.pushNamed(context, '/otp', arguments: {
+          'userId': userId.toString(),
+          'email': email.toString(),
+        });
+        return;
+      }
+
+      // Fallback: navigate to home if user data isn't available
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
         (route) => false,
