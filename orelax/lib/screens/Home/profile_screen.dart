@@ -17,7 +17,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _userData;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -26,14 +25,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserData() async {
-    setState(() => _isLoading = true);
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userData = await authProvider.getUserData();
 
     setState(() {
       _userData = userData;
-      _isLoading = false;
     });
   }
 
@@ -46,7 +42,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
     const Color darkGreen = Color(0xFF1A5C2A);
-    const Color lightGreen = Color(0xFFE8F5E9);
 
     return Scaffold(
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
@@ -240,10 +235,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profileImage = userData?['profileImage'] ?? user?['profileImage'];
     
     if (profileImage != null && profileImage.toString().isNotEmpty) {
+      // Construct full URL if it's a relative path
+      String imageUrl = profileImage.toString();
+      if (!imageUrl.startsWith('http')) {
+        imageUrl = 'http://localhost:5000$imageUrl';
+      }
+      
       // Display network image if available
       return CircleAvatar(
         radius: 36,
-        backgroundImage: NetworkImage(profileImage),
+        backgroundImage: NetworkImage(imageUrl),
         backgroundColor: Colors.grey.shade300,
       );
     } else {
@@ -296,15 +297,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _navigateToContactUs() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ContactUsScreen(),
-      ),
-    );
-  }
-
   void _editPhoneNumber() async {
     final TextEditingController controller = TextEditingController(
       text: _userData?['phone'] ?? '',
@@ -334,9 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   context,
                   listen: false,
                 );
-                await authProvider.updateUserData({
-                  'phone': controller.text,
-                });
+                await authProvider.updateUserData({'phone': controller.text});
                 Navigator.pop(context, true);
               }
             },
@@ -354,52 +344,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _editApartment() async {
-    final TextEditingController controller = TextEditingController(
-      text: _userData?['apartment'] ?? '',
+  void _navigateToContactUs() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ContactUsScreen()),
     );
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Apartment Number'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter apartment number',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                final authProvider = Provider.of<AuthProvider>(
-                  context,
-                  listen: false,
-                );
-                await authProvider.updateUserData({
-                  'apartment': controller.text,
-                });
-                Navigator.pop(context, true);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1A6B2F),
-            ),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      _refreshData();
-    }
   }
 
   void _showAboutDialog() {

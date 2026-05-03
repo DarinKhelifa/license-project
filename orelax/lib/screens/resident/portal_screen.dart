@@ -49,7 +49,6 @@ class _PortalScreenState extends State<PortalScreen> {
     final user = auth.user;
     final userName = user?['name'] ?? 'Resident';
     final userAvatar = user?['profileImage'];
-    final userId = user?['_id'] ?? user?['id'] ?? 'unknown';
 
     // Split name into first and last if possible
     String firstName = userName;

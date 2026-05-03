@@ -8,12 +8,22 @@ class NotificationBell extends StatelessWidget {
 
   const NotificationBell({super.key, this.onTap});
 
+  void _handleNotificationTap(BuildContext context) {
+    if (onTap != null) {
+      onTap!();
+      return;
+    }
+    
+    // Default: Navigate to notifications list
+    Navigator.pushNamed(context, '/notifications');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<NotificationProvider>(
       builder: (context, notificationProvider, child) {
         return GestureDetector(
-          onTap: onTap ?? () => Navigator.pushNamed(context, '/notifications'),
+          onTap: () => _handleNotificationTap(context),
           child: Container(
             width: 40,
             height: 40,

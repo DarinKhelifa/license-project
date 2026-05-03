@@ -28,6 +28,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   dynamic _selectedPhoto; // Can be File (native) or Uint8List (web)
   Uint8List? _selectedPhotoBytes; // For web display
   final ImagePicker _imagePicker = ImagePicker();
+  String? _existingProfileImage; // Store existing profile image URL
+  bool _hasChangedPhoto = false; // Track if user selected new photo
 
   final Color darkGreen = const Color(0xFF1A5C2A);
   final Color lightGreen = const Color(0xFFE8F5E9);
@@ -38,6 +40,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _nameController = TextEditingController(text: widget.userData?['name'] ?? '');
     _phoneController = TextEditingController(text: widget.userData?['phone'] ?? '');
     _apartmentController = TextEditingController(text: widget.userData?['apartment'] ?? '');
+    _existingProfileImage = widget.userData?['profileImage'];
   }
 
   @override
@@ -57,6 +60,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       setState(() {
+        _hasChangedPhoto = true;
         if (kIsWeb) {
           _selectedPhotoBytes = bytes;
         } else {
@@ -75,6 +79,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       setState(() {
+        _hasChangedPhoto = true;
         if (kIsWeb) {
           _selectedPhotoBytes = bytes;
         } else {
@@ -150,26 +155,52 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildPhotoDisplay() {
+    // Priority: newly selected photo > existing profile image > default icon
     if (kIsWeb) {
-      // Web: use Image.memory for bytes
       if (_selectedPhotoBytes != null) {
         return ClipOval(
           child: Image.memory(
             _selectedPhotoBytes!,
             fit: BoxFit.cover,
+            width: 120,
+            height: 120,
           ),
         );
       }
     } else {
-      // Native: use Image.file
       if (_selectedPhoto != null && _selectedPhoto is io.File) {
         return ClipOval(
           child: Image.file(
             _selectedPhoto as io.File,
             fit: BoxFit.cover,
+            width: 120,
+            height: 120,
           ),
         );
       }
+    }
+
+    // Show existing profile image from database if no new photo selected
+    if (_existingProfileImage != null && _existingProfileImage!.isNotEmpty) {
+      String imageUrl = _existingProfileImage!;
+      if (!imageUrl.startsWith('http')) {
+        imageUrl = 'http://localhost:5000$imageUrl';
+      }
+      return ClipOval(
+        child: Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          width: 120,
+          height: 120,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.person_outline,
+              size: 60,
+              color: darkGreen,
+            );
+          },
+        ),
+      );
     }
 
     // Default: show icon if no photo selected

@@ -11,7 +11,6 @@ class StoryCarousel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color darkGreen = Color(0xFF1A5C2A);
-    const Color lightGreen = Color(0xFFE8F5E9);
 
     return Consumer<SocialProvider>(
       builder: (context, socialProvider, _) {

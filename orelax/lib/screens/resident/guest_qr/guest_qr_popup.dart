@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import 'guest_qr_view_screen.dart';
 
 void showGuestQRPopup(
   BuildContext context,

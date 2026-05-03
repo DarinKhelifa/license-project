@@ -64,7 +64,8 @@ const register = async (req, res) => {
         phone: user.phone,
         apartment: user.apartment,
         role: user.role,
-        status: user.status
+        status: user.status,
+        profileImage: user.profileImage
       }
     });
   } catch (error) {
@@ -115,7 +116,8 @@ const login = async (req, res) => {
         phone: user.phone,
         apartment: user.apartment,
         role: user.role,
-        status: user.status
+        status: user.status,
+        profileImage: user.profileImage
       }
     });
   } catch (error) {
@@ -137,7 +139,8 @@ const getMe = async (req, res) => {
       phone: user.phone,
       apartment: user.apartment,
       role: user.role,
-      status: user.status
+      status: user.status,
+      profileImage: user.profileImage
     });
   } catch (error) {
     console.error('Get me error:', error);
@@ -157,6 +160,12 @@ const updateProfile = async (req, res) => {
     if (name) user.name = name;
     if (phone) user.phone = phone;
     if (apartment) user.apartment = apartment;
+    
+    // Handle profile image upload
+    if (req.file) {
+      user.profileImage = `/uploads/${req.file.filename}`;
+    }
+    
     user.updatedAt = Date.now();
 
     await user.save();
@@ -167,7 +176,8 @@ const updateProfile = async (req, res) => {
       email: user.email,
       phone: user.phone,
       apartment: user.apartment,
-      role: user.role
+      role: user.role,
+      profileImage: user.profileImage
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -230,7 +240,10 @@ const updateUserRole = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json(user);
+    // Include profileImage in response
+    const userObj = user.toObject();
+    userObj.profileImage = user.profileImage;
+    res.json(userObj);
   } catch (error) {
     console.error('Update user role error:', error);
     res.status(500).json({ message: error.message });
@@ -262,7 +275,10 @@ const updateUserStatus = async (req, res) => {
     await user.save();
 
     const updatedUser = await User.findById(user._id).select('-password');
-    res.json(updatedUser);
+    // Include profileImage in response
+    const userObj = updatedUser.toObject();
+    userObj.profileImage = updatedUser.profileImage;
+    res.json(userObj);
 
   } catch (error) {
     console.error('Update user status error:', error);

@@ -7,7 +7,6 @@ class SocketService {
   final StreamController<Map<String, dynamic>> _notificationStream =
       StreamController<Map<String, dynamic>>.broadcast();
 
-  String? _userId;
   bool _isConnected = false;
 
   SocketService._internal();
@@ -19,8 +18,6 @@ class SocketService {
   // Initialize socket connection
   Future<void> connect(String serverUrl, String userId) async {
     try {
-      _userId = userId;
-
       _socket = IO.io(
         serverUrl,
         IO.OptionBuilder()

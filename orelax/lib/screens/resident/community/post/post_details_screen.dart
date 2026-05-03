@@ -17,8 +17,6 @@ class PostDetailsScreen extends StatefulWidget {
 
 class _PostDetailsScreenState extends State<PostDetailsScreen> {
   final TextEditingController _commentController = TextEditingController();
-  late List<Comment> _comments = [];
-  bool _isLoadingComments = true;
   bool _isLiking = false;
   bool _isSharing = false;
 
@@ -288,11 +286,6 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                   // Comments Section
                   Consumer<SocialProvider>(
                     builder: (context, socialProvider, _) {
-                      final comments = socialProvider.posts
-                          .firstWhere((p) => p.id == widget.post.id,
-                              orElse: () => widget.post)
-                          .comments;
-
                       return Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: FutureBuilder(

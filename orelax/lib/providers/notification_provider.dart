@@ -147,6 +147,65 @@ class NotificationProvider with ChangeNotifier {
     _socketService.disconnect();
   }
 
+  /// Determines the navigation route and arguments based on notification type
+  Map<String, dynamic> getNavigationRoute(NotificationModel notification) {
+    final metadata = notification.metadata;
+    String route = '/notifications'; // default
+    dynamic arguments;
+
+    switch (notification.type.toLowerCase()) {
+      case 'message_received':
+      case 'new_message':
+      case 'chat':
+        route = '/chat';
+        if (metadata?.messageId != null) {
+          arguments = metadata!.messageId;
+        }
+        break;
+
+      case 'staff_added':
+      case 'new_staff':
+      case 'helping_staff':
+      case 'staff_request':
+        route = '/helping-staff';
+        if (metadata?.employeeId != null) {
+          arguments = metadata!.employeeId;
+        }
+        break;
+
+      case 'report_treated':
+      case 'incident_treated':
+      case 'incident_resolved':
+      case 'incident_report':
+        route = '/report-detail';
+        if (metadata?.reportId != null) {
+          arguments = metadata!.reportId;
+        }
+        break;
+
+      case 'booking_update':
+        route = '/booking-history';
+        break;
+
+      case 'event_update':
+      case 'event_approved':
+        route = '/events';
+        break;
+
+      default:
+        // Use custom route path if provided
+        if (metadata?.routePath != null) {
+          route = metadata!.routePath!;
+          arguments = metadata.routeArguments;
+        }
+    }
+
+    return {
+      'route': route,
+      'arguments': arguments,
+    };
+  }
+
   void _updateUnreadCount() {
     _unreadCount = _notifications.where((n) => !n.isRead).length;
   }

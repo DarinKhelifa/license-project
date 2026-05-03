@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../models/facility_model.dart';
 import '../../../providers/facility_provider.dart';
 import 'resident_facility_detail_screen.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';

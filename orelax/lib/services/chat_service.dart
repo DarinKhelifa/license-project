@@ -22,7 +22,6 @@ class ChatService {
   static final List<Function(dynamic)> _alertStatusUpdateListeners = [];
   
   static bool _isConnecting = false;
-  static int _reconnectAttempts = 0;
 
   static bool get isConnected => socket != null && socket!.connected;
   
@@ -131,7 +130,6 @@ class ChatService {
     }
 
     _isConnecting = true;
-    _reconnectAttempts = 0;
 
     if (socket != null) {
       socket?.disconnect();
@@ -161,7 +159,6 @@ class ChatService {
       
       socket?.on('connect', (_) {
         _isConnecting = false;
-        _reconnectAttempts = 0;
         print('✅ Socket connected: ${socket?.id}');
         print('✅ Socket connected to $_serverUrl');
         socket?.emit('user-connected', { 'userId': userId, 'role': role });
@@ -256,7 +253,6 @@ class ChatService {
       
       socket?.on('reconnect_attempt', (attempt) {
         print('🔄 Reconnection attempt #$attempt');
-        _reconnectAttempts = attempt;
       });
       
       socket?.on('reconnect', (_) {
@@ -388,6 +384,5 @@ class ChatService {
     currentUserId = null;
     currentUserRole = null;
     _isConnecting = false;
-    _reconnectAttempts = 0;
   }
 }

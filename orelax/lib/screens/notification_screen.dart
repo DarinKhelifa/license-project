@@ -68,6 +68,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return '${difference.inDays}d';
   }
 
+  void _handleNotificationTap(BuildContext context, NotificationModel notification) {
+    final navRoute = context.read<NotificationProvider>().getNavigationRoute(notification);
+    final route = navRoute['route'] as String;
+    final arguments = navRoute['arguments'];
+
+    if (arguments != null) {
+      Navigator.pushNamed(context, route, arguments: arguments);
+    } else {
+      Navigator.pushNamed(context, route);
+    }
+  }
+
   String _subtitleForNotification(NotificationModel notification) {
     final metadata = notification.metadata;
     switch (notification.type) {
@@ -236,6 +248,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   .read<NotificationProvider>()
                                   .markAsRead(notification.id);
                             }
+                            // Navigate based on notification type
+                            _handleNotificationTap(context, notification);
                           },
                           iconForType: _iconForType,
                           subtitleForNotification: _subtitleForNotification,

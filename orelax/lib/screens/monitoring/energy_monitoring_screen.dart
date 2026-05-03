@@ -13,7 +13,6 @@ class EnergyMonitoringScreen extends StatefulWidget {
 
 class _EnergyMonitoringScreenState extends State<EnergyMonitoringScreen> {
   int _selectedDays = 7;
-  String? _selectedDevice;
 
   @override
   void initState() {

@@ -6,6 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/facility_provider.dart';
+import '../../providers/employee_provider.dart';
+import '../../providers/event_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../Environment/temperature_screen.dart';
 import '../../widgets/notification_bell.dart';
 
@@ -1294,6 +1297,13 @@ class _HomeScreenState extends State<HomeScreen> {
         'title': 'Energy Monitoring',
         'subtitle': 'Track your energy consumption',
         'route': '/monitoring',
+      },
+      {
+        'icon': Icons.thermostat,
+        'iconColor': const Color(0xFF00BCD4),
+        'title': 'Temperature',
+        'subtitle': 'Check room temperature',
+        'route': '/temperature',
       },
       {
         'icon': Icons.feed,

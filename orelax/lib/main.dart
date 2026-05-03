@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/facility_provider.dart';
@@ -81,6 +82,15 @@ class OrelaxApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en', 'US'),
+          Locale('ar', 'SA'),
+        ],
         builder: (context, child) {
           return NotificationBootstrapper(
             child: child ?? const SizedBox.shrink(),

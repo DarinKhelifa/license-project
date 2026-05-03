@@ -21,7 +21,6 @@ class _ChatScreenState extends State<ChatScreen>
   bool _isLoading = true;
   bool _isUsersLoading = true;
   bool _isSearching = false;
-  String _searchQuery = '';
   
   late AnimationController _searchAnimationController;
   late Animation<double> _searchFadeAnimation;
@@ -120,7 +119,6 @@ class _ChatScreenState extends State<ChatScreen>
 
   void _filterUsers(String query) {
     setState(() {
-      _searchQuery = query;
       if (query.isEmpty) {
         _filteredUsers = _users;
       } else {
@@ -466,7 +464,6 @@ class _ChatScreenState extends State<ChatScreen>
                           onPressed: () {
                             setState(() {
                               _isSearching = false;
-                              _searchQuery = '';
                               _filteredUsers = _users;
                             });
                             _searchAnimationController.reverse();
@@ -722,7 +719,6 @@ class _HoverAvatarButtonState extends State<HoverAvatarButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _shadowAnimation;
 
   @override
   void initState() {
@@ -733,10 +729,6 @@ class _HoverAvatarButtonState extends State<HoverAvatarButton>
     );
 
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    _shadowAnimation = Tween<double>(begin: 0, end: 8).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
   }

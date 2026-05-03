@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 const {
   register,
   login,
@@ -18,7 +19,7 @@ router.post('/login', login);
 
 // Protected routes (require authentication)
 router.get('/me', protect, getMe);
-router.put('/profile', protect, updateProfile);
+router.put('/profile', protect, upload.single('profileImage'), updateProfile);
 router.put('/change-password', protect, changePassword);
 
 // Admin only routes

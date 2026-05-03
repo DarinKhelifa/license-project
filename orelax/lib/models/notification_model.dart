@@ -54,6 +54,10 @@ class NotificationMetadata {
   final String? senderName;
   final String? senderPreview;
   final String? messageId;
+  final String? reportId;
+  final String? employeeId;
+  final String? routePath;
+  final Map<String, dynamic>? routeArguments;
 
   NotificationMetadata({
     this.staffName,
@@ -64,6 +68,10 @@ class NotificationMetadata {
     this.senderName,
     this.senderPreview,
     this.messageId,
+    this.reportId,
+    this.employeeId,
+    this.routePath,
+    this.routeArguments,
   });
 
   factory NotificationMetadata.fromJson(Map<String, dynamic> json) {
@@ -77,6 +85,10 @@ class NotificationMetadata {
       senderName: json['senderName'],
       senderPreview: json['senderPreview'],
       messageId: json['messageId'],
+      reportId: json['reportId'],
+      employeeId: json['employeeId'],
+      routePath: json['routePath'],
+      routeArguments: json['routeArguments'] as Map<String, dynamic>?,
     );
   }
 
@@ -90,6 +102,10 @@ class NotificationMetadata {
       'senderName': senderName,
       'senderPreview': senderPreview,
       'messageId': messageId,
+      'reportId': reportId,
+      'employeeId': employeeId,
+      'routePath': routePath,
+      'routeArguments': routeArguments,
     };
   }
 }

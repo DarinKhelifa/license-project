@@ -62,6 +62,22 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       // Update alert provider
       final alertProvider = Provider.of<AlertProvider>(context, listen: false);
       await alertProvider.updateAlertStatus(widget.reportId, _selectedStatus);
+
+      // Send notification to resident if status changed to resolved
+      if (_selectedStatus == 'resolved') {
+        try {
+          await ApiService.sendReportTreatedNotification(
+            residentId: widget.alert.reportedBy,
+            reportId: widget.reportId,
+            reportCategory: widget.alert.category,
+            resolutionNotes: _resolutionNotes,
+          );
+          print('✅ Notification sent to resident for treated report');
+        } catch (e) {
+          print('⚠️ Failed to send notification: $e');
+          // Continue anyway - status was updated successfully
+        }
+      }
       
       if (mounted) {
         Navigator.pop(context);
