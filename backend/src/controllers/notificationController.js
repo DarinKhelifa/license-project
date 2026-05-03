@@ -1,5 +1,37 @@
 const Notification = require('../models/Notification');
 
+// @desc    Create a notification
+// @route   POST /api/notifications
+const createNotification = async (req, res) => {
+  try {
+    const { userId, title, message, type, data } = req.body;
+
+    if (!userId || !title || !message) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId, title, and message are required'
+      });
+    }
+
+    const notification = new Notification({
+      userId,
+      title,
+      message,
+      type: type || 'general',
+      data: data || {},
+      isRead: false,
+      createdAt: new Date()
+    });
+
+    await notification.save();
+
+    res.status(201).json({ success: true, notification });
+  } catch (error) {
+    console.error('Create notification error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // @desc    Get all notifications for a user
 // @route   GET /api/notifications/:userId
 const getNotifications = async (req, res) => {
@@ -78,6 +110,7 @@ const deleteNotification = async (req, res) => {
 };
 
 module.exports = {
+  createNotification,
   getNotifications,
   markAsRead,
   markAllAsRead,

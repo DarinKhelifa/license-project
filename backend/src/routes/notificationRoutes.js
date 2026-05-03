@@ -1,5 +1,6 @@
 const express = require('express');
 const { 
+  createNotification,
   getNotifications, 
   markAsRead, 
   markAllAsRead, 
@@ -10,6 +11,9 @@ const { protect } = require('../middleware/auth');
 const router = express.Router();
 
 // All routes are protected (require authentication)
+
+// @route   POST /api/notifications
+router.post('/', protect, createNotification);
 
 // @route   PATCH /api/notifications/read-all/:userId
 // MUST BE FIRST to avoid matching /:id/read

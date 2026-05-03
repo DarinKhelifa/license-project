@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../../models/alert_model.dart';
 import '../../providers/alert_provider.dart';
@@ -24,7 +25,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   String _selectedStatus = '';
   Map<String, dynamic>? _reportData;
   bool _isLoading = true;
-  String? _resolutionNotes;
+  String _resolutionNotes = '';
 
   @override
   void initState() {
@@ -66,7 +67,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       // Send notification to resident if status changed to resolved
       if (_selectedStatus == 'resolved') {
         try {
-          await ApiService.sendReportTreatedNotification(
+          await _sendReportTreatedNotification(
             residentId: widget.alert.reportedBy,
             reportId: widget.reportId,
             reportCategory: widget.alert.category,
@@ -96,6 +97,39 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           const SnackBar(content: Text('Failed to update status'), backgroundColor: Colors.red),
         );
       }
+    }
+  }
+
+  Future<void> _sendReportTreatedNotification({
+    required String residentId,
+    required String reportId,
+    required String reportCategory,
+    required String resolutionNotes,
+  }) async {
+    final token = await ApiService.getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.post(
+      Uri.parse('${ApiService.baseUrl}/notifications'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'userId': residentId,
+        'title': 'Report Resolved',
+        'message': 'Your $reportCategory report has been resolved.',
+        'type': 'report_resolved',
+        'data': {
+          'reportId': reportId,
+          'category': reportCategory,
+          'resolutionNotes': resolutionNotes,
+        }
+      }),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to send treated report notification');
     }
   }
 

@@ -9,8 +9,6 @@ import '../../providers/facility_provider.dart';
 import '../../providers/employee_provider.dart';
 import '../../providers/event_provider.dart';
 import '../../providers/notification_provider.dart';
-import '../Environment/temperature_screen.dart';
-import '../../widgets/notification_bell.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +21,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   String _role = 'resident';
   bool _roleResolved = false;
-  String _userName = '';
 
   @override
   void initState() {
@@ -48,7 +45,6 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _role = r;
       _roleResolved = true;
-      _userName = (data?['name'] as String?) ?? auth.userName ?? '';
     });
 
     print('Normalized role set to: $_role');
@@ -61,38 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final facilityProvider =
           Provider.of<FacilityProvider>(context, listen: false);
       await facilityProvider.fetchFacilities();
-    }
-  }
-
-  String get _tagline {
-    switch (_role) {
-      case 'security':
-        return '★ Security · Access & monitoring';
-      case 'maintenance':
-        return '★ Maintenance · Work orders & repairs';
-      case 'facility manager':
-      case 'facilities manager':
-      case 'facility_manager':
-      case 'facilities_manager':
-        return '★ Facilities Manager · Reservations & approvals';
-      default:
-        return '★ Secure Gated Community';
-    }
-  }
-
-  String get _searchHint {
-    switch (_role) {
-      case 'security':
-        return 'Search access, visitors, alerts...';
-      case 'maintenance':
-        return 'Search work orders, requests...';
-      case 'facility manager':
-      case 'facilities manager':
-      case 'facility_manager':
-      case 'facilities_manager':
-        return 'Search facilities, registrations, payments...';
-      default:
-        return 'Search services, events...';
     }
   }
 
@@ -145,6 +109,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Get localized greeting text
+  String _getGreeting() {
+    final locale = Localizations.localeOf(context);
+    final isArabic = locale.languageCode == 'ar';
+    return isArabic ? 'مرحبا،' : 'Hello,';
+  }
+
+  // Get localized search hint
+  String _getSearchHint() {
+    final locale = Localizations.localeOf(context);
+    final isArabic = locale.languageCode == 'ar';
+    return isArabic
+        ? 'ابحث عن خدمة، موظف، رمز QR...'
+        : 'Search service, staff, QR code...';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,149 +133,101 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // ── Modern Top Header (replaces hero image) ──
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1A5C2A), Color(0xFF2A7D3A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(28),
-                  bottomRight: Radius.circular(28),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: SafeArea(
-                bottom: false,
-                child: Row(
-                  children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.shield, color: Colors.white, size: 24),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ORELAX',
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        Text(
-                          _tagline,
-                          style: GoogleFonts.poppins(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/temperature'),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.all(8),
-                            child: SvgPicture.asset(
-                              'assets/icon/thermometer-sun.svg',
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const NotificationBell(),
-                        const SizedBox(width: 10),
-                        _AnimatedProfileButton(
-                          onTap: () => Navigator.pushNamed(context, '/profile'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            // ── Search bar under header ──
+            // ── NEW CLEAN HEADER ──
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Material(
-                elevation: 6,
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Row: Logo + Bell/Avatar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Icon(Icons.search, color: Colors.grey, size: 22),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: _searchHint,
-                            border: InputBorder.none,
-                            isDense: true,
+                      // Left: Brand header
+                      Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0B5A2A),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.12),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.shield_outlined,
+                              size: 28,
+                              color: Color(0xFFF4D23C),
+                            ),
                           ),
-                          onSubmitted: (query) {},
-                        ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ORELAX',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 32,
+                                  height: 1,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF1A1A1A),
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFF69D18A),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Secure Gated Community',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF97A0AD),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF8F1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(Icons.tune, color: const Color(0xFF1A5C2A), size: 20),
+                      // Right: Temperature + notification/profile controls
+                      Row(
+                        children: [
+                          _HeaderTemperatureButton(
+                            onTap: () => Navigator.pushNamed(context, '/temperature'),
+                          ),
+                          const SizedBox(width: 10),
+                          _PillNotificationToggle(
+                            onAvatarTap: () =>
+                                Navigator.pushNamed(context, '/profile'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // ── Welcome message ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Welcome Home, ${_userName.isNotEmpty ? _userName.split(' ').first : 'Guest'}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                  const SizedBox(height: 16),
+                  // Search Bar
+                  _SearchBarWithResults(
+                    onSearchHint: _getSearchHint(),
                   ),
-                ),
+                ],
               ),
             ),
             const SizedBox(height: 8),
@@ -1299,13 +1231,6 @@ class _HomeScreenState extends State<HomeScreen> {
         'route': '/monitoring',
       },
       {
-        'icon': Icons.thermostat,
-        'iconColor': const Color(0xFF00BCD4),
-        'title': 'Temperature',
-        'subtitle': 'Check room temperature',
-        'route': '/temperature',
-      },
-      {
         'icon': Icons.feed,
         'iconColor': const Color(0xFF1A5C2A),
         'title': 'Feed',
@@ -1522,6 +1447,203 @@ class _AnimatedChatNavItemState extends State<_AnimatedChatNavItem>
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Pill-shaped Toggle Button with Swappable Icons ──
+class _PillNotificationToggle extends StatefulWidget {
+  final VoidCallback onAvatarTap;
+
+  const _PillNotificationToggle({
+    required this.onAvatarTap,
+  });
+
+  @override
+  State<_PillNotificationToggle> createState() => _PillNotificationToggleState();
+}
+
+class _PillNotificationToggleState extends State<_PillNotificationToggle>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _swapController;
+
+  @override
+  void initState() {
+    super.initState();
+    _swapController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _swapController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) {
+        _swapController.forward();
+      },
+      onExit: (_) {
+        _swapController.reverse();
+      },
+      child: Container(
+        width: 140,
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(50),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            // Bell Icon - starts at left, slides to right
+            SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0),
+                end: const Offset(0.4, 0),
+              ).animate(
+                CurvedAnimation(
+                  parent: _swapController,
+                  curve: Curves.easeInOutCubic,
+                ),
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 14),
+                  child: GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, '/notifications'),
+                    child: Consumer<NotificationProvider?>(
+                      builder: (context, notificationProvider, _) {
+                        final unreadCount = notificationProvider?.unreadCount ?? 0;
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFF1A5C2A).withOpacity(0.08),
+                                border: Border.all(
+                                  color: const Color(0xFF1A5C2A).withOpacity(0.25),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Center(
+                                child: SvgPicture.asset(
+                                  'assets/icon/bell.svg',
+                                  width: 24,
+                                  height: 24,
+                                  colorFilter: const ColorFilter.mode(
+                                    Color(0xFF1A5C2A),
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (unreadCount > 0)
+                              Positioned(
+                                right: -2,
+                                top: -2,
+                                child: Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      unreadCount > 9
+                                          ? '9'
+                                          : unreadCount.toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Avatar - starts at right, slides to left
+            SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0),
+                end: const Offset(-0.4, 0),
+              ).animate(
+                CurvedAnimation(
+                  parent: _swapController,
+                  curve: Curves.easeInOutCubic,
+                ),
+              ),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: GestureDetector(
+                    onTap: widget.onAvatarTap,
+                    child: Consumer<AuthProvider>(
+                      builder: (context, authProvider, _) {
+                        var userAvatar = authProvider.userAvatar;
+                        // Construct full URL if it's a relative path
+                        if (userAvatar != null && !userAvatar.startsWith('http')) {
+                          userAvatar = 'http://localhost:5000$userAvatar';
+                        }
+                        return Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF1A5C2A),
+                              width: 1.5,
+                            ),
+                            image: userAvatar != null
+                                ? DecorationImage(
+                                    image: NetworkImage(userAvatar),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: userAvatar == null
+                              ? const Icon(
+                                  Icons.person,
+                                  color: Color(0xFF1A5C2A),
+                                  size: 18,
+                                )
+                              : null,
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -2050,6 +2172,248 @@ class _AnimatedIconButtonState extends State<_AnimatedIconButton>
 }
 
 // ── Animated Profile Button ──
+class _SearchBarWithResults extends StatefulWidget {
+  final String onSearchHint;
+
+  const _SearchBarWithResults({required this.onSearchHint});
+
+  @override
+  State<_SearchBarWithResults> createState() => _SearchBarWithResultsState();
+}
+
+class _SearchBarWithResultsState extends State<_SearchBarWithResults> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _searchResults = [];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.isEmpty) {
+      setState(() => _searchResults = []);
+      return;
+    }
+
+    final results = <Map<String, dynamic>>[];
+    final lowerQuery = query.toLowerCase();
+
+    try {
+      // Search in Facilities
+      final facilityProvider =
+          Provider.of<FacilityProvider>(context, listen: false);
+      for (var facility in facilityProvider.facilities) {
+        if (facility.name.toLowerCase().contains(lowerQuery)) {
+          results.add({
+            'type': 'Facility',
+            'title': facility.name,
+            'subtitle': facility.description,
+            'id': facility.id,
+          });
+        }
+      }
+
+      // Search in Employees/Staff
+      final employeeProvider =
+          Provider.of<EmployeeProvider>(context, listen: false);
+      for (var employee in employeeProvider.employees) {
+        final fullName = '${employee.firstName} ${employee.lastName}';
+        if (fullName.toLowerCase().contains(lowerQuery) ||
+            employee.workCategory.toLowerCase().contains(lowerQuery)) {
+          results.add({
+            'type': 'Staff',
+            'title': fullName,
+            'subtitle': employee.workCategory,
+            'id': employee.id,
+          });
+        }
+      }
+
+      // Search in Events
+      final eventProvider =
+          Provider.of<EventProvider>(context, listen: false);
+      for (var event in eventProvider.events) {
+        if (event.title.toLowerCase().contains(lowerQuery)) {
+          results.add({
+            'type': 'Event',
+            'title': event.title,
+            'subtitle': event.description,
+            'id': event.id,
+          });
+        }
+      }
+
+      setState(() => _searchResults = results);
+    } catch (e) {
+      debugPrint('Search error: $e');
+    }
+  }
+
+  void _handleResultTap(Map<String, dynamic> result) {
+    final type = result['type'] as String;
+    final id = result['id'] as String?;
+
+    // Navigate based on type
+    switch (type) {
+      case 'Facility':
+        Navigator.pushNamed(context, '/facilities');
+        break;
+      case 'Staff':
+        Navigator.pushNamed(context, '/employee-detail', arguments: id);
+        break;
+      case 'Event':
+        Navigator.pushNamed(context, '/events');
+        break;
+      default:
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Search Bar Input
+        Material(
+          elevation: 4,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.search, color: Color(0xFFC0C0C0), size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: widget.onSearchHint,
+                      border: InputBorder.none,
+                      isDense: true,
+                      hintStyle: const TextStyle(
+                        color: Color(0xFFC0C0C0),
+                        fontSize: 14,
+                      ),
+                    ),
+                    onChanged: _performSearch,
+                  ),
+                ),
+                if (_searchController.text.isNotEmpty)
+                  GestureDetector(
+                    onTap: () {
+                      _searchController.clear();
+                      setState(() => _searchResults = []);
+                    },
+                    child: const Icon(Icons.close,
+                        color: Color(0xFFC0C0C0), size: 18),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        // Search Results Dropdown
+        if (_searchResults.isNotEmpty && _searchController.text.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            constraints: const BoxConstraints(maxHeight: 300),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _searchResults.length,
+              itemBuilder: (context, index) {
+                final result = _searchResults[index];
+                return ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _getTypeColor(result['type']),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _getTypeIcon(result['type']),
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    result['title'] as String,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  subtitle: Text(
+                    result['subtitle'] as String,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Text(
+                    result['type'] as String,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: _getTypeColor(result['type']),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () => _handleResultTap(result),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Color _getTypeColor(String type) {
+    switch (type) {
+      case 'Facility':
+        return const Color(0xFF1A5C2A);
+      case 'Staff':
+        return const Color(0xFF0066CC);
+      case 'Event':
+        return const Color(0xFFF5C518);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getTypeIcon(String type) {
+    switch (type) {
+      case 'Facility':
+        return Icons.location_on;
+      case 'Staff':
+        return Icons.person;
+      case 'Event':
+        return Icons.event;
+      default:
+        return Icons.search;
+    }
+  }
+}
+
 class _AnimatedProfileButton extends StatefulWidget {
   final VoidCallback onTap;
 
@@ -2100,6 +2464,43 @@ class _AnimatedProfileButtonState extends State<_AnimatedProfileButton>
             ),
             child: const Icon(Icons.person, color: Colors.white, size: 18),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderTemperatureButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _HeaderTemperatureButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          border: Border.all(
+            color: const Color(0xFF1A5C2A).withOpacity(0.2),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.thermostat,
+          color: Color(0xFF1A5C2A),
+          size: 24,
         ),
       ),
     );
@@ -2158,7 +2559,6 @@ class _BannerWithHoverState extends State<_BannerWithHover> {
         ),
         child: Stack(
           children: [
-            // 4 Floating Circles - Kept and slowed down
             ...List.generate(4, (index) {
               final positions = [
                 const Offset(-20, -20),
@@ -2173,7 +2573,7 @@ class _BannerWithHoverState extends State<_BannerWithHover> {
                 child: _FloatingCircle(
                   size: sizes[index],
                   color: Colors.white.withOpacity(0.08),
-                  duration: Duration(seconds: 8 + index * 2), // Slow motion
+                  duration: Duration(seconds: 8 + index * 2),
                 ),
               );
             }),
@@ -2189,7 +2589,7 @@ class _BannerWithHoverState extends State<_BannerWithHover> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            "Orelax Real Estate",
+                            'Orelax Real Estate',
                             style: GoogleFonts.poppins(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -2524,9 +2924,7 @@ class _DockMagnifiedItem extends StatelessWidget {
                       width: 22,
                       height: 22,
                       colorFilter: ColorFilter.mode(
-                        item.isActive
-                            ? Colors.white
-                            : Colors.white60,
+                        item.isActive ? Colors.white : Colors.white60,
                         BlendMode.srcIn,
                       ),
                     ),
@@ -2597,9 +2995,7 @@ class _DockMagnifiedChatItem extends StatelessWidget {
                           width: 22,
                           height: 22,
                           colorFilter: ColorFilter.mode(
-                            item.isActive
-                                ? Colors.white
-                                : Colors.white60,
+                            item.isActive ? Colors.white : Colors.white60,
                             BlendMode.srcIn,
                           ),
                         ),
@@ -2617,28 +3013,28 @@ class _DockMagnifiedChatItem extends StatelessWidget {
                       ],
                     ),
                     if (item.showNotificationBadge)
-                          Positioned(
-                            right: -8,
-                            top: -8,
-                            child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
+                      Positioned(
+                        right: -8,
+                        top: -8,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
                                 color: Colors.red,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.red,
-                                    blurRadius: 4,
-                                  ),
-                                ],
+                                blurRadius: 4,
                               ),
-                            ),
+                            ],
                           ),
-                      ],
-                    ),
-                  ),
-                );
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
           },
         ),
       ),
