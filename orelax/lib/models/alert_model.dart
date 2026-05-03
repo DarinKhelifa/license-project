@@ -12,6 +12,8 @@ class Alert {
   String status;
   final String reportId;
   bool isRead;
+  final String alertType;
+  final dynamic gasPpm;
 
   Alert({
     required this.id,
@@ -25,6 +27,8 @@ class Alert {
     required this.status,
     required this.reportId,
     this.isRead = false,
+    this.alertType = 'report',
+    this.gasPpm,
   });
 
   factory Alert.fromMap(Map<String, dynamic> map) {
@@ -40,6 +44,8 @@ class Alert {
       status: map['status'] ?? 'pending',
       reportId: map['reportId'] ?? '',
       isRead: map['isRead'] ?? false,
+      alertType: map['alertType'] ?? 'report',
+      gasPpm: map['gasPpm'],
     );
   }
 

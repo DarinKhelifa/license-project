@@ -275,6 +275,21 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
+
+// Graceful handling for common server listen errors (e.g. EADDRINUSE)
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use (EADDRINUSE).`);
+    console.error('Suggestions:');
+    console.error(` - Change the PORT in your .env or start command (e.g. PORT=${parseInt(PORT,10)+1})`);
+    console.error(' - On Windows: run `netstat -ano | findstr :' + PORT + '` then `taskkill /PID <pid> /F`');
+    console.error(' - Or use `npx kill-port ' + PORT + '` to free the port');
+    process.exit(1);
+  }
+  console.error('Server error:', err);
+  process.exit(1);
+});
+
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

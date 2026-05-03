@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'dart:async';
 
 class WelcomeScreen extends StatefulWidget {
-  const WelcomeScreen({super.key});
+  final bool navigateToHome;
+
+  const WelcomeScreen({super.key, this.navigateToHome = false});
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -41,10 +43,14 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
     _logoController.forward();
 
-    // 5 second intro then continue app auth flow
+    // 5 second intro then navigate based on flag
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/auth');
+        if (widget.navigateToHome) {
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          Navigator.pushReplacementNamed(context, '/auth');
+        }
       }
     });
   }

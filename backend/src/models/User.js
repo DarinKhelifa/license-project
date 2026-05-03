@@ -53,20 +53,34 @@ const userSchema = new mongoose.Schema({
   qrGeneratedAt: {
     type: Date,
     default: null
+  },
+  // ========== OTP EMAIL VERIFICATION FIELDS ==========
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  otp: {
+    type: String,
+    default: null,
+    select: false
+  },
+  otpExpire: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true
 });
 
 // Hash password before saving
-userSchema.pre('save', async function() {
-  // Only hash the password if it has been modified (or is new)
+userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
-    return;
+    return next();
   }
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
 // Compare password method

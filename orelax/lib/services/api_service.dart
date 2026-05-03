@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
 
 class ApiService {
   // Server URL
@@ -177,13 +176,16 @@ class ApiService {
           ));
         }
       } else {
-        // Native: handle File
-        if (photoFile is File) {
+        // Native: assume an object with a `path` property (e.g., File)
+        try {
+          final path = (photoFile as dynamic).path as String;
           request.files.add(await http.MultipartFile.fromPath(
             'profileImage',
-            photoFile.path,
+            path,
             contentType: MediaType('image', 'jpeg'),
           ));
+        } catch (_) {
+          // If path unavailable, skip attaching the file on native
         }
       }
     }
@@ -359,10 +361,10 @@ class ApiService {
         throw Exception('Invalid file type for web upload');
       }
     } else {
-      if (file is File) {
+      if (file != null && file is! Uint8List && (file as dynamic).path != null) {
         request.files.add(await http.MultipartFile.fromPath(
           'file',
-          file.path,
+          (file as dynamic).path,
           filename: filename,
           contentType: contentType,
         ));

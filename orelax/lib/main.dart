@@ -11,6 +11,7 @@ import 'screens/Welcome/welcome_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/Home/report_screen.dart';
 import 'screens/Home/profile_screen.dart';
+import 'screens/Home/home_screen.dart';
 import 'screens/chat/chat_screen.dart';
 import 'screens/security/access_control_screen.dart';
 import 'screens/security/visitors_screen.dart';
@@ -24,12 +25,12 @@ import 'screens/resident/facilities/resident_facilities_screen.dart';
 import 'screens/facilities_manager/create_edit_facility_screen.dart';
 import 'screens/facilities_manager/facility_detail_screen.dart';
 import 'screens/facilities_manager/booking_history_screen.dart';
-import 'screens/resident/events/events_screen.dart'; // Add this import
+import 'screens/resident/events/events_screen.dart';
 import 'screens/resident/community/community_feed_screen.dart';
-import 'providers/event_provider.dart'; // Add this import
-import 'providers/report_provider.dart'; // Add this import
+import 'providers/event_provider.dart';
+import 'providers/report_provider.dart';
 import 'providers/alert_provider.dart';
-import 'screens/resident/guest_qr/guest_qr_form_screen.dart'; // Add this import
+import 'screens/resident/guest_qr/guest_qr_form_screen.dart';
 import 'screens/resident/guest_qr/guest_qr_view_screen.dart';
 import 'providers/energy_provider.dart';
 import 'screens/monitoring/energy_monitoring_screen.dart';
@@ -38,7 +39,7 @@ import 'screens/resident/portal_screen.dart';
 import 'screens/notification_screen.dart';
 import 'screens/Environment/temperature_screen.dart';
 import 'services/api_service.dart';
-
+import 'screens/auth/otp_verification_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const OrelaxApp());
@@ -56,15 +57,11 @@ class OrelaxApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => BookingProvider()),
         ChangeNotifierProvider(create: (context) => EmployeeProvider()),
         ChangeNotifierProvider(create: (context) => SocialProvider()),
-        ChangeNotifierProvider(
-            create: (context) => EventProvider()), // ADD THIS
+        ChangeNotifierProvider(create: (context) => EventProvider()),
         ChangeNotifierProvider(create: (context) => ReportProvider()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
-        // ADD THIS
-        ChangeNotifierProvider(
-            create: (context) => AlertProvider()), // ADD THIS
-        ChangeNotifierProvider(
-            create: (context) => EnergyProvider()), // ADD THIS
+        ChangeNotifierProvider(create: (context) => AlertProvider()),
+        ChangeNotifierProvider(create: (context) => EnergyProvider()),
       ],
       child: MaterialApp(
         title: 'ORELAX',
@@ -88,6 +85,12 @@ class OrelaxApp extends StatelessWidget {
         },
         home: const WelcomeScreen(),
         routes: {
+          '/welcome': (ctx) {
+            final args = ModalRoute.of(ctx)!.settings.arguments as Map<String, dynamic>?;
+            final navigateToHome = args?['navigateToHome'] as bool? ?? false;
+            return WelcomeScreen(navigateToHome: navigateToHome);
+          },
+          '/home': (_) => const HomeScreen(),
           '/auth': (_) => const AuthWrapper(),
           '/onboarding': (_) => const OnboardingScreen(),
           '/chat': (_) => const ChatScreen(),
@@ -97,8 +100,7 @@ class OrelaxApp extends StatelessWidget {
           '/portal': (_) => const PortalScreen(),
           '/guest_qr': (_) => const GuestQRFormScreen(),
           '/guest_qr_view': (ctx) {
-            final args =
-                ModalRoute.of(ctx)!.settings.arguments as Map<String, dynamic>;
+            final args = ModalRoute.of(ctx)!.settings.arguments as Map<String, dynamic>;
             return GuestQRViewScreen(
               qrData: args['qrData'] as String,
               guestName: args['guestName'] as String? ?? '',
@@ -106,41 +108,40 @@ class OrelaxApp extends StatelessWidget {
               hostName: args['hostName'] as String?,
             );
           },
-
           // Resident shortcuts
           '/feed': (_) => const CommunityFeedScreen(),
-          '/events': (_) => EventsScreen(), // Add this line
+          '/events': (_) => EventsScreen(),
           '/bookings': (_) => const _ComingSoonScreen(title: 'Bookings'),
-          '/maintenance-request': (_) =>
-              const _ComingSoonScreen(title: 'Maintenance Request'),
+          '/maintenance-request': (_) => const _ComingSoonScreen(title: 'Maintenance Request'),
           '/facilities': (_) => const ResidentFacilitiesScreen(),
-
           // Security screens
           '/access-control': (_) => const AccessControlScreen(),
           '/visitors': (_) => const VisitorsScreen(),
           '/alerts': (_) => const AlertsScreen(),
           '/access-logs': (_) => const AccessLogsScreen(),
-
           // Maintenance screens
           '/work-orders': (_) => const WorkOrdersScreen(),
           '/pending-requests': (_) => const PendingRequestsScreen(),
           '/schedule': (_) => const MaintenanceScheduleScreen(),
-
           // Facilities Manager
           '/create-facility': (_) => const CreateEditFacilityScreen(),
           '/facility-detail': (_) => const _FacilityDetailWrapper(),
           '/booking-history': (_) => const BookingHistoryScreen(),
-
           // Placeholders
-          '/all-services': (_) =>
-              const _ComingSoonScreen(title: 'All Services'),
+          '/all-services': (_) => const _ComingSoonScreen(title: 'All Services'),
           '/camera-live': (_) => const CameraLiveStreamScreen(),
+          // OTP Verification Route
+          '/otp': (ctx) {
+            final args = ModalRoute.of(ctx)!.settings.arguments as Map<String, dynamic>;
+            return OTPVerificationScreen(
+              userId: args['userId'] as String,
+              email: args['email'] as String,
+            );
+          },
           '/childcare': (_) => const _ComingSoonScreen(title: 'Childcare'),
           '/helping-staff': (_) => const HelpingStaffScreen(),
-          '/manage-accounts': (_) =>
-              const _ComingSoonScreen(title: 'Manage Accounts'),
-          '/security-management': (_) =>
-              const _ComingSoonScreen(title: 'Security Management'),
+          '/manage-accounts': (_) => const _ComingSoonScreen(title: 'Manage Accounts'),
+          '/security-management': (_) => const _ComingSoonScreen(title: 'Security Management'),
           '/monitoring': (_) => const EnergyMonitoringScreen(),
           '/temperature': (_) => const TemperatureScreen(),
         },
@@ -155,8 +156,7 @@ class NotificationBootstrapper extends StatefulWidget {
   const NotificationBootstrapper({super.key, required this.child});
 
   @override
-  State<NotificationBootstrapper> createState() =>
-      _NotificationBootstrapperState();
+  State<NotificationBootstrapper> createState() => _NotificationBootstrapperState();
 }
 
 class _NotificationBootstrapperState extends State<NotificationBootstrapper> {
