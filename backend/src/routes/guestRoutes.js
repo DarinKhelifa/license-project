@@ -3,6 +3,7 @@ const router = express.Router();
 const {
     generateGuestQR,
     getMyGuests,
+    getAllGuests,
     getGuestQR,
 } = require('../controllers/guestController');
 
@@ -14,5 +15,8 @@ router.get('/resident/:residentId', getMyGuests);
 
 // Get single guest QR
 router.get('/:guestId', getGuestQR);
+
+// Admin: get all guests
+router.get('/admin/all', getAllGuests);
 
 module.exports = router;

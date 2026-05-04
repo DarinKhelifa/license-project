@@ -113,5 +113,14 @@ const getGuestQR = async (req, res) => {
 module.exports = {
     generateGuestQR,
     getMyGuests,
+    getAllGuests: async (req, res) => {
+        try {
+            const guests = await Guest.find().select('-qrCode').sort({ createdAt: -1 });
+            return res.status(200).json({ success: true, count: guests.length, guests });
+        } catch (err) {
+            console.error('Get all guests error:', err);
+            return res.status(500).json({ success: false, error: 'Failed to fetch guests' });
+        }
+    },
     getGuestQR,
 };

@@ -613,5 +613,46 @@ static Future<void> updateReportStatus(String reportId, String status) async {
       throw Exception('Failed to load environment readings');
     }
   }
+  // Get all guests (admin/security)
+  static Future<List<Map<String, dynamic>>> getAllGuests() async {
+    final token = await ApiService.getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('${ApiService.baseUrl}/guests/admin/all'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(json['guests'] ?? jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load guests');
+    }
+  }
+
+  // Get guests for a resident
+  static Future<List<Map<String, dynamic>>> getGuestsForResident(String residentId) async {
+    final token = await ApiService.getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('${ApiService.baseUrl}/guests/resident/$residentId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(json['guests'] ?? []);
+    } else {
+      throw Exception('Failed to load guest list');
+    }
+  }
 
 }
