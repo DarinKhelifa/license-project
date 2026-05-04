@@ -616,7 +616,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/access-control'),
+              onTap: () => Navigator.pushNamed(context, '/reports'),
               child: const Text(
                 'View All',
                 style: TextStyle(
@@ -641,11 +641,11 @@ class _HomeScreenState extends State<HomeScreen> {
           children: List.generate(4, (index) {
             final cards = [
               {
-                'icon': Icons.qr_code_scanner,
+                'icon': Icons.report_problem_outlined,
                 'iconColor': const Color(0xFF5B8DEF),
-                'title': 'Access',
-                'subtitle': 'Grant & QR control',
-                'route': '/access-control',
+                'title': 'Reports',
+                'subtitle': 'Resident reports',
+                'route': '/reports',
               },
               {
                 'icon': Icons.people_outline,
@@ -689,10 +689,10 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: Icons.security,
           title: 'Shift note',
           subtitle: 'Today • Security',
-          buttonLabel: 'LOGS',
-          content:
-              'Check visitor queue and gate cameras during peak hours. Use Access for new entries.',
-          onButtonTap: () => Navigator.pushNamed(context, '/access-logs'),
+            buttonLabel: 'LOGS',
+            content:
+              'Check visitor queue and gate cameras during peak hours. Use Reports for resident-submitted issues.',
+            onButtonTap: () => Navigator.pushNamed(context, '/access-logs'),
           delay: const Duration(milliseconds: 400),
         ),
 

@@ -4,10 +4,12 @@ import '../services/api_service.dart';
 
 class ReportProvider extends ChangeNotifier {
   List<Report> _myReports = [];
+  List<Report> _allReports = [];
   bool _isLoading = false;
   String? _error;
 
   List<Report> get myReports => _myReports;
+  List<Report> get allReports => _allReports;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -48,4 +50,22 @@ class ReportProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-}
+
+  // Fetch reports for admin/security role
+  Future<void> fetchReportsForRole() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final data = await ApiService.getReportsForRole();
+      _allReports = data.map((json) => Report.fromMap(json)).toList();
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error fetching reports for role: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+  }

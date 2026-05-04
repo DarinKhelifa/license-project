@@ -11,10 +11,11 @@ import 'screens/auth/auth_wrapper.dart';
 import 'screens/Welcome/welcome_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/Home/report_screen.dart';
+import 'screens/security/reports_screen.dart';
 import 'screens/Home/profile_screen.dart';
 import 'screens/Home/home_screen.dart';
 import 'screens/chat/chat_screen.dart';
-import 'screens/security/access_control_screen.dart';
+// AccessControlScreen removed from navigation; reports route used instead
 import 'screens/security/visitors_screen.dart';
 import 'screens/security/alerts_screen.dart';
 import 'screens/security/access_logs_screen.dart';
@@ -105,6 +106,7 @@ class OrelaxApp extends StatelessWidget {
           '/onboarding': (_) => const OnboardingScreen(),
           '/chat': (_) => const ChatScreen(),
           '/report': (_) => const ReportScreen(),
+          '/reports': (_) => const ReportsScreen(),
           '/notifications': (_) => const NotificationScreen(),
           '/profile': (_) => const ProfileScreen(),
           '/portal': (_) => const PortalScreen(),
@@ -125,7 +127,7 @@ class OrelaxApp extends StatelessWidget {
           '/maintenance-request': (_) => const _ComingSoonScreen(title: 'Maintenance Request'),
           '/facilities': (_) => const ResidentFacilitiesScreen(),
           // Security screens
-          '/access-control': (_) => const AccessControlScreen(),
+          '/access-control': (_) => const ReportScreen(),
           '/visitors': (_) => const VisitorsScreen(),
           '/alerts': (_) => const AlertsScreen(),
           '/access-logs': (_) => const AccessLogsScreen(),
