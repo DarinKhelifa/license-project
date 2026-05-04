@@ -15,6 +15,9 @@ import {
   Avatar,
   Badge,
   Stack,
+  Menu,
+  MenuItem,
+  ListItemAvatar,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import {
@@ -36,18 +39,63 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useThemeMode } from '../context/ThemeModeContext';
+import { useNotifications } from '../context/NotificationsContext';
 
 const drawerWidth = 280;
 
 const menuItems = [
   { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Community', icon: <PeopleIcon />, path: '/community' },
+  { text: 'Guests', icon: <PeopleIcon />, path: '/guests' },
   { text: 'Monitoring', icon: <MonitoringIcon />, path: '/monitoring' },
   { text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' },
   { text: 'Employees', icon: <BadgeIcon />, path: '/employees' },
   { text: 'Report', icon: <AssessmentIcon />, path: '/report' },
   { text: 'Events', icon: <EventIcon />, path: '/events' },
 ];
+
+function NotificationsButton() {
+  const { notifications, unreadCount, markAllRead } = useNotifications();
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleOpen = (e: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(e.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleMarkAll = () => {
+    markAllRead();
+    handleClose();
+  };
+
+  return (
+    <>
+      <IconButton color="inherit" onClick={handleOpen} aria-label="Notifications">
+        <Badge badgeContent={unreadCount} color="secondary">
+          <NotificationsIcon />
+        </Badge>
+      </IconButton>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose} PaperProps={{ sx: { width: 360, maxWidth: '90vw' } }}>
+        <MenuItem dense sx={{ justifyContent: 'space-between' }}>
+          <strong>Notifications</strong>
+          <Box component="span" onClick={handleMarkAll} sx={{ cursor: 'pointer', fontSize: 12, color: 'text.secondary' }}>Mark all read</Box>
+        </MenuItem>
+        {notifications.length === 0 && (
+          <MenuItem disabled>No notifications</MenuItem>
+        )}
+        {notifications.map((n, idx) => (
+          <MenuItem key={n._id ?? idx} onClick={handleClose} sx={{ whiteSpace: 'normal' }}>
+            <ListItemAvatar>
+              <Avatar sx={{ bgcolor: 'secondary.main' }}>{(n.type?.[0] ?? 'N').toUpperCase()}</Avatar>
+            </ListItemAvatar>
+            <ListItemText primary={n.title ?? 'Notification'} secondary={n.message} />
+          </MenuItem>
+        ))}
+      </Menu>
+    </>
+  );
+}
 
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -57,8 +105,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { logout, user } = useAuth();
   const theme = useTheme();
   const { mode, toggleMode } = useThemeMode();
+  const { refreshUser } = useAuth();
 
   const isDark = theme.palette.mode === 'dark';
+
+  function ProfileMenu() {
+    const { user, logout, refreshUser } = useAuth();
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+    const open = Boolean(anchorEl);
+    const handleOpen = (e: React.MouseEvent<HTMLElement>) => setAnchorEl(e.currentTarget);
+    const handleClose = () => setAnchorEl(null);
+
+    const handleLogoutClick = async () => {
+      await logout();
+      handleClose();
+    };
+
+    return (
+      <>
+        <IconButton onClick={handleOpen} sx={{ ml: 2 }}>
+          <Avatar src={user?.profileImage || undefined} sx={{ bgcolor: theme.palette.secondary.main, color: theme.palette.primary.dark, fontWeight: 900 }}>
+            {(user?.name?.[0] ?? 'U').toUpperCase()}
+          </Avatar>
+        </IconButton>
+        <Menu anchorEl={anchorEl} open={open} onClose={handleClose} PaperProps={{ sx: { width: 260 } }}>
+          <Box sx={{ p: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Avatar src={user?.profileImage || undefined} sx={{ width: 56, height: 56, bgcolor: theme.palette.secondary.main }} />
+            <Box>
+              <Typography sx={{ fontWeight: 800 }}>{user?.name ?? 'User'}</Typography>
+              <Typography variant="caption" color="text.secondary">{user?.email}</Typography>
+            </Box>
+          </Box>
+          <Divider />
+          <MenuItem onClick={() => { navigate('/settings'); handleClose(); }}>Profile settings</MenuItem>
+          <MenuItem onClick={handleLogoutClick}>Logout</MenuItem>
+        </Menu>
+      </>
+    );
+  }
 
   const pageTitle = useMemo(() => {
     const matched = menuItems.find((m) => m.path === location.pathname);
@@ -207,7 +291,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <List sx={{ px: 2, pb: 3, pt: 1.4 }}>
         <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton sx={{
+          <ListItemButton onClick={() => { navigate('/settings'); setMobileOpen(false); }} sx={{
             borderRadius: 2,
             transition: 'all 0.2s',
             '&:hover': {
@@ -312,14 +396,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
           </IconButton>
 
-          <IconButton color="inherit">
-            <Badge badgeContent={4} color="secondary">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
-          <Avatar sx={{ ml: 2, bgcolor: theme.palette.secondary.main, color: theme.palette.primary.dark, fontWeight: 900 }}>
-            {(user?.name?.[0] ?? 'U').toUpperCase()}
-          </Avatar>
+          <NotificationsButton />
+          <ProfileMenu />
         </Toolbar>
       </AppBar>
       

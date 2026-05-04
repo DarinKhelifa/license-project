@@ -29,13 +29,18 @@ const userSchema = new mongoose.Schema({
   },
   apartment: {
     type: String,
-    required: [true, 'Apartment number is required'],
+    required: [function() { return this.role === 'resident'; }, 'Apartment number is required for residents'],
     trim: true
   },
   role: {
     type: String,
     enum: ['resident', 'security', 'maintenance', 'facility_manager', 'admin'],
     default: 'resident'
+  },
+  specialization: {
+    type: String,
+    enum: ['cleaning', 'electrician', 'repair', 'plumber', 'other'],
+    default: null
   },
   status: {
     type: String,
@@ -53,6 +58,21 @@ const userSchema = new mongoose.Schema({
   qrGeneratedAt: {
     type: Date,
     default: null
+  },
+  // User-specific settings (appearance, notifications, security)
+  settings: {
+    appearance: {
+      theme: { type: String, enum: ['auto', 'light', 'dark'], default: 'auto' },
+      reducedMotion: { type: Boolean, default: false }
+    },
+    notifications: {
+      inApp: { type: Boolean, default: true },
+      email: { type: Boolean, default: true },
+      sms: { type: Boolean, default: false }
+    },
+    security: {
+      twoFactorEnabled: { type: Boolean, default: false }
+    }
   },
   // ========== OTP EMAIL VERIFICATION FIELDS ==========
   isEmailVerified: {

@@ -3,9 +3,12 @@ import { authAPI, adminAPI } from '../services/api';
 
 export interface UserData {
   id: string;
+  _id?: string;
   uid: string;  // Add this for compatibility
   name: string;
   email: string;
+  profileImage?: string;
+  specialization?: 'cleaning' | 'electrician' | 'repair' | 'plumber' | 'other' | null;
   phone: string;
   apartment: string;
   role: 'resident' | 'security' | 'admin' | 'maintenance';
@@ -22,12 +25,13 @@ interface AuthContextType {
   signUp: (email: string, password: string, userData: any) => Promise<void>;  // Update signature
   signInWithGoogle: () => Promise<void>;  // Add this
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   // Admin functions
   getAllUsers: () => Promise<UserData[]>;
   updateUserRole: (uid: string, role: UserData['role']) => Promise<void>;
   updateUserStatus: (uid: string, status: UserData['status']) => Promise<void>;
   deleteUser: (uid: string) => Promise<void>;  // Add this
-  createUser: (userData: any) => Promise<void>;  // Add this
+  createUser: (userData: any) => Promise<any>;  // Add this
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token) {
         try {
           const userData = await authAPI.getMe();
-          setUser(userData);
+          setUser(normalizeUser(userData));
         } catch (error) {
           localStorage.removeItem('auth_token');
         }
@@ -53,9 +57,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
+  const refreshUser = async () => {
+    try {
+      const userData = await authAPI.getMe();
+      const normalized = normalizeUser(userData);
+      setUser(normalized);
+    } catch (err) {
+      console.error('refreshUser error', err);
+    }
+  };
+
   const signIn = async (email: string, password: string) => {
     const userData = await authAPI.login(email, password);
-    setUser(userData);
+    const normalized = normalizeUser(userData);
+    setUser(normalized);
   };
 
   const signUp = async (email: string, password: string, userDataInput: any) => {
@@ -67,7 +82,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       apartment: userDataInput.apartment,
       role: userDataInput.role || 'resident',
     });
-    setUser(newUser);
+    const normalized = normalizeUser(newUser);
+    setUser(normalized);
   };
 
   const signInWithGoogle = async () => {
@@ -95,19 +111,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const deleteUser = async (uid: string) => {
-    // For now, just deactivate the user
-    await adminAPI.updateUserStatus(uid, 'inactive');
+    await adminAPI.deleteUser(uid);
+  };
+
+  // Normalize user object (make profileImage absolute URL)
+  const normalizeUser = (u: any) => {
+    if (!u) return u;
+    const copy = { ...u } as any;
+    try {
+      if (copy.profileImage && typeof copy.profileImage === 'string' && copy.profileImage.startsWith('/uploads')) {
+        const apiBase = ((process.env.REACT_APP_API_URL as string) || 'http://localhost:5000').replace(/\/api$/, '');
+        copy.profileImage = `${apiBase}${copy.profileImage}`;
+      }
+      // ensure specialization is preserved
+      if (u.specialization) copy.specialization = u.specialization;
+    } catch (e) {
+      // noop
+    }
+    return copy as UserData;
   };
 
   const createUser = async (userDataInput: any) => {
-    await authAPI.register({
+    // Use admin API to create users without email verification so they can login
+    const res = await adminAPI.createUser({
       email: userDataInput.email,
-      password: 'temporary123', // You should generate a random password
+      password: userDataInput.password || undefined,
       name: userDataInput.name,
       phone: userDataInput.phone,
       apartment: userDataInput.apartment,
       role: userDataInput.role,
+      specialization: userDataInput.specialization || null,
+      status: userDataInput.status || 'active',
     });
+    return res;
   };
 
   return (
@@ -119,6 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signUp,
       signInWithGoogle,
       logout,
+      refreshUser,
       getAllUsers,
       updateUserRole,
       updateUserStatus,
