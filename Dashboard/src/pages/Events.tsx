@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -33,6 +36,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 
 const API_BASE = 'http://localhost:5000';
@@ -90,6 +94,7 @@ function TabPanel(props: TabPanelProps) {
 
 export default function Events() {
   const { user } = useAuth();
+  const theme = useTheme();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
@@ -108,6 +113,8 @@ export default function Events() {
     capacity: 0,
   });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [actionAnchorEl, setActionAnchorEl] = useState<HTMLElement | null>(null);
+  const [actionEventId, setActionEventId] = useState<string | null>(null);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -225,6 +232,81 @@ export default function Events() {
     }
   };
 
+  const openActionMenu = (e: React.MouseEvent<HTMLElement>, eventId: string) => {
+    setActionAnchorEl(e.currentTarget);
+    setActionEventId(eventId);
+  };
+
+  const closeActionMenu = () => {
+    setActionAnchorEl(null);
+    setActionEventId(null);
+  };
+
+  const handleAdminAction = async (action: 'approve' | 'reject' | 'cancel' | 'delete') => {
+    if (!actionEventId) return;
+    closeActionMenu();
+
+    try {
+      if (action === 'approve') {
+        await handleApproveEvent(actionEventId);
+      } else if (action === 'reject') {
+        const evt = events.find((e) => e.id === actionEventId) || null;
+        setSelectedEvent(evt);
+        setRejectDialog(true);
+      } else if (action === 'cancel') {
+        await handleCancelEvent(actionEventId);
+      } else if (action === 'delete') {
+        await handleDeleteEventAdmin(actionEventId);
+      }
+    } catch (error) {
+      console.error('Admin action error:', error);
+    }
+  };
+
+  // Admin: cancel an approved event (sets isActive=false and status=cancelled)
+  const handleCancelEvent = async (eventId: string) => {
+    const confirmed = window.confirm('Cancel this event? Attendees will be notified.');
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE}/api/events/${eventId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error('Failed to cancel event');
+
+      setSnackbar({ open: true, message: 'Event cancelled successfully', severity: 'success' });
+      fetchEvents();
+    } catch (error) {
+      console.error('Error cancelling event:', error);
+      setSnackbar({ open: true, message: 'Failed to cancel event', severity: 'error' });
+    }
+  };
+
+  // Admin: delete event via admin endpoint
+  const handleDeleteEventAdmin = async (eventId: string) => {
+    const confirmed = window.confirm('Permanently delete this event? This cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE}/api/events/admin/${eventId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error('Failed to delete event (admin)');
+
+      setSnackbar({ open: true, message: 'Event deleted', severity: 'success' });
+      fetchEvents();
+    } catch (error) {
+      console.error('Error deleting event (admin):', error);
+      setSnackbar({ open: true, message: 'Failed to delete event', severity: 'error' });
+    }
+  };
+
   const handleSaveEventChanges = async () => {
     if (!eventToEdit) return;
 
@@ -303,23 +385,41 @@ export default function Events() {
               <Typography variant="h6" sx={{ fontWeight: 600, color: '#034808', flex: 1 }}>
                 {event.title}
               </Typography>
-              <Chip
-                label={event.status}
-                size="small"
-                sx={{
-                  bgcolor: event.status === 'pending' ? '#FFC107' : event.status === 'approved' ? '#4CAF50' : '#F44336',
-                  color: 'white',
-                  fontWeight: 600,
-                  textTransform: 'capitalize',
-                  ml: 1,
-                }}
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Chip
+                  label={event.status}
+                  size="small"
+                  sx={{
+                    bgcolor:
+                      event.status === 'pending'
+                        ? (theme.palette.mode === 'dark' ? theme.palette.warning.dark : theme.palette.warning.main)
+                        : event.status === 'approved'
+                        ? (theme.palette.mode === 'dark' ? theme.palette.success.dark : theme.palette.success.main)
+                        : (theme.palette.mode === 'dark' ? theme.palette.error.dark : theme.palette.error.main),
+                    color: 'white',
+                    fontWeight: 600,
+                    textTransform: 'capitalize',
+                    ml: 1,
+                  }}
+                />
+
+                {user?.role === 'admin' && (
+                  <IconButton size="small" onClick={(e) => openActionMenu(e, event.id)}>
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </Box>
             </Box>
 
             <Chip
               label={event.category}
               size="small"
-              sx={{ bgcolor: catColor.bg, color: catColor.color, mb: 2, width: 'fit-content' }}
+              sx={{
+                bgcolor: theme.palette.mode === 'dark' ? theme.palette.background.paper : catColor.bg,
+                color: theme.palette.mode === 'dark' ? theme.palette.text.primary : catColor.color,
+                mb: 2,
+                width: 'fit-content',
+              }}
             />
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
@@ -415,14 +515,21 @@ export default function Events() {
             )}
 
             {event.status === 'rejected' && event.rejectionReason && (
-              <Paper sx={{ p: 1.5, bgcolor: '#FFEBEE', borderRadius: 1, mt: 'auto' }}>
+              <Paper
+                sx={{
+                  p: 1.5,
+                  bgcolor: theme.palette.mode === 'dark' ? theme.palette.background.paper : '#FFEBEE',
+                  borderRadius: 1,
+                  mt: 'auto',
+                }}
+              >
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <InfoIcon sx={{ color: '#F44336', fontSize: 18 }} />
+                  <InfoIcon sx={{ color: theme.palette.error.main, fontSize: 18 }} />
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#F44336', fontWeight: 600 }}>
+                    <Typography variant="caption" sx={{ color: theme.palette.error.main, fontWeight: 600 }}>
                       Rejection Reason:
                     </Typography>
-                    <Typography variant="caption" sx={{ color: '#F44336', display: 'block' }}>
+                    <Typography variant="caption" sx={{ color: theme.palette.error.main, display: 'block' }}>
                       {event.rejectionReason}
                     </Typography>
                   </Box>
@@ -460,8 +567,8 @@ export default function Events() {
               indicatorColor="primary"
               textColor="inherit"
               sx={{
-                bgcolor: '#F5F5F5',
-                '& .MuiTabs-indicator': { bgcolor: '#034808', height: 3 },
+                bgcolor: theme.palette.mode === 'dark' ? theme.palette.background.default : '#F5F5F5',
+                '& .MuiTabs-indicator': { bgcolor: theme.palette.primary.main, height: 3 },
               }}
             >
               <Tab label={`Pending (${pendingEvents.length})`} />
@@ -582,6 +689,27 @@ export default function Events() {
           </AnimatePresence>
         </>
       )}
+
+      <Menu anchorEl={actionAnchorEl} open={Boolean(actionAnchorEl)} onClose={closeActionMenu}>
+        {(() => {
+          const evt = events.find((e) => e.id === actionEventId) || null;
+          if (!evt) return null;
+          return (
+            <>
+              {evt.status !== 'approved' && (
+                <MenuItem onClick={() => handleAdminAction('approve')}>Approve</MenuItem>
+              )}
+              {evt.status !== 'rejected' && (
+                <MenuItem onClick={() => handleAdminAction('reject')}>Reject</MenuItem>
+              )}
+              {evt.status === 'approved' && (
+                <MenuItem onClick={() => handleAdminAction('cancel')}>Cancel</MenuItem>
+              )}
+              <MenuItem onClick={() => handleAdminAction('delete')}>Delete</MenuItem>
+            </>
+          );
+        })()}
+      </Menu>
 
       {/* Rejection reason dialog */}
       <Dialog open={rejectDialog} onClose={() => setRejectDialog(false)} fullWidth maxWidth="sm">

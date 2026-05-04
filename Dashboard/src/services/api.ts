@@ -87,4 +87,13 @@ export const adminAPI = {
       method: 'PUT',
       body: JSON.stringify({ status }),
     }),
+  deleteUser: (userId: string) =>
+    request(`/auth/users/${userId}`, {
+      method: 'DELETE',
+    }),
+  createUser: (userData: any) =>
+    request<{ tempPassword?: string; user?: any }>('/auth/users', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    }),
 };

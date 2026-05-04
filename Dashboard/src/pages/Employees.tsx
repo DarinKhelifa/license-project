@@ -257,6 +257,7 @@ export default function Employees() {
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [workFilter, setWorkFilter] = useState<string>('');
   const [openModal, setOpenModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState(emptyForm);
@@ -419,21 +420,34 @@ export default function Employees() {
             Employees
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Button
-            variant="outlined"
-            startIcon={<FilterIcon />}
-            sx={{
-              borderColor: alpha(theme.palette.primary.main, isDark ? 0.55 : 0.45),
-              color: 'text.primary',
-              '&:hover': {
-                borderColor: alpha(theme.palette.primary.main, isDark ? 0.75 : 0.55),
-                bgcolor: alpha(theme.palette.primary.main, isDark ? 0.10 : 0.06),
-              },
-            }}
-          >
-            Filter
-          </Button>
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+            <Button
+              variant="outlined"
+              startIcon={<FilterIcon />}
+              sx={{
+                borderColor: alpha(theme.palette.primary.main, isDark ? 0.55 : 0.45),
+                color: 'text.primary',
+                '&:hover': {
+                  borderColor: alpha(theme.palette.primary.main, isDark ? 0.75 : 0.55),
+                  bgcolor: alpha(theme.palette.primary.main, isDark ? 0.10 : 0.06),
+                },
+              }}
+            >
+              Filter
+            </Button>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ mr: 1 }}>Category:</Typography>
+              {['', ...WORK_CATEGORIES].map((cat) => (
+                <Chip
+                  key={cat || 'all'}
+                  label={cat === '' ? 'All' : cat}
+                  size="small"
+                  clickable
+                  color={workFilter === cat ? 'primary' : 'default'}
+                  onClick={() => setWorkFilter(cat)}
+                />
+              ))}
+            </Box>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -509,7 +523,9 @@ export default function Employees() {
         /* ── Cards Grid ── */
         <AnimatePresence>
           <Grid container spacing={3}>
-            {employees.map((emp) => (
+            {employees
+              .filter((emp) => (workFilter ? emp.workCategory === workFilter : true))
+              .map((emp) => (
               <Grid
                 item
                 key={emp._id}

@@ -11,10 +11,6 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TextField from '@mui/material/TextField';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Snackbar from '@mui/material/Snackbar';
@@ -22,10 +18,7 @@ import Alert from '@mui/material/Alert';
 import Paper from '@mui/material/Paper';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import {
-  Edit as EditIcon,
-  LocationOn as LocationIcon,
-} from '@mui/icons-material';
+import { LocationOn as LocationIcon } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_BASE = 'http://localhost:5000';
@@ -82,9 +75,6 @@ export default function Report() {
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null);
-  const [statusDialog, setStatusDialog] = useState(false);
-  const [newStatus, setNewStatus] = useState<'in-progress' | 'resolved' | 'rejected'>('in-progress');
-  const [resolutionNotes, setResolutionNotes] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
   const fetchReports = useCallback(async () => {
@@ -112,34 +102,7 @@ export default function Report() {
     fetchReports();
   }, [fetchReports]);
 
-  // ── Update report status ──────────────────────────────────────────────────
-  const handleUpdateStatus = async () => {
-    if (!selectedReport) return;
-
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${API_BASE}/api/reports/${selectedReport._id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus, resolutionNotes }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update report status');
-
-      setSnackbar({ open: true, message: 'Report status updated successfully', severity: 'success' });
-      setStatusDialog(false);
-      setNewStatus('in-progress');
-      setResolutionNotes('');
-      setSelectedReport(null);
-      fetchReports();
-    } catch (error) {
-      console.error('Error updating report:', error);
-      setSnackbar({ open: true, message: 'Failed to update report', severity: 'error' });
-    }
-  };
+  
 
   // ── Filter reports by status ──────────────────────────────────────────────
   const pendingReports = reports.filter((r) => r.status === 'pending');
@@ -251,26 +214,7 @@ export default function Report() {
               </Typography>
             )}
 
-            {(report.status === 'pending' || report.status === 'in-progress') && (
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<EditIcon />}
-                onClick={() => {
-                  setSelectedReport(report);
-                  setNewStatus(report.status === 'pending' ? 'in-progress' : 'resolved');
-                  setStatusDialog(true);
-                }}
-                sx={{
-                  mt: 'auto',
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  '&:hover': { bgcolor: 'primary.dark' },
-                }}
-              >
-                Update Status
-              </Button>
-            )}
+            {/* Reports are read-only for admins; status changes are handled outside this UI */}
           </CardContent>
         </Card>
       </motion.div>
@@ -447,44 +391,7 @@ export default function Report() {
         </>
       )}
 
-      {/* Status Update Dialog */}
-      <Dialog open={statusDialog} onClose={() => setStatusDialog(false)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ color: 'text.primary', fontWeight: 900 }}>
-          Update Report Status
-        </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Select New Status</InputLabel>
-            <Select value={newStatus} onChange={(e) => setNewStatus(e.target.value as any)} label="Select New Status">
-              <MenuItem value="in-progress">In Progress</MenuItem>
-              <MenuItem value="resolved">Resolved</MenuItem>
-              <MenuItem value="rejected">Rejected</MenuItem>
-            </Select>
-          </FormControl>
-
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label="Resolution Notes"
-            placeholder="Add notes about this report..."
-            value={resolutionNotes}
-            onChange={(e) => setResolutionNotes(e.target.value)}
-            variant="outlined"
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setStatusDialog(false)}>Cancel</Button>
-          <Button
-            onClick={handleUpdateStatus}
-            variant="contained"
-            sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }}
-            disabled={!resolutionNotes.trim()}
-          >
-            Update Status
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Reports are read-only in the dashboard; status updates are not available here. */}
 
       {/* Snackbar notification */}
       <Snackbar

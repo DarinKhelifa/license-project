@@ -35,6 +35,8 @@ import {
   Security as SecurityIcon,
   Search as SearchIcon,
   Refresh as RefreshIcon,
+  ToggleOn as ToggleOnIcon,
+  ToggleOff as ToggleOffIcon,
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
@@ -49,6 +51,7 @@ interface User {
   apartment?: string;
   status: 'active' | 'inactive' | 'pending';
   joinDate: string;
+  specialization?: string | null;
 }
 
 // Tab Panel Component
@@ -97,6 +100,7 @@ export default function ManageAccounts() {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [employeeSpecFilter, setEmployeeSpecFilter] = useState<string>('');
   
   // Form state
   const [formData, setFormData] = useState({
@@ -105,6 +109,7 @@ export default function ManageAccounts() {
     phone: '',
     role: 'resident' as User['role'],
     apartment: '',
+    specialization: '' as string,
     status: 'active' as User['status'],
   });
 
@@ -117,7 +122,7 @@ export default function ManageAccounts() {
     try {
       const allUsers = await getAllUsers();
       const formattedUsers: User[] = allUsers.map(u => ({
-        id: u.id || u.uid,
+        id: u._id || u.id || u.uid,
         name: u.name,
         email: u.email,
         phone: u.phone,
@@ -125,6 +130,7 @@ export default function ManageAccounts() {
         apartment: u.apartment,
         status: u.status,
         joinDate: u.joinDate,
+        specialization: (u as any).specialization || null,
       }));
       setUsers(formattedUsers);
     } catch (error) {
@@ -157,6 +163,7 @@ export default function ManageAccounts() {
       phone: '',
       role: 'resident',
       apartment: '',
+      specialization: '',
       status: 'active',
     });
     setOpenDialog(true);
@@ -170,6 +177,7 @@ export default function ManageAccounts() {
       phone: user.phone,
       role: user.role,
       apartment: user.apartment || '',
+        specialization: (user as any).specialization || '',
       status: user.status,
     });
     setOpenDialog(true);
@@ -226,6 +234,7 @@ export default function ManageAccounts() {
         // Update existing user
         await updateUserRole(editingUser.id, formData.role);
         await updateUserStatus(editingUser.id, formData.status);
+        // TODO: update specialization via admin endpoint (not implemented)
         await loadUsers();
         setSnackbar({
           open: true,
@@ -233,19 +242,21 @@ export default function ManageAccounts() {
           severity: 'success',
         });
       } else {
-        // Add new user
-        await createUser({
+        // Add new user via admin API
+        const res = await createUser({
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           role: formData.role,
           apartment: formData.apartment,
+          specialization: formData.specialization || null,
           status: formData.status,
         });
         await loadUsers();
+        const tempPass = (res as any)?.tempPassword;
         setSnackbar({
           open: true,
-          message: `User ${formData.name} added successfully`,
+          message: `User ${formData.name} added successfully` + (tempPass ? ` (temp password: ${tempPass})` : ''),
           severity: 'success',
         });
       }
@@ -260,15 +271,24 @@ export default function ManageAccounts() {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = 
+    const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.phone.includes(searchTerm) ||
       (user.apartment && user.apartment.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    if (tabValue === 0) return matchesSearch; // All
-    if (tabValue === 1) return matchesSearch && user.role === 'resident';
-    if (tabValue === 2) return matchesSearch && ['security', 'admin', 'maintenance'].includes(user.role);
+
+    // Exclude admin from Manage Accounts entirely
+    if (user.role === 'admin') return false;
+
+    // tabValue 0 => Residents only
+    if (tabValue === 0) return matchesSearch && user.role === 'resident';
+
+    // tabValue 1 => Agents (security staff)
+    if (tabValue === 1) return matchesSearch && user.role === 'security';
+
+    // tabValue 2 => Maintenance staff
+    if (tabValue === 2) return matchesSearch && user.role === 'maintenance';
+
     return matchesSearch;
   });
 
@@ -382,6 +402,7 @@ export default function ManageAccounts() {
                 label={`Staff: ${users.filter(u => u.role !== 'resident').length}`}
                 sx={{ bgcolor: alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08) }}
               />
+                  {/* specialization filters moved to Employees page */}
               <IconButton onClick={loadUsers} size="small">
                 <RefreshIcon />
               </IconButton>
@@ -402,39 +423,51 @@ export default function ManageAccounts() {
             '& .MuiTabs-indicator': { bgcolor: theme.palette.primary.main },
           }}
         >
-          <Tab label="All Accounts" />
           <Tab label="Residents" />
-          <Tab label="Employees" />
+          <Tab label="Agents" />
+          <Tab label="Maintenance" />
         </Tabs>
 
-        {/* All Accounts Tab */}
+        {/* Residents Tab */}
         <TabPanel value={tabValue} index={0}>
           <UserTable
             users={filteredUsers}
             onEdit={handleOpenEditDialog}
             onDelete={handleOpenDeleteDialog}
+            onToggleActive={(u) => {
+              const newStatus = u.status === 'active' ? 'inactive' : 'active';
+              updateUserStatus(u.id, newStatus).then(() => loadUsers());
+            }}
             getRoleChipColor={getRoleChipColor}
             getStatusChip={getStatusChip}
           />
         </TabPanel>
 
-        {/* Residents Tab */}
+        {/* Agents Tab */}
         <TabPanel value={tabValue} index={1}>
           <UserTable
             users={filteredUsers}
             onEdit={handleOpenEditDialog}
             onDelete={handleOpenDeleteDialog}
+            onToggleActive={(u) => {
+              const newStatus = u.status === 'active' ? 'inactive' : 'active';
+              updateUserStatus(u.id, newStatus).then(() => loadUsers());
+            }}
             getRoleChipColor={getRoleChipColor}
             getStatusChip={getStatusChip}
           />
         </TabPanel>
 
-        {/* Employees Tab */}
+        {/* Maintenance Tab */}
         <TabPanel value={tabValue} index={2}>
           <UserTable
             users={filteredUsers}
             onEdit={handleOpenEditDialog}
             onDelete={handleOpenDeleteDialog}
+            onToggleActive={(u) => {
+              const newStatus = u.status === 'active' ? 'inactive' : 'active';
+              updateUserStatus(u.id, newStatus).then(() => loadUsers());
+            }}
             getRoleChipColor={getRoleChipColor}
             getStatusChip={getStatusChip}
           />
@@ -494,6 +527,25 @@ export default function ManageAccounts() {
                 </Select>
               </FormControl>
             </Grid>
+            {formData.role !== 'resident' && (
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>Specialization</InputLabel>
+                  <Select
+                    value={formData.specialization}
+                    label="Specialization"
+                    onChange={(e) => setFormData({ ...formData, specialization: e.target.value as string })}
+                  >
+                    <MenuItem value="">None</MenuItem>
+                    <MenuItem value="cleaning">Cleaning</MenuItem>
+                    <MenuItem value="electrician">Electrician</MenuItem>
+                    <MenuItem value="repair">Repair</MenuItem>
+                    <MenuItem value="plumber">Plumber</MenuItem>
+                    <MenuItem value="other">Other</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Status</InputLabel>
@@ -571,15 +623,18 @@ interface UserTableProps {
   users: User[];
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
+  onToggleActive?: (user: User) => void;
   getRoleChipColor: (role: string) => { bg: string; color: string };
   getStatusChip: (status: string) => JSX.Element | null;
 }
 
-function UserTable({ users, onEdit, onDelete, getRoleChipColor, getStatusChip }: UserTableProps) {
+function UserTable({ users, onEdit, onDelete, onToggleActive, getRoleChipColor, getStatusChip }: UserTableProps) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   return (
     <TableContainer>
       <Table>
-        <TableHead sx={{ bgcolor: '#f5f5f5' }}>
+        <TableHead sx={{ bgcolor: isDark ? alpha(theme.palette.text.primary, 0.06) : '#f5f5f5' }}>
           <TableRow>
             <TableCell>User</TableCell>
             <TableCell>Contact</TableCell>
@@ -646,6 +701,13 @@ function UserTable({ users, onEdit, onDelete, getRoleChipColor, getStatusChip }:
                   </Typography>
                 </TableCell>
                 <TableCell align="center">
+                  <IconButton
+                    size="small"
+                    onClick={() => onToggleActive && onToggleActive(user)}
+                    sx={{ color: user.status === 'active' ? '#4CAF50' : '#9E9E9E', mr: 1 }}
+                  >
+                    {user.status === 'active' ? <ToggleOffIcon /> : <ToggleOnIcon />}
+                  </IconButton>
                   <IconButton
                     size="small"
                     onClick={() => onEdit(user)}

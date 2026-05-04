@@ -14,7 +14,7 @@ const generateToken = (id) => {
 // ========== REGISTER ==========
 const register = async (req, res) => {
   try {
-    const { name, email, password, phone, apartment, role } = req.body;
+    const { name, email, password, phone, apartment, role, specialization } = req.body;
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -36,6 +36,7 @@ const register = async (req, res) => {
       phone,
       apartment,
       role: role || 'resident',
+      specialization: specialization || null,
       status: role === 'admin' ? 'active' : 'pending',
       isEmailVerified: false,
       otp: hashedOTP,
@@ -69,9 +70,10 @@ const register = async (req, res) => {
         phone: user.phone,
         apartment: user.apartment,
         role: user.role,
+        specialization: user.specialization,
         status: user.status,
         profileImage: user.profileImage,
-        isEmailVerified: user.isEmailVerified,
+        isEmailVerified: user.isEmailVerified
             }
     });
   } catch (error) {
@@ -284,6 +286,9 @@ const updateProfile = async (req, res) => {
     // Handle profile image upload
     if (req.file) {
       user.profileImage = `/uploads/${req.file.filename}`;
+    } else if (req.body && (req.body.removeProfileImage === 'true' || req.body.removeProfileImage === true)) {
+      // allow frontend to request removing current profile image
+      user.profileImage = null;
     }
     
     user.updatedAt = Date.now();
@@ -388,6 +393,87 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
+// Exports will be declared after all controller functions are defined
+
+// ========== DELETE USER (Admin) ==========
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Optionally remove profile image file from disk (best-effort)
+    try {
+      if (user.profileImage && user.profileImage.startsWith('/uploads/')) {
+        const fs = require('fs');
+        const path = require('path');
+        const filePath = path.join(process.cwd(), user.profileImage);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      }
+    } catch (e) {
+      console.warn('Failed to remove profile image file:', e.message || e);
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: 'User deleted' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// exports will be attached after all functions are defined
+
+// ========== CREATE USER (Admin) ==========
+const createUserAdmin = async (req, res) => {
+  try {
+    const { name, email, password, phone, apartment, role, specialization, status } = req.body;
+
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    // If no password provided, generate a temporary one
+    const tempPassword = password || Math.random().toString(36).slice(-8);
+
+    // Create user as verified (admin created)
+    const user = await User.create({
+      name,
+      email,
+      password: tempPassword,
+      phone,
+      apartment,
+      role: role || 'resident',
+      specialization: specialization || null,
+      status: status || (role === 'admin' ? 'active' : 'active'),
+      isEmailVerified: true
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'User created by admin',
+      tempPassword,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        apartment: user.apartment,
+        role: user.role,
+        specialization: user.specialization,
+        status: user.status,
+        profileImage: user.profileImage
+      }
+    });
+  } catch (error) {
+    console.error('Admin create user error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -397,6 +483,8 @@ module.exports = {
   getAllUsers,
   updateUserRole,
   updateUserStatus,
+  createUserAdmin,
+  deleteUser,
   verifyOTP,
   resendOTP
 };

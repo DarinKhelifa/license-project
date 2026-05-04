@@ -6,6 +6,7 @@ import type { PaletteMode } from '@mui/material';
 import { createOrelaxTheme } from './styles/theme';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeModeProvider } from './context/ThemeModeContext';
+import { NotificationsProvider } from './context/NotificationsContext';
 import AuthGuard from './components/AuthGuard';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
@@ -16,6 +17,9 @@ import ManageAccounts from './pages/ManageAccounts';
 import Employees from './pages/Employees';
 import Report from './pages/Report';
 import Events from './pages/Events';
+import Guests from './pages/Guests';
+import GuestDetail from './pages/GuestDetail';
+import Settings from './pages/Settings';
 /*import Security from './pages/Security';
 import Community from './pages/Community';
 import Facilities from './pages/Facilities';
@@ -54,7 +58,8 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <Router>
+          <NotificationsProvider>
+            <Router>
             <Routes>
               {/* Public Routes - NO DASHBOARD LAYOUT */}
               <Route path="/" element={<LandingPage />} />
@@ -112,9 +117,40 @@ function App() {
                   </AuthGuard>
                 }
               />
+              <Route
+                path="/guests"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <Guests />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/guests/:guestId"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <GuestDetail />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <Settings />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
               {/* Security / Facilities removed from UI */}
             </Routes>
-          </Router>
+            </Router>
+          </NotificationsProvider>
         </AuthProvider>
       </ThemeProvider>
     </ThemeModeProvider>
