@@ -44,10 +44,14 @@ const createEvent = async (req, res) => {
 // @route   GET /api/events
 const getAllEvents = async (req, res) => {
   try {
+    // Return all approved, active events. Previously this endpoint filtered
+    // out events whose `date` was earlier than "now" which caused some
+    // approved events to be missing from the resident UI (timezones and
+    // date-only values could make the comparison exclude valid events).
+    // Removing the date filter ensures all approved events are visible.
     const events = await Event.find({ 
       status: 'approved', 
       isActive: true,
-      date: { $gte: new Date() } // Only future events
     }).sort({ date: 1 });
     
     res.json(events);
