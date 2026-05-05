@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   String _role = 'resident';
   bool _roleResolved = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -245,6 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Search Bar
                   _SearchBarWithResults(
                     onSearchHint: _getSearchHint(),
+                    onQueryChanged: (q) => setState(() => _searchQuery = q),
                   ),
                 ],
               ),
@@ -670,58 +672,68 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Animated Service Grid
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.3,
-          children: List.generate(4, (index) {
-            final cards = [
-              {
-                'icon': Icons.report_problem_outlined,
-                'iconColor': const Color(0xFF5B8DEF),
-                'title': 'Reports',
-                'subtitle': 'Resident reports',
-                'route': '/reports',
-              },
-              {
-                'icon': Icons.people_outline,
-                'iconColor': const Color(0xFFE07B3F),
-                'title': 'Visitors',
-                'subtitle': 'Guest management',
-                'route': '/visitors',
-              },
-              {
-                'icon': Icons.warning_amber_outlined,
-                'iconColor': const Color(0xFFE05C8A),
-                'title': 'Alerts',
-                'subtitle': 'Incidents & notices',
-                'route': '/alerts',
-              },
-              {
-                'icon': Icons.history,
-                'iconColor': const Color(0xFF9B59B6),
-                'title': 'Access logs',
-                'subtitle': 'Recent activity',
-                'route': '/access-logs',
-              },
-            ];
+        // Animated Service Grid (filterable)
+        () {
+          final cards = [
+            {
+              'icon': Icons.report_problem_outlined,
+              'iconColor': const Color(0xFF5B8DEF),
+              'title': 'Reports',
+              'subtitle': 'Resident reports',
+              'route': '/reports',
+            },
+            {
+              'icon': Icons.people_outline,
+              'iconColor': const Color(0xFFE07B3F),
+              'title': 'Visitors',
+              'subtitle': 'Guest management',
+              'route': '/visitors',
+            },
+            {
+              'icon': Icons.warning_amber_outlined,
+              'iconColor': const Color(0xFFE05C8A),
+              'title': 'Alerts',
+              'subtitle': 'Incidents & notices',
+              'route': '/alerts',
+            },
+            {
+              'icon': Icons.history,
+              'iconColor': const Color(0xFF9B59B6),
+              'title': 'Access logs',
+              'subtitle': 'Recent activity',
+              'route': '/access-logs',
+            },
+          ];
 
-            final card = cards[index];
-            return _AnimatedServiceCard(
-              delay: Duration(milliseconds: 100 * index),
-              icon: card['icon'] as IconData,
-              iconColor: card['iconColor'] as Color,
-              title: card['title'] as String,
-              subtitle: card['subtitle'] as String,
-              onTap: () =>
-                  Navigator.pushNamed(context, card['route'] as String),
-            );
-          }),
-        ),
+          final lowerQuery = _searchQuery.trim().toLowerCase();
+          final visible = lowerQuery.isEmpty
+              ? cards
+              : cards
+                  .where((c) => (c['title'] as String)
+                      .toLowerCase()
+                      .contains(lowerQuery))
+                  .toList();
+
+          return GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 1.3,
+            children: List.generate(visible.length, (index) {
+              final card = visible[index];
+              return _AnimatedServiceCard(
+                delay: Duration(milliseconds: 100 * index),
+                icon: card['icon'] as IconData,
+                iconColor: card['iconColor'] as Color,
+                title: card['title'] as String,
+                subtitle: card['subtitle'] as String,
+                onTap: () => Navigator.pushNamed(context, card['route'] as String),
+              );
+            }),
+          );
+        }(),
         const SizedBox(height: 24),
 
         // Modern Info Card showing latest security note (from local storage)
@@ -951,58 +963,68 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 16),
 
-        // Animated Service Grid
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.3,
-          children: List.generate(4, (index) {
-            final cards = [
-              {
-                'icon': Icons.build_circle_outlined,
-                'iconColor': const Color(0xFF5B8DEF),
-                'title': 'Work orders',
-                'subtitle': 'Active jobs',
-                'route': '/work-orders',
-              },
-              {
-                'icon': Icons.pending_actions_outlined,
-                'iconColor': const Color(0xFFE07B3F),
-                'title': 'Pending',
-                'subtitle': 'Awaiting action',
-                'route': '/pending-requests',
-              },
-              {
-                'icon': Icons.calendar_today_outlined,
-                'iconColor': const Color(0xFFE05C8A),
-                'title': 'Schedule',
-                'subtitle': 'Your calendar',
-                'route': '/schedule',
-              },
-              {
-                'icon': Icons.report_problem_outlined,
-                'iconColor': const Color(0xFF9B59B6),
-                'title': 'Report',
-                'subtitle': 'Submit an issue',
-                'route': '/report',
-              },
-            ];
+        // Animated Service Grid (filterable)
+        () {
+          final cards = [
+            {
+              'icon': Icons.build_circle_outlined,
+              'iconColor': const Color(0xFF5B8DEF),
+              'title': 'Work orders',
+              'subtitle': 'Active jobs',
+              'route': '/work-orders',
+            },
+            {
+              'icon': Icons.pending_actions_outlined,
+              'iconColor': const Color(0xFFE07B3F),
+              'title': 'Pending',
+              'subtitle': 'Awaiting action',
+              'route': '/pending-requests',
+            },
+            {
+              'icon': Icons.calendar_today_outlined,
+              'iconColor': const Color(0xFFE05C8A),
+              'title': 'Schedule',
+              'subtitle': 'Your calendar',
+              'route': '/schedule',
+            },
+            {
+              'icon': Icons.report_problem_outlined,
+              'iconColor': const Color(0xFF9B59B6),
+              'title': 'Report',
+              'subtitle': 'Submit an issue',
+              'route': '/report',
+            },
+          ];
 
-            final card = cards[index];
-            return _AnimatedServiceCard(
-              delay: Duration(milliseconds: 100 * index),
-              icon: card['icon'] as IconData,
-              iconColor: card['iconColor'] as Color,
-              title: card['title'] as String,
-              subtitle: card['subtitle'] as String,
-              onTap: () =>
-                  Navigator.pushNamed(context, card['route'] as String),
-            );
-          }),
-        ),
+          final lowerQuery = _searchQuery.trim().toLowerCase();
+          final visible = lowerQuery.isEmpty
+              ? cards
+              : cards
+                  .where((c) => (c['title'] as String)
+                      .toLowerCase()
+                      .contains(lowerQuery))
+                  .toList();
+
+          return GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 1.3,
+            children: List.generate(visible.length, (index) {
+              final card = visible[index];
+              return _AnimatedServiceCard(
+                delay: Duration(milliseconds: 100 * index),
+                icon: card['icon'] as IconData,
+                iconColor: card['iconColor'] as Color,
+                title: card['title'] as String,
+                subtitle: card['subtitle'] as String,
+                onTap: () => Navigator.pushNamed(context, card['route'] as String),
+              );
+            }),
+          );
+        }(),
         const SizedBox(height: 24),
 
         // Modern Info Card
@@ -1304,6 +1326,13 @@ class _HomeScreenState extends State<HomeScreen> {
         'route': '/feed',
       },
       {
+        'icon': Icons.local_parking,
+        'iconColor': const Color(0xFF1976D2),
+        'title': 'Parking',
+        'subtitle': 'Reserve a parking place',
+        'route': '/parking',
+      },
+      {
         'icon': Icons.place,
         'iconColor': const Color(0xFF9B59B6),
         'title': 'Facilities',
@@ -1356,30 +1385,45 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 16),
 
-            // Resident Shortcut Grid with Animations (toggle all/first 4)
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.3,
-              children: List.generate(
-                showAll ? cards.length : 4,
-                (index) {
-                  final card = cards[index];
-                  return _AnimatedServiceCard(
-                    delay: Duration(milliseconds: 80 * index),
-                    icon: card['icon'] as IconData,
-                    iconColor: card['iconColor'] as Color,
-                    title: card['title'] as String,
-                    subtitle: card['subtitle'] as String,
-                    onTap: () =>
-                        Navigator.pushNamed(context, card['route'] as String),
-                  );
-                },
-              ),
-            ),
+            // Resident Shortcut Grid with Animations (toggle all/first 4) and search-filter
+            () {
+              final lowerQuery = _searchQuery.trim().toLowerCase();
+              final filtered = lowerQuery.isEmpty
+                  ? cards
+                  : cards
+                      .where((c) => (c['title'] as String)
+                          .toLowerCase()
+                          .contains(lowerQuery))
+                      .toList();
+
+              final visibleCards = lowerQuery.isEmpty
+                  ? (showAll ? cards : cards.take(4).toList())
+                  : filtered;
+
+              return GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 1.3,
+                children: List.generate(
+                  visibleCards.length,
+                  (index) {
+                    final card = visibleCards[index];
+                    return _AnimatedServiceCard(
+                      delay: Duration(milliseconds: 80 * index),
+                      icon: card['icon'] as IconData,
+                      iconColor: card['iconColor'] as Color,
+                      title: card['title'] as String,
+                      subtitle: card['subtitle'] as String,
+                      onTap: () =>
+                          Navigator.pushNamed(context, card['route'] as String),
+                    );
+                  },
+                ),
+              );
+            }(),
 
             const SizedBox(height: 24),
 
@@ -2240,8 +2284,9 @@ class _AnimatedIconButtonState extends State<_AnimatedIconButton>
 // ── Animated Profile Button ──
 class _SearchBarWithResults extends StatefulWidget {
   final String onSearchHint;
+  final ValueChanged<String> onQueryChanged;
 
-  const _SearchBarWithResults({required this.onSearchHint});
+  const _SearchBarWithResults({required this.onSearchHint, required this.onQueryChanged});
 
   @override
   State<_SearchBarWithResults> createState() => _SearchBarWithResultsState();
@@ -2260,6 +2305,7 @@ class _SearchBarWithResultsState extends State<_SearchBarWithResults> {
   Future<void> _performSearch(String query) async {
     if (query.isEmpty) {
       setState(() => _searchResults = []);
+      widget.onQueryChanged('');
       return;
     }
 
@@ -2312,6 +2358,7 @@ class _SearchBarWithResultsState extends State<_SearchBarWithResults> {
       }
 
       setState(() => _searchResults = results);
+      widget.onQueryChanged(query);
     } catch (e) {
       debugPrint('Search error: $e');
     }
@@ -2375,6 +2422,7 @@ class _SearchBarWithResultsState extends State<_SearchBarWithResults> {
                     onTap: () {
                       _searchController.clear();
                       setState(() => _searchResults = []);
+                      widget.onQueryChanged('');
                     },
                     child: const Icon(Icons.close,
                         color: Color(0xFFC0C0C0), size: 18),

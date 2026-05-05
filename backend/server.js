@@ -33,6 +33,7 @@ const initSurveillance = require('./src/routes/surveillanceRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const settingsRoutes = require('./src/routes/settingsRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
+const parkingRoutes = require('./src/routes/parkingRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -80,6 +81,7 @@ app.use('/api/qr', qrRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/contacts', contactRoutes);
+app.use('/api/parking', parkingRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ORELAX API is running' });

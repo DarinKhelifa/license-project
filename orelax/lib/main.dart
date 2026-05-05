@@ -25,6 +25,7 @@ import 'screens/maintenance/pending_requests_screen.dart';
 import 'screens/maintenance/schedule_screen.dart';
 import 'screens/resident/helping_staff/helping_staff_home_screen.dart';
 import 'screens/resident/facilities/resident_facilities_screen.dart';
+import 'screens/resident/parking/parking_screen.dart';
 import 'screens/facilities_manager/create_edit_facility_screen.dart';
 import 'screens/facilities_manager/facility_detail_screen.dart';
 import 'screens/facilities_manager/booking_history_screen.dart';
@@ -154,6 +155,7 @@ class OrelaxApp extends StatelessWidget {
           },
           '/childcare': (_) => const _ComingSoonScreen(title: 'Childcare'),
           '/helping-staff': (_) => const HelpingStaffScreen(),
+          '/parking': (_) => const ParkingScreen(),
           '/manage-accounts': (_) => const _ComingSoonScreen(title: 'Manage Accounts'),
           '/security-management': (_) => const _ComingSoonScreen(title: 'Security Management'),
           '/monitoring': (_) => const EnergyMonitoringScreen(),
