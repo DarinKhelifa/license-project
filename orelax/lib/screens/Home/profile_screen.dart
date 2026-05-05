@@ -6,6 +6,9 @@ import '../../screens/Welcome/welcome_screen.dart';
 import 'edit_profile_screen.dart';
 import 'change_password_screen.dart';
 import 'contact_us_screen.dart';
+import 'about_page.dart';
+import 'help_center_page.dart';
+import 'notification_settings_screen.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -171,14 +174,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _ProfileTile(
                         icon: Icons.info_outline,
                         title: 'About Us',
-                        onTap: () => _showAboutDialog(),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AboutPage()),
+                        ),
                       ),
                       _divider(),
                       _ProfileTile(
                         icon: Icons.notifications_outlined,
                         title: 'Notifications',
-                        trailing: 'On',
-                        onTap: () => _toggleNotifications(),
+                        trailing: null,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
+                        ),
                       ),
                     ],
                   ),
@@ -199,7 +208,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _ProfileTile(
                         icon: Icons.help_outline,
                         title: 'Help Center',
-                        onTap: () => _showHelpCenter(),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const HelpCenterPage()),
+                        ),
                       ),
                       _divider(),
                       _ProfileTile(
@@ -356,16 +368,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('About ORELAX'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Version: 1.0.0'),
-            SizedBox(height: 8),
-            Text('Smart Residential Community Management'),
-            SizedBox(height: 8),
-            Text('© 2024 ORELAX. All rights reserved.'),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text('ORELAX is a resident-centered community management platform designed to simplify daily life in apartment complexes and residential buildings.'),
+              SizedBox(height: 8),
+              Text('Version: 1.0.0'),
+              SizedBox(height: 8),
+              Text('Our mission is to make residential living safer, more convenient, and more connected by delivering an easy, secure, and reliable digital experience for residents and staff.'),
+              SizedBox(height: 8),
+              Text('Key features include: Facility bookings, event announcements, incident reporting, visitor QR passes, and real-time notifications.'),
+              SizedBox(height: 12),
+              Text('© 2024 ORELAX. All rights reserved.'),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -378,37 +396,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _toggleNotifications() {
-    // TODO: Implement notification toggle
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Notification settings coming soon'),
-        duration: Duration(seconds: 2),
-      ),
+    // kept for backward compatibility; main settings moved to NotificationSettingsScreen
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
     );
   }
 
   void _showHelpCenter() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Help Center'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Need help? Contact us:'),
-            SizedBox(height: 8),
-            Text('Email: support@orelax.com'),
-            Text('Phone: +213 (0) 123 456 789'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+    // Help center is now a full page. Use navigation instead.
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const HelpCenterPage()),
     );
   }
 

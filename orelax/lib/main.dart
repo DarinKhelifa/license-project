@@ -12,6 +12,7 @@ import 'screens/Welcome/welcome_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/Home/report_screen.dart';
 import 'screens/security/reports_screen.dart';
+import 'screens/security/notes_screen.dart';
 import 'screens/Home/profile_screen.dart';
 import 'screens/Home/home_screen.dart';
 import 'screens/chat/chat_screen.dart';
@@ -107,6 +108,7 @@ class OrelaxApp extends StatelessWidget {
           '/chat': (_) => const ChatScreen(),
           '/report': (_) => const ReportScreen(),
           '/reports': (_) => const ReportsScreen(),
+          '/notes': (_) => const NotesScreen(),
           '/notifications': (_) => const NotificationScreen(),
           '/profile': (_) => const ProfileScreen(),
           '/portal': (_) => const PortalScreen(),
