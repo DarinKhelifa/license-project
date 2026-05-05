@@ -11,7 +11,7 @@ export interface UserData {
   specialization?: 'cleaning' | 'electrician' | 'repair' | 'plumber' | 'other' | null;
   phone: string;
   apartment: string;
-  role: 'resident' | 'security' | 'admin' | 'maintenance';
+  role: 'resident' | 'security' | 'admin' | 'maintenance' | 'facility_manager';
   status: 'active' | 'pending' | 'inactive';
   joinDate: string;
   createdBy?: string;
@@ -125,6 +125,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       // ensure specialization is preserved
       if (u.specialization) copy.specialization = u.specialization;
+      // normalize legacy role name
+      if (copy.role === 'facilities_manager') copy.role = 'facility_manager';
     } catch (e) {
       // noop
     }

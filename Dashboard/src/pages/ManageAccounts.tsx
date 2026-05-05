@@ -47,7 +47,7 @@ interface User {
   name: string;
   email: string;
   phone: string;
-  role: 'resident' | 'security' | 'admin' | 'maintenance';
+  role: 'resident' | 'security' | 'admin' | 'maintenance' | 'facility_manager';
   apartment?: string;
   status: 'active' | 'inactive' | 'pending';
   joinDate: string;
@@ -108,6 +108,7 @@ export default function ManageAccounts() {
     email: '',
     phone: '',
     role: 'resident' as User['role'],
+    password: '',
     apartment: '',
     specialization: '' as string,
     status: 'active' as User['status'],
@@ -126,7 +127,7 @@ export default function ManageAccounts() {
         name: u.name,
         email: u.email,
         phone: u.phone,
-        role: u.role,
+        role: (((u as any).role === 'facilities_manager') ? 'facility_manager' : (u as any).role) as User['role'],
         apartment: u.apartment,
         status: u.status,
         joinDate: u.joinDate,
@@ -162,6 +163,7 @@ export default function ManageAccounts() {
       email: '',
       phone: '',
       role: 'resident',
+      password: '',
       apartment: '',
       specialization: '',
       status: 'active',
@@ -176,6 +178,7 @@ export default function ManageAccounts() {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      password: '',
       apartment: user.apartment || '',
         specialization: (user as any).specialization || '',
       status: user.status,
@@ -248,6 +251,7 @@ export default function ManageAccounts() {
           email: formData.email,
           phone: formData.phone,
           role: formData.role,
+          password: formData.password,
           apartment: formData.apartment,
           specialization: formData.specialization || null,
           status: formData.status,
@@ -289,6 +293,9 @@ export default function ManageAccounts() {
     // tabValue 2 => Maintenance staff
     if (tabValue === 2) return matchesSearch && user.role === 'maintenance';
 
+    // tabValue 3 => Facilities managers
+    if (tabValue === 3) return matchesSearch && user.role === 'facility_manager';
+
     return matchesSearch;
   });
 
@@ -300,6 +307,8 @@ export default function ManageAccounts() {
         return { bg: theme.palette.secondary.main, color: theme.palette.primary.dark };
       case 'maintenance':
         return { bg: theme.palette.error.main, color: theme.palette.error.contrastText };
+      case 'facility_manager':
+        return { bg: '#FFA726', color: '#fff' };
       default:
         return {
           bg: alpha(theme.palette.text.primary, isDark ? 0.12 : 0.08),
@@ -426,6 +435,7 @@ export default function ManageAccounts() {
           <Tab label="Residents" />
           <Tab label="Agents" />
           <Tab label="Maintenance" />
+          <Tab label="Facilities" />
         </Tabs>
 
         {/* Residents Tab */}
@@ -460,6 +470,20 @@ export default function ManageAccounts() {
 
         {/* Maintenance Tab */}
         <TabPanel value={tabValue} index={2}>
+          <UserTable
+            users={filteredUsers}
+            onEdit={handleOpenEditDialog}
+            onDelete={handleOpenDeleteDialog}
+            onToggleActive={(u) => {
+              const newStatus = u.status === 'active' ? 'inactive' : 'active';
+              updateUserStatus(u.id, newStatus).then(() => loadUsers());
+            }}
+            getRoleChipColor={getRoleChipColor}
+            getStatusChip={getStatusChip}
+          />
+        </TabPanel>
+        {/* Facilities Tab */}
+        <TabPanel value={tabValue} index={3}>
           <UserTable
             users={filteredUsers}
             onEdit={handleOpenEditDialog}
@@ -524,9 +548,23 @@ export default function ManageAccounts() {
                   <MenuItem value="security">Security</MenuItem>
                   <MenuItem value="admin">Admin</MenuItem>
                   <MenuItem value="maintenance">Maintenance</MenuItem>
+                  <MenuItem value="facility_manager">Facilities Manager</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
+            {!editingUser && (
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  required
+                  margin="normal"
+                />
+              </Grid>
+            )}
             {formData.role !== 'resident' && (
               <Grid item xs={12} md={6}>
                 <FormControl fullWidth margin="normal">
