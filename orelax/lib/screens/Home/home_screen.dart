@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../providers/auth_provider.dart';
@@ -77,12 +78,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToPage(int index) {
+    // special portal index
     if (index == 4) {
       Navigator.pushNamed(context, '/portal');
       return;
     }
+
     setState(() => _currentIndex = index);
 
+    // Security role uses a different 3-item layout: Home(0) / Notes(1) / Profile(2)
+    if (_role == 'security') {
+      switch (index) {
+        case 0:
+          break;
+        case 1:
+          Navigator.pushNamed(context, '/notes');
+          break;
+        case 2:
+          Navigator.pushNamed(context, '/profile');
+          break;
+      }
+      return;
+    }
+
+    // Default behavior for other roles
     switch (index) {
       case 0:
         break;
@@ -283,40 +302,61 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 child: DockNavBar(
-                  items: [
-                    _DockNavBarItem(
-                      icon: 'assets/icon/house.svg',
-                      label: 'Home',
-                      isActive: _currentIndex == 0,
-                      onTap: () => _navigateToPage(0),
-                    ),
-                    _isFacilitiesManager()
-                        ? _DockNavBarItem(
-                            icon: 'assets/icon/calendar.svg',
-                            label: 'Bookings',
-                            isActive: _currentIndex == 1,
-                            onTap: () => _navigateToPage(1),
-                          )
-                        : _DockNavBarChatItem(
-                            isActive: _currentIndex == 1,
-                            onTap: () => _navigateToPage(1),
-                            showNotificationBadge: _usesNotificationsTab,
+                  items: _role == 'security'
+                      ? [
+                          _DockNavBarItem(
+                            icon: 'assets/icon/house.svg',
+                            label: 'Home',
+                            isActive: _currentIndex == 0,
+                            onTap: () => _navigateToPage(0),
                           ),
-                    _DockNavBarItem(
-                      icon: _usesNotificationsTab
-                          ? 'assets/icon/bell.svg'
-                          : 'assets/icon/triangle-alert.svg',
-                      label: _usesNotificationsTab ? 'Notifications' : 'Report',
-                      isActive: _currentIndex == 2,
-                      onTap: () => _navigateToPage(2),
-                    ),
-                    _DockNavBarItem(
-                      icon: 'assets/icon/user-round.svg',
-                      label: 'Profile',
-                      isActive: _currentIndex == 3,
-                      onTap: () => _navigateToPage(3),
-                    ),
-                  ],
+                          _DockNavBarItem(
+                            icon: 'assets/icon/user-pen.svg',
+                            label: 'Notes',
+                            isActive: _currentIndex == 1,
+                            onTap: () => _navigateToPage(1),
+                          ),
+                          _DockNavBarItem(
+                            icon: 'assets/icon/user-round.svg',
+                            label: 'Profile',
+                            isActive: _currentIndex == 2,
+                            onTap: () => _navigateToPage(2),
+                          ),
+                        ]
+                      : [
+                          _DockNavBarItem(
+                            icon: 'assets/icon/house.svg',
+                            label: 'Home',
+                            isActive: _currentIndex == 0,
+                            onTap: () => _navigateToPage(0),
+                          ),
+                          _isFacilitiesManager()
+                              ? _DockNavBarItem(
+                                  icon: 'assets/icon/calendar.svg',
+                                  label: 'Bookings',
+                                  isActive: _currentIndex == 1,
+                                  onTap: () => _navigateToPage(1),
+                                )
+                              : _DockNavBarChatItem(
+                                  isActive: _currentIndex == 1,
+                                  onTap: () => _navigateToPage(1),
+                                  showNotificationBadge: _usesNotificationsTab,
+                                ),
+                          _DockNavBarItem(
+                            icon: _usesNotificationsTab
+                                ? 'assets/icon/bell.svg'
+                                : 'assets/icon/triangle-alert.svg',
+                            label: _usesNotificationsTab ? 'Notifications' : 'Report',
+                            isActive: _currentIndex == 2,
+                            onTap: () => _navigateToPage(2),
+                          ),
+                          _DockNavBarItem(
+                            icon: 'assets/icon/user-round.svg',
+                            label: 'Profile',
+                            isActive: _currentIndex == 3,
+                            onTap: () => _navigateToPage(3),
+                          ),
+                        ],
                 ),
               ),
             )
@@ -684,16 +724,42 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Modern Info Card
-        _AnimatedInfoCard(
-          icon: Icons.security,
-          title: 'Shift note',
-          subtitle: 'Today • Security',
-            buttonLabel: 'LOGS',
-            content:
-              'Check visitor queue and gate cameras during peak hours. Use Reports for resident-submitted issues.',
-            onButtonTap: () => Navigator.pushNamed(context, '/access-logs'),
-          delay: const Duration(milliseconds: 400),
+        // Modern Info Card showing latest security note (from local storage)
+        FutureBuilder<Map<String, String?>>(
+          future: () async {
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              final auth = Provider.of<AuthProvider>(context, listen: false);
+              final uid = auth.userId ?? 'anonymous';
+              final key = 'notes_$uid';
+              final raw = prefs.getStringList(key) ?? [];
+              if (raw.isEmpty) return {'title': 'No shift notes', 'content': 'No notes yet. Tap Notes to add a shift note.'};
+              final first = raw.first;
+              final m = json.decode(first) as Map<String, dynamic>;
+              return {
+                'title': (m['title'] as String?) ?? '(No title)',
+                'content': (m['content'] as String?) ?? '',
+              };
+            } catch (e) {
+              return {'title': 'Shift note', 'content': 'Failed to load note'};
+            }
+          }(),
+          builder: (context, snap) {
+            final data = snap.data;
+            final title = data?['title'] ?? 'Shift note';
+            final content = data?['content'] ?? '';
+            return _AnimatedInfoCard(
+              icon: Icons.security,
+              title: title,
+              subtitle: 'Today • Security',
+              buttonLabel: 'LOGS',
+              content: content.isNotEmpty
+                  ? content
+                  : 'No recent shift notes available. Tap to open Notes.',
+              onButtonTap: () => Navigator.pushNamed(context, '/notes'),
+              delay: const Duration(milliseconds: 400),
+            );
+          },
         ),
 
         const SizedBox(height: 100),

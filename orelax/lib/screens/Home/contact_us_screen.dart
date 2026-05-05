@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:http/http.dart' as http;
 
 class ContactUsScreen extends StatefulWidget {
   const ContactUsScreen({super.key});
@@ -150,9 +153,9 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             _buildContactCard(
               icon: Icons.admin_panel_settings_outlined,
               title: 'Admin Support',
-              email: 'admin@gmail.com',
+              email: 'orelax.admin@gmail.com',
               phone: '05562436215',
-              onEmailTap: () => _sendEmail('admin@gmail.com'),
+              onEmailTap: () => _sendEmail('orelax.admin@gmail.com'),
               onPhoneTap: () => _callPhone('05562436215'),
             ),
 
@@ -162,9 +165,9 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             _buildContactCard(
               icon: Icons.security_outlined,
               title: 'Security Team',
-              email: 'security@gmail.com',
+              email: 'kld060273@gmail.com',
               phone: '0798965312',
-              onEmailTap: () => _sendEmail('security@gmail.com'),
+              onEmailTap: () => _sendEmail('kld060273@gmail.com'),
               onPhoneTap: () => _callPhone('0798965312'),
             ),
 
@@ -455,27 +458,74 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   }
 
   Future<void> _submitMessage() async {
-    if (_nameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _messageController.text.isEmpty) {
-      _showSnackBar('Please fill all fields', isSuccess: false);
+    if (_emailController.text.isEmpty || _messageController.text.isEmpty) {
+      _showSnackBar('Please fill name, email and message', isSuccess: false);
       return;
     }
 
     setState(() => _isSending = true);
 
+    final payload = {
+      'name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'phone': '',
+      'subject': 'Contact from app',
+      'message': _messageController.text.trim(),
+    };
+
     try {
-      // Simulate sending message
-      await Future.delayed(const Duration(seconds: 1));
-      
-      _showSnackBar('Message sent successfully!');
-      _nameController.clear();
-      _emailController.clear();
-      _messageController.clear();
+      String host;
+      if (kIsWeb) {
+        host = Uri.base.host;
+        if (host.isEmpty) host = 'localhost';
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
+        host = '10.0.2.2';
+      } else {
+        host = 'localhost';
+      }
+      final uri = Uri.parse('http://$host:5000/api/contacts');
+      final response = await httpPostJson(uri, payload);
+      if (response != null && response['error'] == null) {
+        _showSnackBar('Message sent successfully!');
+        _nameController.clear();
+        _emailController.clear();
+        _messageController.clear();
+      } else {
+        final err = response?['error'] ?? 'Unknown error';
+        _showSnackBar('Failed to send message: $err', isSuccess: false);
+      }
     } catch (e) {
-      _showSnackBar('Failed to send message', isSuccess: false);
+      _showSnackBar('Failed to send message: ${e.toString()}', isSuccess: false);
     } finally {
       setState(() => _isSending = false);
+    }
+  }
+
+  Future<Map<String, dynamic>?> httpPostJson(Uri uri, Map body) async {
+    final client = http.Client();
+    try {
+      final response = await client.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 10));
+
+      final status = response.statusCode;
+      if (status == 201 || status == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+
+      // Try to decode body for error details
+      try {
+        final decoded = jsonDecode(response.body);
+        return {'error': decoded};
+      } catch (_) {
+        return {'error': 'Status $status'};
+      }
+    } on Exception catch (e) {
+      return {'error': e.toString()};
+    } finally {
+      client.close();
     }
   }
 

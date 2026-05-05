@@ -20,6 +20,7 @@ import Events from './pages/Events';
 import Guests from './pages/Guests';
 import GuestDetail from './pages/GuestDetail';
 import Settings from './pages/Settings';
+import Contacts from './pages/Contacts';
 /*import Security from './pages/Security';
 import Community from './pages/Community';
 import Facilities from './pages/Facilities';
@@ -123,6 +124,16 @@ function App() {
                   <AuthGuard>
                     <DashboardLayout>
                       <Guests />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/contacts"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <Contacts />
                     </DashboardLayout>
                   </AuthGuard>
                 }

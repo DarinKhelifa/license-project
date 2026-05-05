@@ -32,6 +32,7 @@ const qrRoutes = require('./src/routes/qrRoutes');
 const initSurveillance = require('./src/routes/surveillanceRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const settingsRoutes = require('./src/routes/settingsRoutes');
+const contactRoutes = require('./src/routes/contactRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -59,19 +60,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
 
-// Database connection 
-mongoose.connect(process.env.MONGODB_URI, {
-  maxPoolSize: 10,
-  minPoolSize: 5,
-  serverSelectionTimeoutMS: 30000,
-  socketTimeoutMS: 45000,
-  family: 4,
-  retryWrites: true,
-  writeConcern: { w: 1 },
-  maxIdleTimeMS: 30000,
-})
-  .then(() => console.log('✅ MongoDB connected successfully'))
-  .catch(err => console.error('❌ MongoDB connection error:', err));
+// Database connection (use resilient connect helper with retries)
+const connectDB = require('./src/config/database');
+connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -88,6 +79,7 @@ app.use('/api/environment', environmentRoutes);
 app.use('/api/qr', qrRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/contacts', contactRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ORELAX API is running' });

@@ -91,8 +91,14 @@ class ApiService {
       await saveToken(data['token']);
       return data;
     } else {
-      final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Login failed');
+      try {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Login failed: ${response.statusCode}');
+      } catch (e) {
+        // If response body is not JSON or empty, include raw body for debugging
+        final bodyPreview = (response.body ?? '').toString();
+        throw Exception('Login failed: ${response.statusCode} - $bodyPreview');
+      }
     }
   }
   
@@ -109,9 +115,18 @@ class ApiService {
     );
     
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      try {
+        return jsonDecode(response.body);
+      } catch (_) {
+        throw Exception('Failed to parse user response');
+      }
+    } else if (response.statusCode == 401) {
+      // Token invalid/expired
+      await removeToken();
+      throw Exception('Not authenticated');
     } else {
-      throw Exception('Failed to get user');
+      final body = response.body ?? '';
+      throw Exception('Failed to get user: ${response.statusCode} - $body');
     }
   }
   
