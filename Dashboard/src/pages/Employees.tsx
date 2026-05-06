@@ -311,12 +311,14 @@ export default function Employees() {
     if (!formData.firstName.trim()) errors.firstName = 'Required';
     if (!formData.lastName.trim()) errors.lastName = 'Required';
     if (!formData.cinId.trim()) errors.cinId = 'Required';
+    else if (!/^\d{18}$/.test(formData.cinId.trim())) errors.cinId = 'Must be exactly 18 digits';
     if (!formData.address.trim()) errors.address = 'Required';
     if (!formData.phone.trim()) errors.phone = 'Required';
     if (!formData.email.trim()) errors.email = 'Required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Invalid email';
     if (!formData.workCategory) errors.workCategory = 'Required';
     if (!formData.experience.trim()) errors.experience = 'Required';
+    if (!pdfFile) errors.pdfFile = 'Required';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -615,7 +617,15 @@ export default function Employees() {
             </Grid>
 
             <Grid item xs={12} sm={6}>
-              <TextField fullWidth label="Identity Card ID (CIN)" {...field('cinId')} required />
+              <TextField
+                fullWidth
+                label="Identity Card ID (CIN)"
+                {...field('cinId')}
+                required
+                inputProps={{ maxLength: 18, inputMode: 'numeric', pattern: '[0-9]*' }}
+                helperText={formErrors.cinId || '18 digits required'}
+                error={!!formErrors.cinId}
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField fullWidth label="Phone Number" {...field('phone')} required />
@@ -677,7 +687,7 @@ export default function Employees() {
               <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary', fontWeight: 600 }}>
                 Criminal Record / Casier judiciaire — Bulletin n°3{' '}
                 <Typography component="span" variant="caption" color="text.secondary">
-                  (PDF only, optional)
+                  (PDF only, required)
                 </Typography>
               </Typography>
               <input
@@ -702,6 +712,11 @@ export default function Employees() {
               >
                 {pdfFile ? pdfFile.name : 'Upload PDF'}
               </Button>
+              {formErrors.pdfFile && (
+                <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.75 }}>
+                  {formErrors.pdfFile}
+                </Typography>
+              )}
             </Grid>
           </Grid>
         </DialogContent>

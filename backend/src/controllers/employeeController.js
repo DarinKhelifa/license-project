@@ -36,8 +36,16 @@ const createEmployee = async (req, res) => {
       return res.status(400).json({ success: false, error: 'All fields are required' });
     }
 
+    if (!/^\d{18}$/.test(String(cinId).trim())) {
+      return res.status(400).json({ success: false, error: 'Identity card number must be exactly 18 digits' });
+    }
+
     const photo = req.files?.photo?.[0]?.filename || '';
     const casierJudiciaire = req.files?.casierJudiciaire?.[0]?.filename || '';
+
+    if (!casierJudiciaire) {
+      return res.status(400).json({ success: false, error: 'Criminal record PDF is required' });
+    }
 
     const employee = new Employee({
       firstName,
