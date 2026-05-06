@@ -10,6 +10,9 @@ const messageSchema = new mongoose.Schema({
   status: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' },
   readBy: [{ type: String }],
   replyTo: { type: String },
+  deleted: { type: Boolean, default: false },
+  is_edited: { type: Boolean, default: false },
+  is_deleted: { type: Boolean, default: false },
 }, {
   timestamps: true,
 });

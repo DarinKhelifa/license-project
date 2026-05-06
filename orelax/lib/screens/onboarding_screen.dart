@@ -226,7 +226,45 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  Future<void> _showSignupRoleDialog(BuildContext context) async {
+    final selectedRole = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Choose account type'),
+          content: const Text('Please select how you want to sign up.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, 'resident'),
+              child: const Text('Resident'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, 'security'),
+              child: const Text('Staff / Security'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!context.mounted || selectedRole == null) {
+      return;
+    }
+
+    // Debug: log selected role from onboarding dialog
+    // ignore: avoid_print
+    print('Onboarding signup role selected: $selectedRole');
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SignupScreen(initialRole: selectedRole),
+      ),
+    );
+  }
+
   void _showAuthOptions(BuildContext context) {
+    final parentContext = context;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -286,13 +324,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SignupScreen()),
-                    );
+                    await Future<void>.delayed(Duration.zero);
+                    if (!mounted) return;
+                    await _showSignupRoleDialog(parentContext);
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color.fromRGBO(3, 72, 8, 1.0),

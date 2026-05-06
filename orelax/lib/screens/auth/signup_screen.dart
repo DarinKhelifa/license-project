@@ -5,7 +5,12 @@ import '../../providers/auth_provider.dart';
 import '../Home/home_screen.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  final String initialRole;
+
+  const SignupScreen({
+    super.key,
+    this.initialRole = 'resident',
+  });
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -16,11 +21,21 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  late String _selectedRole;
+
+  bool get _requiresApartment => _selectedRole == 'resident';
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _apartmentController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRole = widget.initialRole == 'security' ? 'security' : 'resident';
+  }
 
   @override
   void dispose() {
@@ -30,6 +45,15 @@ class _SignupScreenState extends State<SignupScreen> {
     _apartmentController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _updateRole(String role) {
+    if (role == _selectedRole) return;
+
+    setState(() {
+      _selectedRole = role;
+      _apartmentController.clear();
+    });
   }
 
   Future<void> _handleSignUp() async {
@@ -45,7 +69,7 @@ class _SignupScreenState extends State<SignupScreen> {
       _showError('Please enter your phone number');
       return;
     }
-    if (_apartmentController.text.trim().isEmpty) {
+    if (_requiresApartment && _apartmentController.text.trim().isEmpty) {
       _showError('Please enter your apartment number');
       return;
     }
@@ -68,31 +92,11 @@ class _SignupScreenState extends State<SignupScreen> {
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      apartment: _apartmentController.text.trim(),
       phone: _phoneController.text.trim(),
+      apartment: _requiresApartment ? _apartmentController.text.trim() : null,
+      role: _selectedRole,
+      context: context,
     );
-
-    if (success && mounted) {
-      final user = authProvider.user;
-      final userId = user?['_id'] ?? user?['id'];
-      final email = user?['email'];
-
-      if (userId != null && email != null) {
-        // Navigate to OTP verification screen
-        Navigator.pushNamed(context, '/otp', arguments: {
-          'userId': userId.toString(),
-          'email': email.toString(),
-        });
-        return;
-      }
-
-      // Fallback: navigate to home if user data isn't available
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
-      return;
-    }
 
     if (!success && mounted) {
       setState(() {
@@ -195,13 +199,53 @@ class _SignupScreenState extends State<SignupScreen> {
                                   style: const TextStyle(color: Colors.red, fontSize: 13)),
                             ),
 
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ChoiceChip(
+                                  label: const Text('Resident'),
+                                  selected: _selectedRole == 'resident',
+                                  onSelected: (_) => _updateRole('resident'),
+                                  selectedColor: const Color(0xFFB8CBB7),
+                                  labelStyle: TextStyle(
+                                    color: _selectedRole == 'resident'
+                                        ? const Color(0xFF1D3A1F)
+                                        : Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  backgroundColor: const Color(0xFF6E8670),
+                                  side: const BorderSide(color: Colors.transparent),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: ChoiceChip(
+                                  label: const Text('Security'),
+                                  selected: _selectedRole == 'security',
+                                  onSelected: (_) => _updateRole('security'),
+                                  selectedColor: const Color(0xFFB8CBB7),
+                                  labelStyle: TextStyle(
+                                    color: _selectedRole == 'security'
+                                        ? const Color(0xFF1D3A1F)
+                                        : Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  backgroundColor: const Color(0xFF6E8670),
+                                  side: const BorderSide(color: Colors.transparent),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
                           _field('full name', Icons.person_outline, controller: _nameController),
                           const SizedBox(height: 12),
                           _field('email address', Icons.email_outlined,
                               controller: _emailController, keyboardType: TextInputType.emailAddress),
                           const SizedBox(height: 12),
-                          _field('apartment number', Icons.location_city_outlined, controller: _apartmentController),
-                          const SizedBox(height: 12),
+                          if (_requiresApartment) ...[
+                            _field('apartment number', Icons.location_city_outlined, controller: _apartmentController),
+                            const SizedBox(height: 12),
+                          ],
                           _field('phone number', Icons.phone_android_outlined,
                               controller: _phoneController, keyboardType: TextInputType.phone),
                           const SizedBox(height: 12),

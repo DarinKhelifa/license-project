@@ -376,11 +376,15 @@ class _ChatScreenState extends State<ChatScreen>
 
     final participants = List<String>.from(chat['participants'] ?? const <String>[]);
     final participantNames = List<String>.from(chat['participantNames'] ?? const <String>[]);
+    final participantAvatars = List<String>.from(chat['participantAvatars'] ?? const <String>[]);
 
     final otherParticipantIndex = participants.isNotEmpty && participants[0] == currentUserId ? 1 : 0;
     final otherUser = {
       'id': participants[otherParticipantIndex],
       'name': participantNames[otherParticipantIndex],
+      'profileImage': participantAvatars.isNotEmpty && participantAvatars.length > otherParticipantIndex
+          ? participantAvatars[otherParticipantIndex]
+          : null,
     };
     
     Navigator.push(

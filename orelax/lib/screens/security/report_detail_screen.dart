@@ -36,8 +36,25 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
   Future<void> _loadReportDetails() async {
     try {
-      final reports = await ApiService.getReportsForRole();
-      final report = reports.firstWhere((r) => r['id'] == widget.reportId);
+      final token = await ApiService.getToken();
+      if (token == null) throw Exception('Not authenticated');
+
+      final response = await http.get(
+        Uri.parse('${ApiService.baseUrl}/reports/admin/all'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to load reports');
+      }
+
+      final reports = List<Map<String, dynamic>>.from(jsonDecode(response.body));
+      final report = reports.firstWhere(
+        (r) => (r['id'] ?? r['_id']) == widget.reportId,
+      );
       setState(() {
         _reportData = report;
         _isLoading = false;
@@ -58,7 +75,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
     
     try {
-      await ApiService.updateReportStatus(widget.reportId, _selectedStatus);
+      final token = await ApiService.getToken();
+      if (token == null) throw Exception('Not authenticated');
+
+      final response = await http.put(
+        Uri.parse('${ApiService.baseUrl}/reports/${widget.reportId}/status'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'status': _selectedStatus}),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update status');
+      }
       
       // Update alert provider
       final alertProvider = Provider.of<AlertProvider>(context, listen: false);

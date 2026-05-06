@@ -17,6 +17,8 @@ class ChatService {
   static final List<Function(dynamic)> _messageErrorListeners = [];
   static final List<Function(dynamic)> _usersOnlineListeners = [];
   static final List<Function(dynamic)> _messageReadListeners = [];
+  static final List<Function(dynamic)> _messageUpdatedListeners = [];
+  static final List<Function(dynamic)> _messageDeletedListeners = [];
   static final List<Function(dynamic)> _userTypingListeners = [];
   static final List<Function(dynamic)> _newAlertListeners = [];
   static final List<Function(dynamic)> _alertStatusUpdateListeners = [];
@@ -106,6 +108,26 @@ class ChatService {
   
   static void removeMessageReadListener(Function(dynamic) listener) {
     _messageReadListeners.remove(listener);
+  }
+
+  static void addMessageUpdatedListener(Function(dynamic) listener) {
+    if (!_messageUpdatedListeners.contains(listener)) {
+      _messageUpdatedListeners.add(listener);
+    }
+  }
+
+  static void removeMessageUpdatedListener(Function(dynamic) listener) {
+    _messageUpdatedListeners.remove(listener);
+  }
+
+  static void addMessageDeletedListener(Function(dynamic) listener) {
+    if (!_messageDeletedListeners.contains(listener)) {
+      _messageDeletedListeners.add(listener);
+    }
+  }
+
+  static void removeMessageDeletedListener(Function(dynamic) listener) {
+    _messageDeletedListeners.remove(listener);
   }
   
   static void addUserTypingListener(Function(dynamic) listener) {
@@ -215,6 +237,34 @@ class ChatService {
       socket?.on('message-read', (data) {
         print('📖 Message read: $data');
         for (var listener in _messageReadListeners) {
+          listener(data);
+        }
+      });
+
+      socket?.on('message:updated', (data) {
+        print('✏️ Message updated: $data');
+        for (var listener in _messageUpdatedListeners) {
+          listener(data);
+        }
+      });
+
+      socket?.on('message-updated', (data) {
+        print('✏️ Message updated: $data');
+        for (var listener in _messageUpdatedListeners) {
+          listener(data);
+        }
+      });
+
+      socket?.on('message:deleted', (data) {
+        print('🗑️ Message deleted: $data');
+        for (var listener in _messageDeletedListeners) {
+          listener(data);
+        }
+      });
+
+      socket?.on('message-deleted', (data) {
+        print('🗑️ Message deleted: $data');
+        for (var listener in _messageDeletedListeners) {
           listener(data);
         }
       });

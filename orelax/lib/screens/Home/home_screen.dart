@@ -129,13 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Get localized greeting text
-  String _getGreeting() {
-    final locale = Localizations.localeOf(context);
-    final isArabic = locale.languageCode == 'ar';
-    return isArabic ? 'مرحبا،' : 'Hello,';
-  }
-
   // Get localized search hint
   String _getSearchHint() {
     final locale = Localizations.localeOf(context);

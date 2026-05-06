@@ -28,20 +28,16 @@ class StaffProfileScreen extends StatefulWidget {
 }
 
 class _StaffProfileScreenState extends State<StaffProfileScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+    {
   final Color darkGreen = const Color(0xFF1A5C2A);
-  final Color primaryPurple = const Color(0xFF7B1FA2);
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     super.dispose();
   }
 
@@ -82,10 +78,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
                             onPressed: () => Navigator.pop(context),
                           ),
                         ),
-                        CircleAvatar(
-                          backgroundColor: Colors.white.withOpacity(0.8),
-                          child: const Icon(Icons.favorite, color: Colors.purple),
-                        ),
                       ],
                     ),
                   ),
@@ -102,7 +94,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
                           height: 8,
                           margin: const EdgeInsets.symmetric(horizontal: 4),
                           decoration: BoxDecoration(
-                            color: index == 0 ? primaryPurple : Colors.grey.shade300,
+                            color: index == 0 ? darkGreen : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -137,19 +129,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.star, color: Colors.amber, size: 20),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      widget.staffRating,
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ],
                             ),
                             Text(
@@ -163,91 +142,59 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
                         ),
                       ),
 
-                      // Tabs
-                      TabBar(
-                        controller: _tabController,
-                        labelColor: primaryPurple,
-                        unselectedLabelColor: Colors.grey,
-                        indicatorColor: primaryPurple,
-                        indicatorSize: TabBarIndicatorSize.label,
-                        tabs: const [
-                          Tab(text: 'About'),
-                          Tab(text: 'Reviews'),
-                        ],
-                      ),
-                      const SizedBox(height: 1),
-                      Divider(height: 1, color: Colors.grey.shade200),
-
-                      // Tab Views
                       Expanded(
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            // About Tab
-                            SingleChildScrollView(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.about,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black87,
+                                  fontSize: 14,
+                                  height: 1.6,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              // Small profile card inside about
+                              Row(
                                 children: [
-                                  Text(
-                                    widget.about,
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.black87,
-                                      fontSize: 14,
-                                      height: 1.6,
-                                    ),
+                                  CircleAvatar(
+                                    backgroundImage: NetworkImage(widget.staffAvatarUrl),
+                                    radius: 20,
                                   ),
-                                  const SizedBox(height: 20),
-                                  // Small profile card inside about
-                                  Row(
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      CircleAvatar(
-                                        backgroundImage: NetworkImage(widget.staffAvatarUrl),
-                                        radius: 20,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Text(
-                                                widget.staffName,
-                                                style: GoogleFonts.poppins(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              const Icon(Icons.check_circle, 
-                                                color: Colors.purple, size: 14),
-                                            ],
-                                          ),
-                                          Text(
-                                            "Service Provider",
-                                            style: GoogleFonts.poppins(
-                                              color: Colors.grey,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const Spacer(),
                                       Row(
                                         children: [
-                                          _buildActionIcon(Icons.chat_bubble, primaryPurple),
-                                          const SizedBox(width: 8),
-                                          _buildActionIcon(Icons.phone, primaryPurple),
+                                          Text(
+                                            widget.staffName,
+                                            style: GoogleFonts.poppins(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          const Icon(Icons.check_circle,
+                                              color: Colors.purple, size: 14),
                                         ],
+                                      ),
+                                      Text(
+                                        "Service Provider",
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 100), 
                                 ],
                               ),
-                            ),
-                            // Reviews Tab
-                            const Center(child: Text("No reviews available yet.")),
-                          ],
+                              const SizedBox(height: 32),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -275,50 +222,25 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
                 ],
               ),
               child: SafeArea(
-                child: Row(
-                  children: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Price",
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          widget.price,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: darkGreen,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 24),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryPurple,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: Text(
-                          "Hire ${widget.staffName.split(' ')[0]}",
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: darkGreen,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                  ],
+                    child: Text(
+                      "Hire ${widget.staffName.split(' ')[0]}",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -328,15 +250,5 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
     );
   }
 
-  Widget _buildActionIcon(IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, color: Colors.white, size: 18),
-    );
-  }
 }
 

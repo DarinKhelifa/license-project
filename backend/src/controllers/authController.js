@@ -14,10 +14,11 @@ const generateToken = (id) => {
 // ========== REGISTER ==========
 const register = async (req, res) => {
   try {
-    const { name, email, password, phone, apartment, role, specialization } = req.body;
+    const { name, email, password, phone, apartment, role } = req.body;
+    const normalizedEmail = (email || '').trim().toLowerCase();
 
     // Check if user exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail }).collation({ locale: 'en', strength: 2 });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
@@ -31,12 +32,11 @@ const register = async (req, res) => {
     // Create user (unverified)
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password,
       phone,
       apartment,
       role: role || 'resident',
-      specialization: specialization || null,
       status: role === 'admin' ? 'active' : 'pending',
       isEmailVerified: false,
       otp: hashedOTP,
@@ -74,7 +74,8 @@ const register = async (req, res) => {
         status: user.status,
         profileImage: user.profileImage,
         isEmailVerified: user.isEmailVerified
-            }
+
+      }
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -199,12 +200,13 @@ const resendOTP = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = (email || '').trim().toLowerCase();
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: normalizedEmail }).collation({ locale: 'en', strength: 2 }).select('+password');
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -241,9 +243,12 @@ const login = async (req, res) => {
         apartment: user.apartment,
         role: user.role,
         status: user.status,
-        profileImage: user.profileImage,
-        isEmailVerified: user.isEmailVerified,
-            }
+
+        profileImage: user.profileImage ,
+
+        isEmailVerified: user.isEmailVerified , 
+
+      }
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -263,9 +268,11 @@ const getMe = async (req, res) => {
       apartment: user.apartment,
       role: user.role,
       status: user.status,
-      profileImage: user.profileImage,
-      isEmailVerified: user.isEmailVerified,
-        });
+
+      profileImage: user.profileImage ,
+      isEmailVerified: user.isEmailVerified ,
+
+    });
   } catch (error) {
     console.error('Get me error:', error);
     res.status(500).json({ message: error.message });
@@ -295,7 +302,7 @@ const updateProfile = async (req, res) => {
 
     await user.save();
 
-        res.json({
+    res.json({
       id: user._id,
       name: user.name,
       email: user.email,
@@ -304,7 +311,7 @@ const updateProfile = async (req, res) => {
       role: user.role,
       profileImage: user.profileImage,
       isEmailVerified: user.isEmailVerified,
-        });
+    });
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ message: error.message });
@@ -382,10 +389,11 @@ const updateUserStatus = async (req, res) => {
     user.updatedAt = Date.now();
     await user.save();
 
+    const updatedUser = await User.findById(user._id).select('-password');
     // Include profileImage in response
-    const updatedUser = await User.findById(user._id).select('-password -otp');
     const userObj = updatedUser.toObject();
     userObj.profileImage = updatedUser.profileImage;
+    userObj.isEmailVerified = updatedUser.isEmailVerified;
     res.json(userObj);
   } catch (error) {
     console.error('Update user status error:', error);
@@ -429,9 +437,10 @@ const deleteUser = async (req, res) => {
 const createUserAdmin = async (req, res) => {
   try {
     const { name, email, password, phone, apartment, role, specialization, status } = req.body;
+    const normalizedEmail = (email || '').trim().toLowerCase();
 
     // Check if user exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail }).collation({ locale: 'en', strength: 2 });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
@@ -442,7 +451,7 @@ const createUserAdmin = async (req, res) => {
     // Create user as verified (admin created)
     const user = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password: tempPassword,
       phone,
       apartment,

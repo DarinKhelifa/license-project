@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'dart:ui'; // Import dart:ui for ImageFilter
 
 import '../../providers/auth_provider.dart';
-import '../Home/home_screen.dart';
 import 'signup_screen.dart';
 
 // Palette for the "Soft Green" theme
@@ -50,14 +49,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final success = await authProvider.signInWithEmail(
       _emailController.text.trim(),
       _passwordController.text,
+      context: context,
     );
-    if (success && mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
-      return;
-    }
     if (!success && mounted) {
       setState(() {
         _isLoading = false;
@@ -74,10 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.signInWithGoogle();
     if (success && mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-        (route) => false,
-      );
       return;
     }
     if (!success && mounted) {
@@ -86,6 +75,44 @@ class _LoginScreenState extends State<LoginScreen> {
         _errorMessage = authProvider.errorMessage;
       });
     }
+  }
+
+  Future<void> _showRoleSelectionDialog() async {
+    final selectedRole = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Choose account type'),
+          content: const Text('Please select how you want to sign up.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, 'resident'),
+              child: const Text('Resident'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, 'security'),
+              child: const Text('Staff / Security'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || selectedRole == null) {
+      return;
+    }
+    // Debug: log selected role from dialog
+    // Helps diagnose why tapping role buttons may not navigate
+    // (will be removed after verification)
+    // ignore: avoid_print
+    print('Role selection dialog returned: $selectedRole');
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SignupScreen(initialRole: selectedRole),
+      ),
+    );
   }
 
   @override
@@ -256,10 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 25),
 
                       GestureDetector(
-                        onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const SignupScreen())),
+                        onTap: _showRoleSelectionDialog,
                         child: Text.rich(
                           TextSpan(
                             text: "Don't have an account? ",

@@ -4,10 +4,8 @@ import 'package:provider/provider.dart';
 import '../../../models/event_model.dart';
 import '../../../providers/event_provider.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../services/api_service.dart';
 import '../../../widgets/custom_bottom_nav_bar.dart';
 import 'dart:convert'; // For base64 image encoding
-import 'dart:io'; // For image picking
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});

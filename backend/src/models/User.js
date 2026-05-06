@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
   },
   apartment: {
     type: String,
-    required: [function() { return this.role === 'resident'; }, 'Apartment number is required for residents'],
+    required: [true, 'Apartment number is required'],
     trim: true
   },
   role: {

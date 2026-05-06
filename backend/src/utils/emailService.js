@@ -1,7 +1,17 @@
-const nodemailer = require('nodemailer');
+let nodemailer = null;
+
+try {
+  nodemailer = require('nodemailer');
+} catch (error) {
+  console.warn('nodemailer is not installed. OTP emails will be disabled until dependencies are installed.');
+}
 
 // Create transporter based on environment variables
 const createTransporter = () => {
+  if (!nodemailer) {
+    return null;
+  }
+
   // For Gmail
   if (process.env.SMTP_HOST === 'smtp.gmail.com') {
     return nodemailer.createTransport({
@@ -29,6 +39,11 @@ const transporter = createTransporter();
 
 const sendOTPEmail = async ({ email, name, otp }) => {
   try {
+    if (!transporter) {
+      console.warn(`Skipping OTP email to ${email} because the mail transporter is unavailable.`);
+      return false;
+    }
+
     const info = await transporter.sendMail({
       from: `"ORELAX" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to: email,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../../services/api_service.dart';
@@ -22,7 +24,22 @@ class _WorkOrdersScreenState extends State<WorkOrdersScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _loadReports() async {
-    final reports = await ApiService.getReportsForRole();
+    final token = await ApiService.getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('${ApiService.baseUrl}/reports/admin/all'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load reports');
+    }
+
+    final reports = List<Map<String, dynamic>>.from(jsonDecode(response.body));
 
     // If the backend provides a category field, prefer showing maintenance-only.
     final maintenance = reports.where((r) {
@@ -265,7 +282,22 @@ class _WorkOrdersScreenState extends State<WorkOrdersScreen> {
   
   Future<void> _updateStatus(String id, String newStatus) async {
     try {
-      await ApiService.updateReportStatus(id, newStatus);
+      final token = await ApiService.getToken();
+      if (token == null) throw Exception('Not authenticated');
+
+      final response = await http.put(
+        Uri.parse('${ApiService.baseUrl}/reports/$id/status'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'status': newStatus}),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update status');
+      }
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Status updated to $newStatus')),

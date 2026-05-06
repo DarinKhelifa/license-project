@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/chat_service.dart';
+import '../screens/Home/home_screen.dart';
 
 class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? _user;
@@ -51,7 +52,11 @@ class AuthProvider extends ChangeNotifier {
     }
   }
   
-  Future<bool> signInWithEmail(String email, String password) async {
+  Future<bool> signInWithEmail(
+    String email,
+    String password, {
+    BuildContext? context,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -62,6 +67,7 @@ class AuthProvider extends ChangeNotifier {
       
       if (_user != null) {
         await initializeChat();
+        _navigateAfterAuthentication(context);
       }
       
       _isLoading = false;
@@ -80,8 +86,10 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String email,
     required String password,
-    required String apartment,
     required String phone,
+    String? apartment,
+    String role = 'resident',
+    BuildContext? context,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -93,12 +101,14 @@ class AuthProvider extends ChangeNotifier {
         email: email,
         password: password,
         phone: phone,
-        apartment: apartment,
+        apartment: apartment ?? '',
+        role: role,
       );
       _user = response['user'];
       
       if (_user != null) {
         await initializeChat();
+        _navigateAfterAuthentication(context);
       }
       
       _isLoading = false;
@@ -125,43 +135,40 @@ class AuthProvider extends ChangeNotifier {
     return false;
   }
   
-  Future<bool> updateUserData(Map<String, dynamic> data) async {
-    _isLoading = true;
-    notifyListeners();
-    
-    try {
-      final updatedUser;
-      
-      // Check if photo is included in data
-      if (data['photo'] != null) {
-        // Use multipart upload method if photo is present
-        updatedUser = await ApiService.updateProfileWithPhoto(
-          name: data['name'],
-          phone: data['phone'],
-          apartment: data['apartment'],
-          photoFile: data['photo'],
-        );
-      } else {
-        // Use regular JSON update if no photo
-        updatedUser = await ApiService.updateProfile(
-          name: data['name'],
-          phone: data['phone'],
-          apartment: data['apartment'],
-        );
-      }
-      
-      _user = updatedUser;
-      _isLoading = false;
-      notifyListeners();
-      return true;
-      
-    } catch (e) {
-      _errorMessage = e.toString();
-      _isLoading = false;
-      notifyListeners();
-      return false;
+Future<bool> updateUserData(Map<String, dynamic> data) async {
+  _isLoading = true;
+  notifyListeners();
+
+  try {
+    final updatedUser;
+
+    if (data['photo'] != null) {
+      updatedUser = await ApiService.updateProfileWithPhoto(
+        name: data['name']?.toString() ?? '',
+        phone: data['phone']?.toString() ?? '',
+        apartment: data['apartment']?.toString() ?? '',
+        photoFile: data['photo'],
+      );
+    } else {
+      updatedUser = await ApiService.updateProfile(
+        name: data['name']?.toString() ?? '',
+        phone: data['phone']?.toString() ?? '',
+        apartment: data['apartment']?.toString() ?? '',
+      );
     }
+
+    _user = updatedUser;
+    _isLoading = false;
+    notifyListeners();
+    return true;
+
+  } catch (e) {
+    _errorMessage = e.toString();
+    _isLoading = false;
+    notifyListeners();
+    return false;
   }
+}
   
   Future<bool> changePassword(String currentPassword, String newPassword) async {
     _isLoading = true;
@@ -187,6 +194,27 @@ class AuthProvider extends ChangeNotifier {
   
   Future<Map<String, dynamic>?> getUserData() async {
     return _user;
+  }
+
+  void _navigateAfterAuthentication(BuildContext? context) {
+    if (context == null || !context.mounted || _user == null) {
+      return;
+    }
+
+    final role = (_user!['role'] ?? 'resident').toString().trim().toLowerCase();
+    final Widget targetScreen;
+
+    if (role == 'security' || role == 'securite') {
+      // HomeScreen is the security-equivalent landing page in this app.
+      targetScreen = const HomeScreen();
+    } else {
+      targetScreen = const HomeScreen();
+    }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => targetScreen),
+      (route) => false,
+    );
   }
   
   Future<void> signOut() async {

@@ -20,6 +20,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const facilityRoutes = require('./src/routes/facilityRoutes');
 const bookingRoutes = require('./src/routes/bookingRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
+const messageRoutes = require('./src/routes/messagesRoutes');
 const eventRoutes = require('./src/routes/eventRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const guestRoutes = require('./src/routes/guestRoutes');
@@ -70,6 +71,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/facilities', facilityRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/messages', messageRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/guests', guestRoutes);
@@ -101,6 +103,9 @@ const employeeController = require('./src/controllers/employeeController');
 const { saveAndEmitNotification } = require('./src/helpers/notificationHelper');
 eventController.setIo(io);
 employeeController.setIo(io);
+
+// Make io available to route handlers via app
+app.set('io', io);
 
 // Store online users
 const onlineUsers = new Map();
