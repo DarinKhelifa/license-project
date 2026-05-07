@@ -170,7 +170,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'pending':
-        return Colors.orange;
+        return Colors.red;
       case 'in-progress':
         return Colors.blue;
       case 'resolved':
