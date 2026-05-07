@@ -582,25 +582,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: HomeBottomNavBar(
-        currentIndex: 1,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-              break;
-            case 1:
-              Navigator.pushNamed(context, '/chat');
-              break;
-            case 2:
-              Navigator.pushNamed(context, '/report');
-              break;
-            case 3:
-              Navigator.pushNamed(context, '/profile');
-              break;
-          }
-        },
-      ),
     );
   }
 
