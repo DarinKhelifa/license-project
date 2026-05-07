@@ -48,7 +48,7 @@ const menuItems = [
   { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Guests', icon: <PeopleIcon />, path: '/guests' },
   { text: 'Contacts', icon: <BadgeIcon />, path: '/contacts' },
-  { text: 'Monitoring', icon: <MonitoringIcon />, path: '/monitoring' },
+  { text: 'Fire Alerts', icon: <MonitoringIcon />, path: '/fire-alerts' },
   { text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' },
   { text: 'Employees', icon: <BadgeIcon />, path: '/employees' },
   { text: 'Report', icon: <AssessmentIcon />, path: '/report' },

@@ -12,6 +12,11 @@ interface AlertItem {
   timestamp: string;
 }
 
+const API_BASE = (((globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.REACT_APP_API_URL) || 'http://localhost:5000').replace(/\/api$/, '');
+const ALERTS_URL = `${API_BASE}/api/iot/alerts`;
+
 export default function GlobalFireOverlay() {
   const theme = useTheme();
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
@@ -23,7 +28,7 @@ export default function GlobalFireOverlay() {
 
   const fetchAlerts = async (): Promise<AlertItem[]> => {
     try {
-      const res = await axios.get('http://192.168.1.21:5000/api/iot/alerts');
+      const res = await axios.get(ALERTS_URL);
       const payload = res.data;
 
       const list = Array.isArray(payload)

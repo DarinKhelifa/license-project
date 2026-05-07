@@ -20,6 +20,10 @@ import { motion } from 'framer-motion';
 
 // Recency threshold used by overlays and normalization
 const RECENT_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+const API_BASE = (((globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+}).process?.env?.REACT_APP_API_URL) || 'http://localhost:5000').replace(/\/api$/, '');
+const ALERTS_URL = `${API_BASE}/api/iot/alerts`;
 
 interface AlertItem {
   _id: string;
@@ -63,7 +67,7 @@ export default function FireAlerts() {
       if (showSpinner) setRefreshing(true);
       setError(null);
 
-      const res = await axios.get('http://192.168.1.21:5000/api/iot/alerts');
+      const res = await axios.get(ALERTS_URL);
       const payload = res.data;
 
       const list = Array.isArray(payload)
@@ -120,7 +124,7 @@ export default function FireAlerts() {
 
   const resolveAlert = async (id: string) => {
     try {
-      await axios.put(`http://192.168.1.21:5000/api/iot/alerts/${id}/resolve`);
+      await axios.put(`${ALERTS_URL}/${id}/resolve`);
       await fetchAlerts(true);
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Failed to resolve alert');

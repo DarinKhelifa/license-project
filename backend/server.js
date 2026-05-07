@@ -35,6 +35,7 @@ const notificationRoutes = require('./src/routes/notificationRoutes');
 const settingsRoutes = require('./src/routes/settingsRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const parkingRoutes = require('./src/routes/parkingRoutes');
+const iotRoutes = require('./src/routes/iotRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -103,6 +104,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/parking', parkingRoutes);
+app.use('/api/iot', iotRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ORELAX API is running' });
