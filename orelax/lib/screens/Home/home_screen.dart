@@ -443,8 +443,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     print('=== ROUTING: User role is "$normalizedRole" ===');
 
-    // Security Role
-    if (normalizedRole == 'security') {
+    // Security Role (also show for admin users)
+    if (normalizedRole == 'security' || normalizedRole == 'admin') {
       print('Routing to Security Dashboard');
       return _buildSecurityHomeContent();
     }
@@ -687,6 +687,13 @@ class _HomeScreenState extends State<HomeScreen> {
               'iconColor': const Color(0xFFE05C8A),
               'title': 'Alerts',
               'subtitle': 'Incidents & notices',
+              'route': '/alerts',
+            },
+            {
+              'icon': Icons.local_fire_department,
+              'iconColor': Colors.red,
+              'title': 'Fire Alerts',
+              'subtitle': 'Fire events history',
               'route': '/alerts',
             },
             {

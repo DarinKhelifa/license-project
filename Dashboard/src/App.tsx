@@ -22,6 +22,9 @@ import GuestDetail from './pages/GuestDetail';
 import Settings from './pages/Settings';
 import Contacts from './pages/Contacts';
 import MyResidences from './pages/MyResidences';
+import FireAlerts from './pages/FireAlerts';
+import GlobalFireOverlay from './components/GlobalFireOverlay';
+
 /*import Security from './pages/Security';
 import Community from './pages/Community';
 import Facilities from './pages/Facilities';
@@ -61,8 +64,9 @@ function App() {
         <CssBaseline />
         <AuthProvider>
           <NotificationsProvider>
+            <GlobalFireOverlay />
             <Router>
-            <Routes>
+              <Routes>
               {/* Public Routes - NO DASHBOARD LAYOUT */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
@@ -160,6 +164,16 @@ function App() {
                 }
               />
               <Route
+                path="/fire-alerts"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <FireAlerts />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
                 path="/settings"
                 element={
                   <AuthGuard>
@@ -170,7 +184,7 @@ function App() {
                 }
               />
               {/* Security / Facilities removed from UI */}
-            </Routes>
+              </Routes>
             </Router>
           </NotificationsProvider>
         </AuthProvider>

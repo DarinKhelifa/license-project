@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { getAllEmployees, createEmployee, deleteEmployee } = require('../controllers/employeeController');
+const { getAllEmployees, getEmployeeById, createEmployee, deleteEmployee } = require('../controllers/employeeController');
 
 // Multer storage — save to /uploads folder
 const storage = multer.diskStorage({
@@ -37,6 +37,7 @@ const upload = multer({ storage, fileFilter });
 
 // Routes
 router.get('/', getAllEmployees);
+router.get('/:id', getEmployeeById);
 router.post(
   '/',
   upload.fields([

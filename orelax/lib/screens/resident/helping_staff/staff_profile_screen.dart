@@ -31,6 +31,16 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
     {
   final Color darkGreen = const Color(0xFF1A5C2A);
 
+  String? _resolveAvatarUrl(String? raw) {
+    if (raw == null) return null;
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return trimmed;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -43,6 +53,11 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final resolvedAvatarUrl = _resolveAvatarUrl(widget.staffAvatarUrl);
+    final initials = widget.staffName.trim().isNotEmpty
+        ? widget.staffName.trim().split(RegExp(r'\s+')).take(2).map((part) => part.isNotEmpty ? part[0] : '').join().toUpperCase()
+        : 'S';
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -53,15 +68,40 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
               // Header Image Section
               Stack(
                 children: [
-                  Container(
+                  SizedBox(
                     height: MediaQuery.of(context).size.height * 0.45,
                     width: double.infinity,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: NetworkImage(widget.staffAvatarUrl),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    child: resolvedAvatarUrl != null
+                        ? Image.network(
+                            resolvedAvatarUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey.shade200,
+                                alignment: Alignment.center,
+                                child: Text(
+                                  initials,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 56,
+                                    fontWeight: FontWeight.w800,
+                                    color: darkGreen,
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            color: Colors.grey.shade200,
+                            alignment: Alignment.center,
+                            child: Text(
+                              initials,
+                              style: GoogleFonts.poppins(
+                                fontSize: 56,
+                                fontWeight: FontWeight.w800,
+                                color: darkGreen,
+                              ),
+                            ),
+                          ),
                   ),
                   // Back and Favorite buttons
                   Positioned(
@@ -79,26 +119,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  // Image indicators (dots)
-                  Positioned(
-                    bottom: 20,
-                    left: 0,
-                    right: 0,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(5, (index) {
-                        return Container(
-                          width: index == 0 ? 12 : 8,
-                          height: 8,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            color: index == 0 ? darkGreen : Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        );
-                      }),
                     ),
                   ),
                 ],
@@ -161,8 +181,18 @@ class _StaffProfileScreenState extends State<StaffProfileScreen>
                               Row(
                                 children: [
                                   CircleAvatar(
-                                    backgroundImage: NetworkImage(widget.staffAvatarUrl),
+                                    backgroundImage: resolvedAvatarUrl != null ? NetworkImage(resolvedAvatarUrl) : null,
                                     radius: 20,
+                                    child: resolvedAvatarUrl == null
+                                        ? Text(
+                                            initials,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : null,
                                   ),
                                   const SizedBox(width: 12),
                                   Column(

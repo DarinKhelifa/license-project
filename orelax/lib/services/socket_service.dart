@@ -6,6 +6,8 @@ class SocketService {
   late IO.Socket _socket;
   final StreamController<Map<String, dynamic>> _notificationStream =
       StreamController<Map<String, dynamic>>.broadcast();
+    final StreamController<Map<String, dynamic>> _fireAlertStream =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   bool _isConnected = false;
 
@@ -39,6 +41,16 @@ class SocketService {
         _notificationStream.add(Map<String, dynamic>.from(data));
       });
 
+      // Fire alert events
+      _socket.on('fire-alert', (data) {
+        try {
+          print('🔥 Fire alert received: $data');
+          _fireAlertStream.add(Map<String, dynamic>.from(data));
+        } catch (e) {
+          print('❌ Error processing fire-alert: $e');
+        }
+      });
+
       _socket.on('disconnect', (_) {
         print('❌ Socket disconnected');
         _isConnected = false;
@@ -58,6 +70,9 @@ class SocketService {
   Stream<Map<String, dynamic>> get notificationStream =>
       _notificationStream.stream;
 
+  // Fire alert stream
+  Stream<Map<String, dynamic>> get fireAlertStream => _fireAlertStream.stream;
+
   // Check if socket is connected
   bool get isConnected => _isConnected;
 
@@ -70,6 +85,7 @@ class SocketService {
   // Dispose resources
   void dispose() {
     _notificationStream.close();
+    _fireAlertStream.close();
     if (_isConnected) {
       disconnect();
     }

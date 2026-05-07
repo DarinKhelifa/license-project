@@ -26,6 +26,29 @@ class _HelpingStaffListScreenState extends State<HelpingStaffListScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
+  String _canonicalCategory(String value) {
+    final normalized = value.toLowerCase().trim();
+    switch (normalized) {
+      case 'cleaning':
+        return 'cleaning';
+      case 'repairing':
+      case 'repair':
+        return 'repair';
+      case 'plumbing':
+      case 'plumber':
+        return 'plumber';
+      case 'electrical':
+      case 'electrician':
+        return 'electrician';
+      case 'all':
+      case 'all staff':
+      case 'staff':
+        return '';
+      default:
+        return normalized;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -39,10 +62,11 @@ class _HelpingStaffListScreenState extends State<HelpingStaffListScreen> {
       debugPrint('Loaded ${allEmployees.length} employees total');
 
       // Filter by category
+      final targetCategory = _canonicalCategory(widget.categoryName);
       final filtered = allEmployees.where((emp) {
-        final category = emp.workCategory.toLowerCase().trim();
-        final target = widget.categoryName.toLowerCase().trim();
-        return category == target;
+        if (targetCategory.isEmpty) return true;
+        final category = _canonicalCategory(emp.workCategory);
+        return category == targetCategory;
       }).toList();
 
       debugPrint(

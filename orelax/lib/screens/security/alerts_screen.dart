@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/alert_provider.dart';
+import '../../providers/fire_alert_provider.dart';
 import '../../models/alert_model.dart';
 import 'report_detail_screen.dart';
 
@@ -18,9 +19,13 @@ class _AlertsScreenState extends State<AlertsScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AlertProvider>(context, listen: false).fetchAlerts();
+      // fetch fire alerts history
+      try {
+        Provider.of<FireAlertProvider>(context, listen: false).fetchHistory();
+      } catch (_) {}
     });
   }
 
@@ -55,6 +60,7 @@ class _AlertsScreenState extends State<AlertsScreen> with SingleTickerProviderSt
           tabs: const [
             Tab(text: 'All Alerts'),
             Tab(text: 'Unread'),
+            Tab(text: 'Fire Alerts'),
           ],
           indicatorColor: Colors.white,
           labelColor: Colors.white,
@@ -89,23 +95,82 @@ class _AlertsScreenState extends State<AlertsScreen> with SingleTickerProviderSt
           ),
         ],
       ),
-      body: alertProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : filteredAlerts.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: () => alertProvider.fetchAlerts(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: filteredAlerts.length,
-                    itemBuilder: (context, index) {
-                      final alert = filteredAlerts[index];
-                      final isUnread = !alert.isRead;
-                      return _buildAlertCard(alert, isUnread);
-                    },
-                  ),
-                ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // All Alerts
+          alertProvider.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : filteredAlerts.isEmpty
+                  ? _buildEmptyState()
+                  : RefreshIndicator(
+                      onRefresh: () => alertProvider.fetchAlerts(),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: filteredAlerts.length,
+                        itemBuilder: (context, index) {
+                          final alert = filteredAlerts[index];
+                          final isUnread = !alert.isRead;
+                          return _buildAlertCard(alert, isUnread);
+                        },
+                      ),
+                    ),
+
+          // Unread
+          RefreshIndicator(
+            onRefresh: () => alertProvider.fetchAlerts(),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: alertProvider.unreadAlerts.length,
+              itemBuilder: (context, index) {
+                final alert = alertProvider.unreadAlerts[index];
+                return _buildAlertCard(alert, true);
+              },
+            ),
+          ),
+
+          // Fire Alerts (from FireAlertProvider)
+          Consumer<FireAlertProvider>(builder: (context, fp, _) {
+            final list = fp.alerts;
+            if (list.isEmpty) {
+              return const Center(child: Text('No fire alerts yet ✅'));
+            }
+            return RefreshIndicator(
+              onRefresh: () => fp.fetchHistory(),
+              child: ListView.separated(
+                padding: const EdgeInsets.all(12),
+                itemCount: list.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, idx) {
+                  final a = list[idx];
+                  final date = '${a.timestamp.day.toString().padLeft(2,'0')} ${_monthName(a.timestamp.month)} ${a.timestamp.year}';
+                  final time = '${a.timestamp.hour.toString().padLeft(2,'0')}:${a.timestamp.minute.toString().padLeft(2,'0')}:${a.timestamp.second.toString().padLeft(2,'0')}';
+                  final isActive = a.status.toLowerCase() == 'active';
+                  return ListTile(
+                    leading: const Text('🔥', style: TextStyle(fontSize: 28)),
+                    title: Text('$date • $time'),
+                    subtitle: Text(isActive ? 'Active' : 'Acknowledged', style: TextStyle(color: isActive ? Colors.red : Colors.green)),
+                    trailing: isActive
+                        ? ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                            onPressed: () {
+                              fp.acknowledge(a.id);
+                            },
+                            child: const Text('Acknowledge'))
+                        : null,
+                  );
+                },
+              ),
+            );
+          }),
+        ],
+      ),
     );
+  }
+
+  String _monthName(int m) {
+    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return names[m-1];
   }
 
   Widget _buildEmptyState() {

@@ -32,6 +32,9 @@ const { initMQTT } = require('./src/controllers/energyController');
 const qrRoutes = require('./src/routes/qrRoutes');
 const initSurveillance = require('./src/routes/surveillanceRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
+const settingsRoutes = require('./src/routes/settingsRoutes');
+const contactRoutes = require('./src/routes/contactRoutes');
+const parkingRoutes = require('./src/routes/parkingRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -42,7 +45,16 @@ const server = http.createServer(app);
 
 const io = socketIo(server, {
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:8080','http://localhost:58010/', 'http://localhost:5000', 'http://127.0.0.1:5000', 'http://127.0.0.1:8080'],
+  origin: [
+  'http://localhost:3000',
+  'http://localhost:8080',
+  'http://localhost:58010/',
+  'http://localhost:5000',
+  'http://127.0.0.1:5000',
+  'http://127.0.0.1:8080',
+  'http://10.40.104.21:5000',
+  '*'
+],
     methods: ['GET', 'POST'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -88,6 +100,9 @@ app.use('/api/environment', environmentRoutes);
 app.use('/api/residences', residenceRoutes);
 app.use('/api/qr', qrRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/contacts', contactRoutes);
+app.use('/api/parking', parkingRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ORELAX API is running' });

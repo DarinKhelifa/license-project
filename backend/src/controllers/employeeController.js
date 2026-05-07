@@ -17,6 +17,19 @@ const getAllEmployees = async (req, res) => {
   }
 };
 
+// GET /api/employees/:id — return single employee
+const getEmployeeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await Employee.findById(id);
+    if (!employee) return res.status(404).json({ success: false, error: 'Employee not found' });
+    res.json({ success: true, employee });
+  } catch (err) {
+    console.error('getEmployeeById error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // POST /api/employees — create employee with optional file uploads
 const createEmployee = async (req, res) => {
   try {
@@ -61,20 +74,23 @@ const createEmployee = async (req, res) => {
     });
 
     const saved = await employee.save();
-    
-        // Notify all residents about new staff member (only if admin is adding)
-        if (req.user && req.user.role === 'admin') {
-          await saveAndEmitToAllResidents(io, {
-            type: 'staff_added',
-            title: 'New Staff Member Added',
-            body: `${firstName} ${lastName} (${workCategory}) has been added to the team!`,
-            metadata: {
-              staffName: `${firstName} ${lastName}`,
-              staffRole: workCategory
-            }
-          });
+
+    // Notify all residents about new staff member (only if admin is adding)
+    // Include employeeId and photo in metadata so clients can route to the profile
+    if (req.user && req.user.role === 'admin') {
+      await saveAndEmitToAllResidents(io, {
+        type: 'staff_added',
+        title: 'New Staff Member Added',
+        body: `${firstName} ${lastName} (${workCategory}) has been added to the team!`,
+        metadata: {
+          employeeId: saved._id,
+          staffName: `${firstName} ${lastName}`,
+          staffRole: workCategory,
+          photo: saved.photo || ''
         }
-    
+      });
+    }
+
     res.status(201).json({ success: true, employee: saved });
   } catch (err) {
     console.error('createEmployee error:', err);
@@ -97,4 +113,4 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
-module.exports = { getAllEmployees, createEmployee, deleteEmployee, setIo };
+module.exports = { getAllEmployees, getEmployeeById, createEmployee, deleteEmployee, setIo };

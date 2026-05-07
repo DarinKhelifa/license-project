@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:orelax/services/employee_api_service.dart';
 import 'package:orelax/models/employee_model.dart';
-import '../../../widgets/custom_bottom_nav_bar.dart';
+import 'package:orelax/screens/resident/helping_staff/staff_profile_screen.dart';
+import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'helping_staff_list_screen.dart';
 
 class HelpingStaffScreen extends StatefulWidget {
@@ -19,6 +20,32 @@ class _HelpingStaffScreenState extends State<HelpingStaffScreen> {
   void initState() {
     super.initState();
     _topRatedFuture = _loadTopRated();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args != null && args is String && args.isNotEmpty) {
+        try {
+          final emp = await EmployeeApiService.getEmployeeById(args);
+          if (!mounted) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (ctx) => StaffProfileScreen(
+                staffId: emp.id,
+                staffName: emp.fullName,
+                staffRating: '4.5 (new)',
+                staffAvatarUrl: EmployeeApiService.getImageUrl(emp.photo),
+                experience: emp.experience,
+                profession: emp.workCategory,
+                price: '120 DA/hr',
+                about: '${emp.fullName} is a trusted ${emp.workCategory} with ${emp.experience} years experience.',
+              ),
+            ),
+          );
+        } catch (e) {
+          // ignore — fall back to standard list view
+        }
+      }
+    });
   }
 
   Future<List<Employee>> _loadTopRated() async {

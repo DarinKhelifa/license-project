@@ -53,7 +53,6 @@ const menuItems = [
   { text: 'Employees', icon: <BadgeIcon />, path: '/employees' },
   { text: 'Report', icon: <AssessmentIcon />, path: '/report' },
   { text: 'Events', icon: <EventIcon />, path: '/events' },
-  { text: 'My Residences', icon: <BusinessIcon />, path: '/residences' },
 ];
 
 function NotificationsButton() {

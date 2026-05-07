@@ -5,10 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_service.dart';
 import '../models/employee_model.dart';
 
 class EmployeeApiService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  // Use ApiService.baseUrl so the correct host is used on device/web
+  static String get baseUrl => ApiService.baseUrl;
   static const Duration httpTimeout = Duration(seconds: 30);
 
   static Future<String?> _getToken() async {
@@ -46,6 +48,31 @@ class EmployeeApiService {
       }
     } on TimeoutException {
       throw Exception('Request timeout while loading employees');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Get a single employee by id
+  static Future<Employee> getEmployeeById(String id) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/employees/$id'),
+            headers: await _getHeaders(),
+          )
+          .timeout(httpTimeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Employee.fromMap(data['employee']);
+      } else if (response.statusCode == 404) {
+        throw Exception('Employee not found');
+      } else {
+        throw Exception('Failed to load employee');
+      }
+    } on TimeoutException {
+      throw Exception('Request timeout while loading employee');
     } catch (e) {
       rethrow;
     }
