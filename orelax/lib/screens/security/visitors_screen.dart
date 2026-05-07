@@ -89,14 +89,14 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF0D1F3A), Color(0xFF122B52)],
+                            colors: [Color(0xFF034808), Color(0xFF213B28)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0D1F3A).withOpacity(0.18),
+                              color: const Color(0xFF034808).withOpacity(0.18),
                               blurRadius: 18,
                               offset: const Offset(0, 8),
                             ),

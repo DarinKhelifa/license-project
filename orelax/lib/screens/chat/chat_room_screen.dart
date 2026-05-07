@@ -13,7 +13,6 @@ import '../../services/chat_service.dart';
 import '../../services/api_service.dart';
 import '../../providers/auth_provider.dart';
 import 'package:provider/provider.dart';
-import '../../widgets/home_bottom_nav_bar.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final String chatId;
@@ -59,10 +58,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _loadBlockStatus() async {
-    final otherUserId = widget.otherUser['id']?.toString();
+    final otherUserId = widget.otherUser['id']?.toString() ?? widget.otherUser['_id']?.toString();
     if (otherUserId == null) return;
 
-    setState(() => _isBlockStatusLoading = true);
+    if (mounted) {
+      setState(() => _isBlockStatusLoading = true);
+    }
     try {
       final chats = await ApiService.getChats();
       final chat = chats.cast<Map<String, dynamic>?>().firstWhere(
@@ -294,6 +295,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Future<void> _loadMessages() async {
     try {
       final messages = await ApiService.getMessages(widget.chatId);
+      if (!mounted) return;
       setState(() {
         _messages = messages;
         _isLoading = false;
@@ -302,7 +304,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       _scrollToBottom();
     } catch (e) {
       print('Error loading messages: $e');
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -708,7 +712,7 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final time = DateTime.parse(message['createdAt']);
+    final time = _parseMessageTime(message['createdAt']);
     final type = (message['type'] ?? 'text').toString();
     final mediaUrl = message['mediaUrl']?.toString();
     
@@ -823,6 +827,14 @@ class _MessageBubble extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  DateTime _parseMessageTime(dynamic value) {
+    if (value is DateTime) return value;
+    if (value is String && value.trim().isNotEmpty) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    }
+    return DateTime.now();
   }
 }
 
