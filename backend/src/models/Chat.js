@@ -12,6 +12,7 @@ const chatSchema = new mongoose.Schema({
   groupName: { type: String },
   groupIcon: { type: String },
   createdBy: { type: String },
+  blockedUsers: [{ type: String, default: [] }],
 }, {
   timestamps: true,
 });

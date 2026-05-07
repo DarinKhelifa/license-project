@@ -107,11 +107,10 @@ export default function ManageAccounts() {
     name: '',
     email: '',
     phone: '',
-    role: 'resident' as User['role'],
+    role: 'security' as User['role'],
     password: '',
+    confirmPassword: '',
     apartment: '',
-    specialization: '' as string,
-    status: 'active' as User['status'],
   });
 
   // Check if current user is admin
@@ -162,11 +161,10 @@ export default function ManageAccounts() {
       name: '',
       email: '',
       phone: '',
-      role: 'resident',
+      role: 'security',
       password: '',
+      confirmPassword: '',
       apartment: '',
-      specialization: '',
-      status: 'active',
     });
     setOpenDialog(true);
   };
@@ -179,9 +177,8 @@ export default function ManageAccounts() {
       phone: user.phone,
       role: user.role,
       password: '',
+      confirmPassword: '',
       apartment: user.apartment || '',
-        specialization: (user as any).specialization || '',
-      status: user.status,
     });
     setOpenDialog(true);
   };
@@ -232,12 +229,73 @@ export default function ManageAccounts() {
       return;
     }
 
+    const normalizedPhone = (formData.phone || '').replace(/\s+/g, '');
+
+    if (!editingUser) {
+      if (!/^0\d{9}$/.test(normalizedPhone)) {
+        setSnackbar({
+          open: true,
+          message: 'Incorrect phone number. It must start with 0 and be exactly 10 digits.',
+          severity: 'error',
+        });
+        return;
+      }
+
+      const allowedCreateRoles: User['role'][] = ['security', 'maintenance', 'facility_manager'];
+      if (!allowedCreateRoles.includes(formData.role)) {
+        setSnackbar({
+          open: true,
+          message: 'You can only create Agent, Maintenance, or Facilities Manager accounts.',
+          severity: 'error',
+        });
+        return;
+      }
+
+      const hasPassword = !!formData.password;
+      const hasConfirm = !!formData.confirmPassword;
+      if (hasPassword || hasConfirm) {
+        if (!hasPassword || !hasConfirm) {
+          setSnackbar({
+            open: true,
+            message: 'Please enter and confirm the password (or leave both blank to auto-generate).',
+            severity: 'error',
+          });
+          return;
+        }
+
+        if (formData.password.length < 8) {
+          setSnackbar({
+            open: true,
+            message: 'Password must be at least 8 characters.',
+            severity: 'error',
+          });
+          return;
+        }
+
+        if (!/^(?=.*[A-Za-z])(?=.*\d)(?=.*[._@])[A-Za-z\d._@]+$/.test(formData.password)) {
+          setSnackbar({
+            open: true,
+            message: 'Password must include letters, numbers, and at least one symbol (._@).',
+            severity: 'error',
+          });
+          return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+          setSnackbar({
+            open: true,
+            message: 'Passwords do not match.',
+            severity: 'error',
+          });
+          return;
+        }
+      }
+    }
+
     try {
       if (editingUser) {
         // Update existing user
         await updateUserRole(editingUser.id, formData.role);
-        await updateUserStatus(editingUser.id, formData.status);
-        // TODO: update specialization via admin endpoint (not implemented)
         await loadUsers();
         setSnackbar({
           open: true,
@@ -249,12 +307,9 @@ export default function ManageAccounts() {
         const res = await createUser({
           name: formData.name,
           email: formData.email,
-          phone: formData.phone,
+          phone: normalizedPhone,
           role: formData.role,
           password: formData.password,
-          apartment: formData.apartment,
-          specialization: formData.specialization || null,
-          status: formData.status,
         });
         await loadUsers();
         const tempPass = (res as any)?.tempPassword;
@@ -268,7 +323,7 @@ export default function ManageAccounts() {
     } catch (error) {
       setSnackbar({
         open: true,
-        message: 'Failed to save user',
+        message: error instanceof Error ? error.message : 'Failed to save user',
         severity: 'error',
       });
     }
@@ -534,6 +589,8 @@ export default function ManageAccounts() {
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
                 margin="normal"
+                inputProps={{ inputMode: 'numeric', pattern: '0\\d{9}' }}
+                helperText="Must start with 0 and be 10 digits"
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -544,61 +601,39 @@ export default function ManageAccounts() {
                   label="Role"
                   onChange={(e) => setFormData({ ...formData, role: e.target.value as User['role'] })}
                 >
-                  <MenuItem value="resident">Resident</MenuItem>
-                  <MenuItem value="security">Security</MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
+                  {editingUser && <MenuItem value="resident">Resident</MenuItem>}
+                  <MenuItem value="security">Agent</MenuItem>
                   <MenuItem value="maintenance">Maintenance</MenuItem>
                   <MenuItem value="facility_manager">Facilities Manager</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             {!editingUser && (
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  margin="normal"
-                />
-              </Grid>
+              <>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    margin="normal"
+                    helperText="Min 8 chars; include letters + numbers + one of (._@). Leave blank to auto-generate"
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Confirm Password"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    margin="normal"
+                  />
+                </Grid>
+              </>
             )}
-            {formData.role !== 'resident' && (
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Specialization</InputLabel>
-                  <Select
-                    value={formData.specialization}
-                    label="Specialization"
-                    onChange={(e) => setFormData({ ...formData, specialization: e.target.value as string })}
-                  >
-                    <MenuItem value="">None</MenuItem>
-                    <MenuItem value="cleaning">Cleaning</MenuItem>
-                    <MenuItem value="electrician">Electrician</MenuItem>
-                    <MenuItem value="repair">Repair</MenuItem>
-                    <MenuItem value="plumber">Plumber</MenuItem>
-                    <MenuItem value="other">Other</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            )}
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={formData.status}
-                  label="Status"
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as User['status'] })}
-                >
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            {formData.role === 'resident' && (
+            {editingUser && formData.role === 'resident' && (
               <Grid item xs={12}>
                 <TextField
                   fullWidth

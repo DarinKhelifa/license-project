@@ -32,6 +32,7 @@ import {
   Badge as BadgeIcon,
   Assessment as AssessmentIcon,
   Event as EventIcon,
+  Business as BusinessIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
 } from '@mui/icons-material';
@@ -52,6 +53,7 @@ const menuItems = [
   { text: 'Employees', icon: <BadgeIcon />, path: '/employees' },
   { text: 'Report', icon: <AssessmentIcon />, path: '/report' },
   { text: 'Events', icon: <EventIcon />, path: '/events' },
+  { text: 'My Residences', icon: <BusinessIcon />, path: '/residences' },
 ];
 
 function NotificationsButton() {

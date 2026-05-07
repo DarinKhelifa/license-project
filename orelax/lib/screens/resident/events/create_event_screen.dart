@@ -127,8 +127,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       capacity: int.tryParse(_capacityController.text.trim()) ?? 0,
       currentRegistrations: 0,
       status: 'pending',
-      createdBy: currentUser?['id'] ?? '',
-      createdByName: currentUser?['name'] ?? '',
+      createdBy: authProvider.userId ?? (currentUser?['id'] ?? ''),
+      createdByName: authProvider.userName ?? (currentUser?['name'] ?? ''),
       createdAt: DateTime.now(),
       isActive: true,
     );
@@ -162,9 +162,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       appBar: AppBar(
         title: const Text('Create Event'),
-        backgroundColor: const Color(0xFF034808),
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
       ),
       body: Stack(
         children: [
@@ -186,7 +186,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.grey.shade300),
                       ),
-                      child: _imageBase64 != null
+                      child: (_imageBase64 != null && _imageBase64!.trim().isNotEmpty)
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(16),
                               child: Image.memory(
@@ -362,6 +362,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       onPressed: _isLoading ? null : _submitEvent,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF034808),
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

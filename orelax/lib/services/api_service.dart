@@ -42,6 +42,8 @@ class ApiService {
     required String password,
     required String phone,
     required String apartment,
+    String? residence,
+    String? building,
     String role = 'resident',
   }) async {
     final response = await http.post(
@@ -53,6 +55,8 @@ class ApiService {
         'password': password,
         'phone': phone,
         'apartment': apartment,
+        'residence': residence ?? null,
+        'building': building ?? null,
         'role': role,
       }),
     );
@@ -67,6 +71,21 @@ class ApiService {
     } else {
       final error = jsonDecode(response.body);
       throw Exception(error['message'] ?? 'Registration failed');
+    }
+  }
+
+  // Get list of residences (public endpoint)
+  static Future<List<Map<String, dynamic>>> getResidences() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/residences'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(json['residences'] ?? []);
+    } else {
+      throw Exception('Failed to load residences');
     }
   }
   
@@ -667,6 +686,46 @@ static Future<void> updateReportStatus(String reportId, String status) async {
       return List<Map<String, dynamic>>.from(json['guests'] ?? []);
     } else {
       throw Exception('Failed to load guest list');
+    }
+  }
+
+  // Block a user in a chat
+  static Future<Map<String, dynamic>> blockUserInChat(String chatId, String userId) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/chat/chats/$chatId/block/$userId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to block user');
+    }
+  }
+
+  // Unblock a user in a chat
+  static Future<Map<String, dynamic>> unblockUserInChat(String chatId, String userId) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/chat/chats/$chatId/unblock/$userId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to unblock user');
     }
   }
 

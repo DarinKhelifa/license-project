@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/api_service.dart';
 import '../Home/home_screen.dart';
 
 class SignupScreen extends StatefulWidget {
-  final String initialRole;
-
-  const SignupScreen({
-    super.key,
-    this.initialRole = 'resident',
-  });
+  final String? initialRole;
+  const SignupScreen({super.key, this.initialRole});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -21,39 +19,43 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  late String _selectedRole;
-
-  bool get _requiresApartment => _selectedRole == 'resident';
-
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _apartmentController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedRole = widget.initialRole == 'security' ? 'security' : 'resident';
-  }
+  bool get _isResident => (widget.initialRole ?? 'resident').toString().trim().toLowerCase() == 'resident';
+  // apartment selection is handled via `_selectedApartment` dropdown
+  List<Map<String, dynamic>> _residences = [];
+  String? _selectedResidenceId;
+  String? _selectedBuildingId;
+  String? _selectedApartment;
+  bool _isResidencesLoading = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _apartmentController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _updateRole(String role) {
-    if (role == _selectedRole) return;
+  @override
+  void initState() {
+    super.initState();
+    _loadResidences();
+  }
 
-    setState(() {
-      _selectedRole = role;
-      _apartmentController.clear();
-    });
+  Future<void> _loadResidences() async {
+    setState(() => _isResidencesLoading = true);
+    try {
+      final list = await ApiService.getResidences();
+      setState(() => _residences = list);
+    } catch (_) {
+      // ignore: avoid_print
+      print('Failed to load residences');
+    }
+    setState(() => _isResidencesLoading = false);
   }
 
   Future<void> _handleSignUp() async {
@@ -69,9 +71,20 @@ class _SignupScreenState extends State<SignupScreen> {
       _showError('Please enter your phone number');
       return;
     }
-    if (_requiresApartment && _apartmentController.text.trim().isEmpty) {
-      _showError('Please enter your apartment number');
-      return;
+    // Apartment/residence/building are only required for residents
+    if (_isResident) {
+      if (_selectedApartment == null || _selectedApartment!.trim().isEmpty) {
+        _showError('Please select your apartment number');
+        return;
+      }
+      if (_selectedResidenceId == null) {
+        _showError('Please select your residence');
+        return;
+      }
+      if (_selectedBuildingId == null) {
+        _showError('Please select your building');
+        return;
+      }
     }
     if (_passwordController.text.isEmpty) {
       _showError('Please enter a password');
@@ -92,11 +105,34 @@ class _SignupScreenState extends State<SignupScreen> {
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
+      residence: _isResident ? _selectedResidenceId : null,
+      building: _isResident ? _selectedBuildingId : null,
+      apartment: _isResident ? _selectedApartment : null,
       phone: _phoneController.text.trim(),
-      apartment: _requiresApartment ? _apartmentController.text.trim() : null,
-      role: _selectedRole,
-      context: context,
+      role: widget.initialRole ?? 'resident',
     );
+
+    if (success && mounted) {
+      final user = authProvider.user;
+      final userId = user?['_id'] ?? user?['id'];
+      final email = user?['email'];
+
+      if (userId != null && email != null) {
+        // Navigate to OTP verification screen
+        Navigator.pushNamed(context, '/otp', arguments: {
+          'userId': userId.toString(),
+          'email': email.toString(),
+        });
+        return;
+      }
+
+      // Fallback: navigate to home if user data isn't available
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (route) => false,
+      );
+      return;
+    }
 
     if (!success && mounted) {
       setState(() {
@@ -199,53 +235,86 @@ class _SignupScreenState extends State<SignupScreen> {
                                   style: const TextStyle(color: Colors.red, fontSize: 13)),
                             ),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ChoiceChip(
-                                  label: const Text('Resident'),
-                                  selected: _selectedRole == 'resident',
-                                  onSelected: (_) => _updateRole('resident'),
-                                  selectedColor: const Color(0xFFB8CBB7),
-                                  labelStyle: TextStyle(
-                                    color: _selectedRole == 'resident'
-                                        ? const Color(0xFF1D3A1F)
-                                        : Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  backgroundColor: const Color(0xFF6E8670),
-                                  side: const BorderSide(color: Colors.transparent),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ChoiceChip(
-                                  label: const Text('Security'),
-                                  selected: _selectedRole == 'security',
-                                  onSelected: (_) => _updateRole('security'),
-                                  selectedColor: const Color(0xFFB8CBB7),
-                                  labelStyle: TextStyle(
-                                    color: _selectedRole == 'security'
-                                        ? const Color(0xFF1D3A1F)
-                                        : Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  backgroundColor: const Color(0xFF6E8670),
-                                  side: const BorderSide(color: Colors.transparent),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
                           _field('full name', Icons.person_outline, controller: _nameController),
                           const SizedBox(height: 12),
                           _field('email address', Icons.email_outlined,
                               controller: _emailController, keyboardType: TextInputType.emailAddress),
                           const SizedBox(height: 12),
-                          if (_requiresApartment) ...[
-                            _field('apartment number', Icons.location_city_outlined, controller: _apartmentController),
+                          if (_isResident) ...[
+                            // Apartment is selected after choosing residence and building
+                            // Residence Dropdown (shows spinner while loading)
+                            _isResidencesLoading
+                                ? SizedBox(height: 56, child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))))
+                                : (_residences.isEmpty
+                                    ? const Text('No residences available', style: TextStyle(color: Colors.grey))
+                                    : DropdownButtonFormField<String>(
+                                        value: _selectedResidenceId,
+                                        decoration: _decoration('select residence', Icons.home_outlined),
+                                        items: _residences
+                                            .map((r) => DropdownMenuItem(
+                                                  value: (r['_id'] ?? r['id'] ?? r['name']).toString(),
+                                                  child: Text(r['name'] ?? r['address'] ?? 'Residence'),
+                                                ))
+                                            .toList(),
+                                        onChanged: (val) {
+                                          setState(() {
+                                            _selectedResidenceId = val;
+                                            _selectedBuildingId = null;
+                                            _selectedApartment = null;
+                                          });
+                                        },
+                                      )),
                             const SizedBox(height: 12),
+                            // Building Dropdown
+                            (_selectedResidenceId == null)
+                                ? const SizedBox()
+                                : DropdownButtonFormField<String>(
+                                    value: _selectedBuildingId,
+                                    decoration: _decoration('select building', Icons.apartment_outlined),
+                                    items: (_residences.firstWhere((r) => (r['_id'] ?? r['id']).toString() == _selectedResidenceId,
+                                          orElse: () => {})['buildings'] as List<dynamic>?)
+                                        ?.map((b) => DropdownMenuItem(
+                                              value: (b['id'] ?? b['name']).toString(),
+                                              child: Text(b['name'] ?? b['id'] ?? 'Building'),
+                                            ))
+                                        .toList() ??
+                                    [],
+                                    onChanged: (val) => setState(() {
+                                      _selectedBuildingId = val;
+                                      _selectedApartment = null;
+                                    }),
+                                  ),
+                            const SizedBox(height: 12),
+                            // Apartment selection: show dropdown only if building selected
+                            (_selectedBuildingId == null)
+                                ? const SizedBox()
+                                : DropdownButtonFormField<String>(
+                                    value: _selectedApartment,
+                                    decoration: _decoration('select apartment', Icons.home_work_outlined),
+                                    items: (() {
+                                      final resList = _residences
+                                          .where((r) => (r['_id'] ?? r['id']).toString() == _selectedResidenceId)
+                                          .toList();
+                                      if (resList.isEmpty) return <DropdownMenuItem<String>>[];
+                                      final res = resList.first;
+                                      final buildings = (res['buildings'] as List<dynamic>?) ?? [];
+                                      final bList = buildings
+                                          .where((b) => (b['id'] ?? b['name']).toString() == _selectedBuildingId)
+                                          .toList();
+                                      if (bList.isEmpty) return <DropdownMenuItem<String>>[];
+                                      final building = bList.first;
+                                      final count = building['apartments'] is int
+                                          ? building['apartments'] as int
+                                          : int.tryParse(building['apartments']?.toString() ?? '') ?? 0;
+                                      if (count <= 0) return <DropdownMenuItem<String>>[];
+                                      return List.generate(count, (i) => (i + 1).toString().padLeft(2, '0'))
+                                          .map((apt) => DropdownMenuItem(value: apt, child: Text(apt)))
+                                          .toList();
+                                    })(),
+                                    onChanged: (val) => setState(() => _selectedApartment = val),
+                                  ),
                           ],
+                          const SizedBox(height: 12),
                           _field('phone number', Icons.phone_android_outlined,
                               controller: _phoneController, keyboardType: TextInputType.phone),
                           const SizedBox(height: 12),

@@ -30,6 +30,7 @@ router.get('/chats', protect, async (req, res) => {
         participants: chat.participants,
         participantNames: chat.participantNames,
         participantAvatars: avatars,
+        blockedUsers: chat.blockedUsers || [],
         lastMessage: chat.lastMessage,
         lastMessageTime: chat.lastMessageTime,
         lastMessageSenderId: chat.lastMessageSenderId,
@@ -179,6 +180,58 @@ router.get('/users', protect, async (req, res) => {
     res.json(mappedUsers);
   } catch (error) {
     console.error('Get chat users error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Block a user in a chat
+router.post('/chats/:chatId/block/:userId', protect, async (req, res) => {
+  try {
+    const { chatId, userId } = req.params;
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+
+    if (!chat.participants.includes(req.user.id)) {
+      return res.status(403).json({ message: 'Not authorized for this chat' });
+    }
+
+    // Add user to blockedUsers if not already blocked
+    if (!chat.blockedUsers.includes(userId)) {
+      chat.blockedUsers.push(userId);
+      await chat.save();
+    }
+
+    res.json({ message: 'User blocked successfully', chat });
+  } catch (error) {
+    console.error('Block user error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Unblock a user in a chat
+router.post('/chats/:chatId/unblock/:userId', protect, async (req, res) => {
+  try {
+    const { chatId, userId } = req.params;
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+
+    if (!chat.participants.includes(req.user.id)) {
+      return res.status(403).json({ message: 'Not authorized for this chat' });
+    }
+
+    // Remove user from blockedUsers
+    chat.blockedUsers = chat.blockedUsers.filter(id => id !== userId);
+    await chat.save();
+
+    res.json({ message: 'User unblocked successfully', chat });
+  } catch (error) {
+    console.error('Unblock user error:', error);
     res.status(500).json({ message: error.message });
   }
 });

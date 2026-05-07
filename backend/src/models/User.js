@@ -29,7 +29,17 @@ const userSchema = new mongoose.Schema({
   },
   apartment: {
     type: String,
-    required: [true, 'Apartment number is required'],
+    required: [function() { return this.role === 'resident'; }, 'Apartment number is required'],
+    trim: true
+  },
+  residence: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Residence',
+    default: null
+  },
+  building: {
+    type: String,
+    default: null,
     trim: true
   },
   role: {

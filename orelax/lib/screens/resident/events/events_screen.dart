@@ -38,9 +38,9 @@ class _EventsScreenState extends State<EventsScreen> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Community Events'),
-        backgroundColor: const Color(0xFF034808),
-        foregroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
         actions: [
           IconButton(
             onPressed: () async {
@@ -168,13 +168,19 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final provider = Provider.of<EventProvider>(context, listen: false);
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => EventDetailScreen(event: event),
           ),
         );
+        // If detail indicated a change (delete/update), refresh lists
+        if (result == true) {
+          await provider.fetchMyEvents();
+          await provider.fetchEvents();
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -195,7 +201,7 @@ class _EventCard extends StatelessWidget {
             // Image or Color Header
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              child: event.imageBase64 != null
+              child: (event.imageBase64 != null && event.imageBase64!.trim().isNotEmpty)
                   ? Image.memory(
                       base64Decode(event.imageBase64!),
                       height: 160,

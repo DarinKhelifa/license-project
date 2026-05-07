@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/chat_service.dart';
 import '../screens/Home/home_screen.dart';
+import '../screens/auth/otp_verification_screen.dart';
 
 class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? _user;
@@ -88,6 +89,8 @@ class AuthProvider extends ChangeNotifier {
     required String password,
     required String phone,
     String? apartment,
+    String? residence,
+    String? building,
     String role = 'resident',
     BuildContext? context,
   }) async {
@@ -102,13 +105,33 @@ class AuthProvider extends ChangeNotifier {
         password: password,
         phone: phone,
         apartment: apartment ?? '',
+        residence: residence,
+        building: building,
         role: role,
       );
       _user = response['user'];
       
       if (_user != null) {
-        await initializeChat();
-        _navigateAfterAuthentication(context);
+        // Check if email is verified
+        final isVerified = _user!['isEmailVerified'] ?? false;
+        
+        if (!isVerified && context != null && context.mounted) {
+          // Navigate to OTP verification screen
+          final userId = _user!['_id'] ?? _user!['id'];
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => OTPVerificationScreen(
+                userId: userId.toString(),
+                email: email,
+              ),
+            ),
+            (route) => false,
+          );
+        } else {
+          // Email already verified or no context, proceed to home
+          await initializeChat();
+          _navigateAfterAuthentication(context);
+        }
       }
       
       _isLoading = false;

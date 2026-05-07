@@ -11,10 +11,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/chat_service.dart';
 import '../../services/api_service.dart';
-import '../../services/message_actions_service.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/chat/message_action_popup.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/home_bottom_nav_bar.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final String chatId;
@@ -37,9 +36,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isLoading = true;
   bool _isTyping = false;
   bool _isUploadingMedia = false;
+  bool _isUserBlocked = false;
+  bool _isBlockStatusLoading = false;
   Timer? _typingTimer;
-  final TextEditingController _editMessageController = TextEditingController();
-  String? _editingMessageId;
 
   // Voice notes
   final AudioRecorder _recorder = AudioRecorder();
@@ -50,20 +49,47 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   late final Function(dynamic) _messageSentListener;
   late final Function(dynamic) _messageErrorListener;
   late final Function(dynamic) _messageReadListener;
-  late final Function(dynamic) _messageUpdatedListener;
-  late final Function(dynamic) _messageDeletedListener;
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
+    _loadBlockStatus();
     _setupSocketListeners();
+  }
+
+  Future<void> _loadBlockStatus() async {
+    final otherUserId = widget.otherUser['id']?.toString();
+    if (otherUserId == null) return;
+
+    setState(() => _isBlockStatusLoading = true);
+    try {
+      final chats = await ApiService.getChats();
+      final chat = chats.cast<Map<String, dynamic>?>().firstWhere(
+        (c) => c?['_id']?.toString() == widget.chatId,
+        orElse: () => null,
+      );
+
+      final blocked = (chat?['blockedUsers'] is List)
+          ? List<dynamic>.from(chat?['blockedUsers'] as List)
+          : <dynamic>[];
+      final isBlocked = blocked.map((e) => e.toString()).contains(otherUserId);
+
+      if (mounted) {
+        setState(() => _isUserBlocked = isBlocked);
+      }
+    } catch (_) {
+      // Keep current state if loading block status fails.
+    } finally {
+      if (mounted) {
+        setState(() => _isBlockStatusLoading = false);
+      }
+    }
   }
 
   @override
   void dispose() {
     _messageController.dispose();
-    _editMessageController.dispose();
     _scrollController.dispose();
     _typingTimer?.cancel();
     _recorder.dispose();
@@ -73,8 +99,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     ChatService.removeMessageSentListener(_messageSentListener);
     ChatService.removeMessageErrorListener(_messageErrorListener);
     ChatService.removeMessageReadListener(_messageReadListener);
-    ChatService.removeMessageUpdatedListener(_messageUpdatedListener);
-    ChatService.removeMessageDeletedListener(_messageDeletedListener);
     
     super.dispose();
   }
@@ -112,6 +136,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _toggleVoiceRecording() async {
+    if (_isUserBlocked) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You blocked this user. Unblock to send voice messages.')),
+      );
+      return;
+    }
     if (_isUploadingMedia) return;
 
     if (kIsWeb) {
@@ -253,141 +284,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         // ignore
       }
     };
-
-    _messageUpdatedListener = (data) {
-      try {
-        final messageId = (data is Map ? data['messageId'] : null)?.toString();
-        if (messageId == null) return;
-
-        final index = _messages.indexWhere((m) => m['_id']?.toString() == messageId);
-        if (index == -1) return;
-
-        setState(() {
-          final updated = Map<String, dynamic>.from(_messages[index]);
-          if (data is Map && data['content'] != null) {
-            updated['text'] = data['content'];
-          }
-          updated['is_edited'] = true;
-          _messages[index] = updated;
-          if (_editingMessageId == messageId) {
-            _editingMessageId = null;
-          }
-        });
-      } catch (_) {
-        // ignore
-      }
-    };
-
-    _messageDeletedListener = (data) {
-      try {
-        final messageId = (data is Map ? data['messageId'] : null)?.toString();
-        if (messageId == null) return;
-
-        final index = _messages.indexWhere((m) => m['_id']?.toString() == messageId);
-        if (index == -1) return;
-
-        setState(() {
-          final updated = Map<String, dynamic>.from(_messages[index]);
-          updated['is_deleted'] = true;
-          updated['text'] = 'This message was deleted';
-          updated['mediaUrl'] = null;
-          updated['type'] = 'text';
-          _messages[index] = updated;
-          if (_editingMessageId == messageId) {
-            _editingMessageId = null;
-          }
-        });
-      } catch (_) {
-        // ignore
-      }
-    };
     
     ChatService.addNewMessageListener(_newMessageListener);
     ChatService.addMessageSentListener(_messageSentListener);
     ChatService.addMessageErrorListener(_messageErrorListener);
     ChatService.addMessageReadListener(_messageReadListener);
-    ChatService.addMessageUpdatedListener(_messageUpdatedListener);
-    ChatService.addMessageDeletedListener(_messageDeletedListener);
-  }
-
-  Future<void> _handleMessageAction(Map<String, dynamic> message, bool isMe, MessageActionType action) async {
-    final messageId = message['_id']?.toString();
-    if (messageId == null) return;
-
-    if (action == MessageActionType.edit) {
-      _editMessageController.text = (message['text'] ?? '').toString();
-      setState(() {
-        _editingMessageId = messageId;
-      });
-      return;
-    }
-
-    if (action == MessageActionType.deleteForMe) {
-      setState(() {
-        _messages.removeWhere((m) => m['_id']?.toString() == messageId);
-        if (_editingMessageId == messageId) {
-          _editingMessageId = null;
-        }
-      });
-      return;
-    }
-
-    if (action == MessageActionType.deleteForEveryone && isMe) {
-      try {
-        await MessageActionsService.deleteMessageForEveryone(messageId: messageId);
-        if (!mounted) return;
-        setState(() {
-          final index = _messages.indexWhere((m) => m['_id']?.toString() == messageId);
-          if (index != -1) {
-            final updated = Map<String, dynamic>.from(_messages[index]);
-            updated['is_deleted'] = true;
-            updated['text'] = 'This message was deleted';
-            updated['mediaUrl'] = null;
-            updated['type'] = 'text';
-            _messages[index] = updated;
-          }
-          if (_editingMessageId == messageId) {
-            _editingMessageId = null;
-          }
-        });
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not delete message: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _saveEditedMessage(String messageId) async {
-    final nextText = _editMessageController.text.trim();
-    if (nextText.isEmpty) return;
-
-    try {
-      await MessageActionsService.editMessage(messageId: messageId, content: nextText);
-      if (!mounted) return;
-      setState(() {
-        final index = _messages.indexWhere((m) => m['_id']?.toString() == messageId);
-        if (index != -1) {
-          final updated = Map<String, dynamic>.from(_messages[index]);
-          updated['text'] = nextText;
-          updated['is_edited'] = true;
-          _messages[index] = updated;
-        }
-        _editingMessageId = null;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not edit message: $e')),
-      );
-    }
-  }
-
-  void _cancelEditingMessage() {
-    setState(() {
-      _editingMessageId = null;
-    });
   }
 
   Future<void> _loadMessages() async {
@@ -435,6 +336,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _sendMessage() {
+    if (_isUserBlocked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You blocked this user. Unblock to send messages.')),
+      );
+      return;
+    }
     if (_messageController.text.trim().isEmpty) return;
     
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -451,12 +358,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _stopTyping();
   }
 
-
-
-
-
-
-
   String _guessMimeTypeFromName(String name) {
     final lower = name.toLowerCase();
     if (lower.endsWith('.png')) return 'image/png';
@@ -468,6 +369,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _pickAndSendImage() async {
+    if (_isUserBlocked) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You blocked this user. Unblock to send media.')),
+        );
+      }
+      return;
+    }
     if (_isUploadingMedia) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -511,6 +420,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _pickAndSendFile() async {
+    if (_isUserBlocked) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You blocked this user. Unblock to send files.')),
+        );
+      }
+      return;
+    }
     if (_isUploadingMedia) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -582,270 +499,218 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  String? _resolveAvatarUrl(String? raw) {
-    if (raw == null) return null;
-    final trimmed = raw.trim();
-    if (trimmed.isEmpty) return null;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed;
-    }
-    if (trimmed.startsWith('/')) {
-      return '${ApiService.serverUrl}$trimmed';
-    }
-    return trimmed;
-  }
-
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final currentUserId = authProvider.userId;
-    final otherUserId = widget.otherUser['id']?.toString();
-    final resolvedAvatarUrl = _resolveAvatarUrl(widget.otherUser['profileImage']?.toString());
     
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Row(
-          children: [
-            Stack(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.white.withOpacity(0.15),
-                  backgroundImage: resolvedAvatarUrl != null ? NetworkImage(resolvedAvatarUrl) : null,
-                  child: resolvedAvatarUrl == null
-                      ? Text(
-                          (widget.otherUser['name'] ?? 'U').toString().substring(0, 1).toUpperCase(),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                        )
-                      : null,
-                ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: ValueListenableBuilder(
-                    valueListenable: ChatService.onlineUserIdsListenable,
-                    builder: (context, onlineIds, _) {
-                      final isOnline = otherUserId != null && onlineIds.contains(otherUserId);
-                      return Container(
-                        width: 11,
-                        height: 11,
-                        decoration: BoxDecoration(
-                          color: isOnline ? Colors.greenAccent : Colors.grey.shade400,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF034808), width: 2),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.otherUser['name'] ?? 'User',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF1C1C1C),
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  ValueListenableBuilder(
-                    valueListenable: ChatService.onlineUserIdsListenable,
-                    builder: (context, onlineIds, _) {
-                      final isOnline = otherUserId != null && onlineIds.contains(otherUserId);
-                      return Text(
-                        isOnline ? 'Online' : 'Offline',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isOnline ? const Color(0xFF034808) : Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        title: Text((widget.otherUser['name'] ?? 'User').toString()),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF034808),
+        foregroundColor: Colors.black,
+        elevation: 1,
         actions: [
           IconButton(
-            onPressed: _callOtherUser,
             icon: const Icon(Icons.call),
+            onPressed: _callOtherUser,
             tooltip: 'Call',
           ),
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == 'block') {
+                await _blockUser();
+              } else if (value == 'unblock') {
+                await _unblockUser();
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              if (_isBlockStatusLoading) {
+                return const [
+                  PopupMenuItem<String>(
+                    value: 'loading',
+                    enabled: false,
+                    child: Text('Loading...'),
+                  ),
+                ];
+              }
+
+              return [
+                PopupMenuItem<String>(
+                  value: _isUserBlocked ? 'unblock' : 'block',
+                  child: Text(_isUserBlocked ? 'Unblock User' : 'Block User'),
+                ),
+              ];
+            },
+          ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
-                            SizedBox(height: 16),
-                            Text('No messages yet'),
-                            Text('Say hello to your neighbor!'),
-                          ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _messages.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                              SizedBox(height: 16),
+                              Text('No messages yet'),
+                              Text('Say hello to your neighbor!'),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            final message = _messages[index];
+                            final isMe = message['senderId'] == currentUserId;
+                            
+                            return _MessageBubble(
+                              message: message,
+                              isMe: isMe,
+                            );
+                          },
                         ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          final message = _messages[index];
-                          final isMe = message['senderId'] == currentUserId;
-                          final messageId = message['_id']?.toString();
-                          final isEditing = messageId != null && _editingMessageId == messageId;
-                          
-                          final bubble = _MessageBubble(
-                            message: message,
-                            isMe: isMe,
-                            isEditing: isEditing,
-                            editController: _editMessageController,
-                            onSaveEdit: messageId == null ? null : () => _saveEditedMessage(messageId),
-                            onCancelEdit: _cancelEditingMessage,
-                          );
-
-                          if (isEditing) {
-                            return bubble;
-                          }
-
-                          return MessageActionPopup(
-                            isOwnMessage: isMe,
-                            onSelected: (action) => _handleMessageAction(message, isMe, action),
-                            child: bubble,
-                          );
-                        },
-                      ),
-          ),
-          _buildMessageInput(),
-        ],
+            ),
+            _buildMessageInput(),
+          ],
+        ),
+      ),
+      bottomNavigationBar: HomeBottomNavBar(
+        currentIndex: 1,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+              break;
+            case 1:
+              Navigator.pushNamed(context, '/chat');
+              break;
+            case 2:
+              Navigator.pushNamed(context, '/report');
+              break;
+            case 3:
+              Navigator.pushNamed(context, '/profile');
+              break;
+          }
+        },
       ),
     );
+  }
+
+  Future<void> _blockUser() async {
+    try {
+      final otherUserId = widget.otherUser['id']?.toString();
+      if (otherUserId == null) return;
+
+      await ApiService.blockUserInChat(widget.chatId, otherUserId);
+      setState(() => _isUserBlocked = true);
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User blocked successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to block user: $e')),
+      );
+    }
+  }
+
+  Future<void> _unblockUser() async {
+    try {
+      final otherUserId = widget.otherUser['id']?.toString();
+      if (otherUserId == null) return;
+
+      await ApiService.unblockUserInChat(widget.chatId, otherUserId);
+      setState(() => _isUserBlocked = false);
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User unblocked successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to unblock user: $e')),
+      );
+    }
   }
 
   Widget _buildMessageInput() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE6ECE7))),
-        ),
-        child: Row(
-          children: [
-            _InputActionButton(
-              onTap: _isUploadingMedia ? null : _pickAndSendImage,
-              icon: Icons.photo,
-              tooltip: 'Send image',
-            ),
-            const SizedBox(width: 6),
-            _InputActionButton(
-              onTap: _isUploadingMedia ? null : _pickAndSendFile,
-              icon: Icons.attach_file,
-              tooltip: 'Send file',
-            ),
-            const SizedBox(width: 6),
-            _InputActionButton(
-              onTap: _isUploadingMedia ? null : _toggleVoiceRecording,
-              icon: _isRecordingVoice ? Icons.stop_circle : Icons.mic,
-              iconColor: _isRecordingVoice ? Colors.red : const Color(0xFF034808),
-              tooltip: _isRecordingVoice ? 'Stop recording' : 'Record voice message',
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF2F5F2),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: TextField(
-                  controller: _messageController,
-                  onChanged: (_) => _onTyping(),
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  ),
-                  maxLines: 4,
-                  minLines: 1,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 40,
-              height: 40,
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF034808),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  onPressed: _isUploadingMedia ? null : _sendMessage,
-                  icon: _isUploadingMedia
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.send_rounded, color: Colors.white, size: 18),
-                ),
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
-    );
-  }
-}
-
-class _InputActionButton extends StatelessWidget {
-  final VoidCallback? onTap;
-  final IconData icon;
-  final String tooltip;
-  final Color? iconColor;
-
-  const _InputActionButton({
-    required this.onTap,
-    required this.icon,
-    required this.tooltip,
-    this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 36,
-      height: 36,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF2F5F2),
-          shape: BoxShape.circle,
-        ),
-        child: IconButton(
-          padding: EdgeInsets.zero,
-          onPressed: onTap,
-          tooltip: tooltip,
-          icon: Icon(icon, size: 18, color: iconColor ?? const Color(0xFF034808)),
-        ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: (_isUploadingMedia || _isUserBlocked) ? null : _pickAndSendImage,
+            icon: const Icon(Icons.photo, color: Color(0xFF034808)),
+            tooltip: 'Send image',
+          ),
+          IconButton(
+            onPressed: (_isUploadingMedia || _isUserBlocked) ? null : _pickAndSendFile,
+            icon: const Icon(Icons.attach_file, color: Color(0xFF034808)),
+            tooltip: 'Send file',
+          ),
+          IconButton(
+            onPressed: (_isUploadingMedia || _isUserBlocked) ? null : _toggleVoiceRecording,
+            icon: Icon(
+              _isRecordingVoice ? Icons.stop_circle : Icons.mic,
+              color: _isRecordingVoice ? Colors.red : const Color(0xFF034808),
+            ),
+            tooltip: _isRecordingVoice ? 'Stop recording' : 'Record voice message',
+          ),
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              readOnly: _isUserBlocked,
+              onChanged: (_) => _onTyping(),
+              decoration: InputDecoration(
+                hintText: _isUserBlocked ? 'Unblock this user to send messages' : 'Type a message...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              ),
+              maxLines: 4,
+              minLines: 1,
+            ),
+          ),
+          const SizedBox(width: 8),
+          CircleAvatar(
+            backgroundColor: const Color(0xFF034808),
+            child: IconButton(
+              onPressed: (_isUploadingMedia || _isUserBlocked) ? null : _sendMessage,
+              icon: _isUploadingMedia
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.send, color: Colors.white),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -854,18 +719,10 @@ class _InputActionButton extends StatelessWidget {
 class _MessageBubble extends StatelessWidget {
   final Map<String, dynamic> message;
   final bool isMe;
-  final bool isEditing;
-  final TextEditingController editController;
-  final VoidCallback? onSaveEdit;
-  final VoidCallback? onCancelEdit;
 
   const _MessageBubble({
     required this.message,
     required this.isMe,
-    required this.isEditing,
-    required this.editController,
-    required this.onSaveEdit,
-    required this.onCancelEdit,
   });
 
   @override
@@ -873,153 +730,86 @@ class _MessageBubble extends StatelessWidget {
     final time = DateTime.parse(message['createdAt']);
     final type = (message['type'] ?? 'text').toString();
     final mediaUrl = message['mediaUrl']?.toString();
-    final isDeleted = message['is_deleted'] == true;
-    final isEdited = message['is_edited'] == true;
     
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.74,
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xFF034808) : Colors.white,
-          border: isMe ? null : Border.all(color: const Color(0xFFE1E7E2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: isMe ? const Color(0xFF034808) : Colors.grey.shade200,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isMe ? 18 : 6),
-            bottomRight: Radius.circular(isMe ? 6 : 18),
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(isMe ? 16 : 4),
+            bottomRight: Radius.circular(isMe ? 4 : 16),
           ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            if (isDeleted)
-              Text(
-                'This message was deleted',
-                style: TextStyle(
-                  color: isMe ? Colors.white70 : Colors.grey.shade600,
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                ),
-              )
-            else if (isEditing)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isMe ? Colors.white.withOpacity(0.08) : const Color(0xFFF8FAF8),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: TextField(
-                      controller: editController,
-                      autofocus: true,
-                      maxLines: 4,
-                      minLines: 1,
-                      style: TextStyle(
-                        color: isMe ? Colors.white : Colors.black87,
-                        fontSize: 14,
-                      ),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextButton(
-                        onPressed: onCancelEdit,
-                        child: const Text('Cancel'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: onSaveEdit,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isMe ? Colors.white : const Color(0xFF034808),
-                          foregroundColor: isMe ? const Color(0xFF034808) : Colors.white,
-                        ),
-                        child: const Text('Save'),
-                      ),
-                    ],
-                  ),
-                ],
-              )
-            else ...[
-              if (type == 'image' && mediaUrl != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    mediaUrl,
-                    width: 220,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 220,
-                        height: 140,
-                        color: isMe ? Colors.white.withOpacity(0.12) : Colors.grey.shade300,
-                        alignment: Alignment.center,
-                        child: Icon(Icons.broken_image, color: isMe ? Colors.white70 : Colors.grey.shade700),
-                      );
-                    },
-                  ),
-                )
-              else if (type == 'audio' && mediaUrl != null)
-                _AudioMessageBubble(
-                  url: mediaUrl,
-                  isMe: isMe,
-                )
-              else if (type == 'file' && mediaUrl != null)
-                InkWell(
-                  onTap: () async {
-                    final uri = Uri.tryParse(mediaUrl);
-                    if (uri != null) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    }
+            if (type == 'image' && mediaUrl != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  mediaUrl,
+                  width: 220,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 220,
+                      height: 140,
+                      color: isMe ? Colors.white.withOpacity(0.12) : Colors.grey.shade300,
+                      alignment: Alignment.center,
+                      child: Icon(Icons.broken_image, color: isMe ? Colors.white70 : Colors.grey.shade700),
+                    );
                   },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.insert_drive_file, size: 16, color: isMe ? Colors.white : Colors.black87),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          (message['text'] ?? 'Attachment').toString(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: isMe ? Colors.white : Colors.black87,
-                            fontSize: 14,
-                            decoration: TextDecoration.underline,
-                          ),
+                ),
+              )
+            else if (type == 'audio' && mediaUrl != null)
+              _AudioMessageBubble(
+                url: mediaUrl,
+                isMe: isMe,
+              )
+            else if (type == 'file' && mediaUrl != null)
+              InkWell(
+                onTap: () async {
+                  final uri = Uri.tryParse(mediaUrl);
+                  if (uri != null) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.insert_drive_file, size: 16, color: isMe ? Colors.white : Colors.black87),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        (message['text'] ?? 'Attachment').toString(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isMe ? Colors.white : Colors.black87,
+                          fontSize: 14,
+                          decoration: TextDecoration.underline,
                         ),
                       ),
-                    ],
-                  ),
-                )
-              else
-                Text(
-                  (message['text'] ?? '').toString(),
-                  style: TextStyle(
-                    color: isMe ? Colors.white : Colors.black87,
-                    fontSize: 14,
-                  ),
+                    ),
+                  ],
                 ),
-            ],
+              )
+            else
+              Text(
+                (message['text'] ?? '').toString(),
+                style: TextStyle(
+                  color: isMe ? Colors.white : Colors.black87,
+                  fontSize: 14,
+                ),
+              ),
             const SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -1031,17 +821,7 @@ class _MessageBubble extends StatelessWidget {
                     color: isMe ? Colors.white70 : Colors.grey.shade600,
                   ),
                 ),
-                if (isEdited) ...[
-                  const SizedBox(width: 4),
-                  Text(
-                    '(edited)',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isMe ? Colors.white70 : Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-                if (isMe && !isEditing && !isDeleted) ...[
+                if (isMe) ...[
                   const SizedBox(width: 4),
                   Icon(
                     message['status'] == 'read' ? Icons.done_all : Icons.done,

@@ -140,10 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       password: userDataInput.password || undefined,
       name: userDataInput.name,
       phone: userDataInput.phone,
-      apartment: userDataInput.apartment,
       role: userDataInput.role,
-      specialization: userDataInput.specialization || null,
-      status: userDataInput.status || 'active',
     });
     return res;
   };

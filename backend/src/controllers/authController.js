@@ -4,6 +4,34 @@ const bcrypt = require('bcryptjs');
 const generateOTP = require('../utils/otpGenerator');
 const { sendOTPEmail } = require('../utils/emailService');
 
+const STRONG_PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[._@])[A-Za-z\d._@]{8,}$/;
+
+const isStrongPassword = (value) => {
+  return typeof value === 'string' && STRONG_PASSWORD_REGEX.test(value);
+};
+
+const generateStrongPassword = (length = 10) => {
+  const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const digits = '0123456789';
+  const symbols = '._@';
+  const all = `${letters}${digits}${symbols}`;
+
+  const pick = (chars) => chars[Math.floor(Math.random() * chars.length)];
+  const chars = [pick(letters), pick(digits), pick(symbols)];
+
+  while (chars.length < Math.max(8, length)) {
+    chars.push(pick(all));
+  }
+
+  // Shuffle
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+
+  return chars.join('');
+};
+
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -14,8 +42,14 @@ const generateToken = (id) => {
 // ========== REGISTER ==========
 const register = async (req, res) => {
   try {
-    const { name, email, password, phone, apartment, role } = req.body;
+    const { name, email, password, phone, apartment, role, residence, building } = req.body;
     const normalizedEmail = (email || '').trim().toLowerCase();
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters and include letters, numbers, and at least one symbol (._@).',
+      });
+    }
 
     // Check if user exists
     const existingUser = await User.findOne({ email: normalizedEmail }).collation({ locale: 'en', strength: 2 });
@@ -36,6 +70,8 @@ const register = async (req, res) => {
       password,
       phone,
       apartment,
+      residence: residence || null,
+      building: building || null,
       role: role || 'resident',
       status: role === 'admin' ? 'active' : 'pending',
       isEmailVerified: false,
@@ -69,6 +105,8 @@ const register = async (req, res) => {
         email: user.email,
         phone: user.phone,
         apartment: user.apartment,
+        residence: user.residence,
+        building: user.building,
         role: user.role,
         specialization: user.specialization,
         status: user.status,
@@ -136,6 +174,8 @@ const verifyOTP = async (req, res) => {
         email: user.email,
         phone: user.phone,
         apartment: user.apartment,
+        residence: user.residence,
+        building: user.building,
         role: user.role,
         status: user.status,
         isEmailVerified: user.isEmailVerified
@@ -241,6 +281,8 @@ const login = async (req, res) => {
         email: user.email,
         phone: user.phone,
         apartment: user.apartment,
+        residence: user.residence,
+        building: user.building,
         role: user.role,
         status: user.status,
 
@@ -266,6 +308,8 @@ const getMe = async (req, res) => {
       email: user.email,
       phone: user.phone,
       apartment: user.apartment,
+      residence: user.residence,
+      building: user.building,
       role: user.role,
       status: user.status,
 
@@ -322,6 +366,12 @@ const updateProfile = async (req, res) => {
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
+
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({
+        message: 'New password must be at least 8 characters and include letters, numbers, and at least one symbol (._@).',
+      });
+    }
 
     const user = await User.findById(req.user.id).select('+password');
 
@@ -436,8 +486,18 @@ const deleteUser = async (req, res) => {
 // ========== CREATE USER (Admin) ==========
 const createUserAdmin = async (req, res) => {
   try {
-    const { name, email, password, phone, apartment, role, specialization, status } = req.body;
+    const { name, email, password, phone, apartment, role, specialization } = req.body;
     const normalizedEmail = (email || '').trim().toLowerCase();
+
+    const normalizedPhone = (phone || '').toString().replace(/\s+/g, '');
+    if (!/^0\d{9}$/.test(normalizedPhone)) {
+      return res.status(400).json({ message: 'Invalid phone number. It must start with 0 and be exactly 10 digits.' });
+    }
+
+    const allowedRoles = ['security', 'maintenance', 'facility_manager'];
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role. Admin can only create security, maintenance, or facility_manager accounts.' });
+    }
 
     // Check if user exists
     const existingUser = await User.findOne({ email: normalizedEmail }).collation({ locale: 'en', strength: 2 });
@@ -445,32 +505,39 @@ const createUserAdmin = async (req, res) => {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // If no password provided, generate a temporary one
-    const tempPassword = password || Math.random().toString(36).slice(-8);
+    const passwordWasGenerated = !password;
+    const tempPassword = passwordWasGenerated ? generateStrongPassword() : password;
+    if (!isStrongPassword(tempPassword)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters and include letters, numbers, and at least one symbol (._@).',
+      });
+    }
 
     // Create user as verified (admin created)
     const user = await User.create({
       name,
       email: normalizedEmail,
       password: tempPassword,
-      phone,
+      phone: normalizedPhone,
       apartment,
-      role: role || 'resident',
+      role,
       specialization: specialization || null,
-      status: status || (role === 'admin' ? 'active' : 'active'),
+      status: 'active',
       isEmailVerified: true
     });
 
     res.status(201).json({
       success: true,
       message: 'User created by admin',
-      tempPassword,
+      tempPassword: passwordWasGenerated ? tempPassword : null,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         phone: user.phone,
         apartment: user.apartment,
+        residence: user.residence,
+        building: user.building,
         role: user.role,
         specialization: user.specialization,
         status: user.status,

@@ -20,7 +20,6 @@ const authRoutes = require('./src/routes/authRoutes');
 const facilityRoutes = require('./src/routes/facilityRoutes');
 const bookingRoutes = require('./src/routes/bookingRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
-const messageRoutes = require('./src/routes/messagesRoutes');
 const eventRoutes = require('./src/routes/eventRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const guestRoutes = require('./src/routes/guestRoutes');
@@ -28,13 +27,11 @@ const employeeRoutes = require('./src/routes/employeeRoutes');
 const socialRoutes = require('./src/routes/socialRoutes');
 const energyRoutes = require('./src/routes/energyRoutes');
 const environmentRoutes = require('./src/routes/environmentRoutes');
+const residenceRoutes = require('./src/routes/residenceRoutes');
 const { initMQTT } = require('./src/controllers/energyController');
 const qrRoutes = require('./src/routes/qrRoutes');
 const initSurveillance = require('./src/routes/surveillanceRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
-const settingsRoutes = require('./src/routes/settingsRoutes');
-const contactRoutes = require('./src/routes/contactRoutes');
-const parkingRoutes = require('./src/routes/parkingRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -62,16 +59,25 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
 
-// Database connection (use resilient connect helper with retries)
-const connectDB = require('./src/config/database');
-connectDB();
+// Database connection 
+mongoose.connect(process.env.MONGODB_URI, {
+  maxPoolSize: 10,
+  minPoolSize: 5,
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 45000,
+  family: 4,
+  retryWrites: true,
+  writeConcern: { w: 1 },
+  maxIdleTimeMS: 30000,
+})
+  .then(() => console.log('✅ MongoDB connected successfully'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/facilities', facilityRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/chat', chatRoutes);
-app.use('/api/messages', messageRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/guests', guestRoutes);
@@ -79,11 +85,9 @@ app.use('/api/employees', employeeRoutes);
 app.use('/api/social', socialRoutes);
 app.use('/api/energy', energyRoutes);
 app.use('/api/environment', environmentRoutes);
+app.use('/api/residences', residenceRoutes);
 app.use('/api/qr', qrRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/contacts', contactRoutes);
-app.use('/api/parking', parkingRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ORELAX API is running' });
@@ -103,9 +107,6 @@ const employeeController = require('./src/controllers/employeeController');
 const { saveAndEmitNotification } = require('./src/helpers/notificationHelper');
 eventController.setIo(io);
 employeeController.setIo(io);
-
-// Make io available to route handlers via app
-app.set('io', io);
 
 // Store online users
 const onlineUsers = new Map();
@@ -135,6 +136,29 @@ io.on('connection', (socket) => {
       const { chatId, senderId, senderName, text = '', type = 'text', mediaUrl } = data;
       console.log(`📤 receive send-message for chat=${chatId} sender=${senderId} type=${type} text=${text}`);
 
+      const chat = await Chat.findById(chatId);
+      if (!chat) {
+        console.warn(`⚠️ Chat not found for chatId=${chatId}`);
+        socket.emit('message-error', { error: 'Chat not found' });
+        return;
+      }
+
+      if (!chat.participants.includes(senderId)) {
+        socket.emit('message-error', { error: 'Not authorized for this chat' });
+        return;
+      }
+
+      const recipientId = chat.participants.find((p) => p !== senderId);
+      const blockedUsers = Array.isArray(chat.blockedUsers) ? chat.blockedUsers : [];
+      const isBlockedConversation = recipientId
+        ? blockedUsers.includes(recipientId) || blockedUsers.includes(senderId)
+        : false;
+
+      if (isBlockedConversation) {
+        socket.emit('message-error', { error: 'You cannot send messages in this chat because a user is blocked.' });
+        return;
+      }
+
       const normalizedText = (typeof text === 'string') ? text.trim() : '';
       const effectiveText = normalizedText || (type === 'image' ? '📷 Photo' : type === 'file' ? '📎 File' : type === 'audio' ? '🎤 Voice message' : '');
       
@@ -150,15 +174,7 @@ io.on('connection', (socket) => {
       });
       const savedMessage = await message.save();
       console.log(`💾 message saved ${savedMessage._id}`);
-      
-      const chat = await Chat.findById(chatId);
-      if (!chat) {
-        console.warn(`⚠️ Chat not found for chatId=${chatId}`);
-        socket.emit('message-error', { error: 'Chat not found' });
-        return;
-      }
 
-      const recipientId = chat.participants.find(p => p !== senderId);
       console.log(`👥 recipientId=${recipientId}`);
       const updateOps = {
         $set: {

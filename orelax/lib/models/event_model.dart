@@ -65,7 +65,7 @@ class Event {
   }
 
   Map<String, dynamic> toMap() {
-    return {
+    final map = <String, dynamic>{
       'id': id,
       'title': title,
       'description': description,
@@ -73,7 +73,6 @@ class Event {
       'time': time,
       'location': location,
       'category': category,
-      'imageBase64': imageBase64,
       'capacity': capacity,
       'currentRegistrations': currentRegistrations,
       'status': status,
@@ -85,6 +84,13 @@ class Event {
       'rejectionReason': rejectionReason,
       'isActive': isActive,
     };
+
+    // Only include imageBase64 if it's non-null and non-empty to avoid decode errors
+    if (imageBase64 != null && imageBase64!.trim().isNotEmpty) {
+      map['imageBase64'] = imageBase64;
+    }
+
+    return map;
   }
 
   String get formattedDate {

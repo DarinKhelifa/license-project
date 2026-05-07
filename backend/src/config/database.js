@@ -27,8 +27,6 @@ const connectDB = async (retries = 0) => {
     retryWrites: true,
     writeConcern: { w: 1 },
     maxIdleTimeMS: 30000,
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
   };
 
   try {

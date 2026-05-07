@@ -80,7 +80,8 @@ const getEventById = async (req, res) => {
 // @route   GET /api/events/my-events
 const getMyEvents = async (req, res) => {
   try {
-    const events = await Event.find({ createdBy: req.user.id }).sort({ createdAt: -1 });
+    // Only return active events for the user (exclude cancelled/deleted)
+    const events = await Event.find({ createdBy: req.user.id, isActive: true }).sort({ createdAt: -1 });
     res.json(events);
   } catch (error) {
     console.error('Get my events error:', error);

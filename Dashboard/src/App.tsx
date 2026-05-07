@@ -21,6 +21,7 @@ import Guests from './pages/Guests';
 import GuestDetail from './pages/GuestDetail';
 import Settings from './pages/Settings';
 import Contacts from './pages/Contacts';
+import MyResidences from './pages/MyResidences';
 /*import Security from './pages/Security';
 import Community from './pages/Community';
 import Facilities from './pages/Facilities';
@@ -114,6 +115,16 @@ function App() {
                   <AuthGuard>
                     <DashboardLayout>
                       <Events />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/residences"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <MyResidences />
                     </DashboardLayout>
                   </AuthGuard>
                 }
