@@ -10,7 +10,7 @@ const setIo = (ioInstance) => { io = ioInstance; };
 const getAllEmployees = async (req, res) => {
   try {
     const employees = await Employee.find().sort({ createdAt: -1 });
-    res.json({ success: true, employees });
+    res.json({ success: true, count: employees.length, employees });
   } catch (err) {
     console.error('getAllEmployees error:', err);
     res.status(500).json({ success: false, error: err.message });

@@ -79,7 +79,7 @@ export default function Overview() {
 
         const employeesPromise = dashboardAPI.employees
           .list()
-          .then((list) => list.length)
+          .then((response) => response.count ?? response.employees?.length ?? 0)
           .catch(() => 0);
 
         const energyPromise = dashboardAPI.energy

@@ -39,6 +39,12 @@ export interface EmployeeDTO {
   createdAt?: string;
 }
 
+export interface EmployeeListResponse {
+  success: boolean;
+  count?: number;
+  employees: EmployeeDTO[];
+}
+
 export interface EnergyHistoricalResponse {
   chartData: Array<{ hour: number; average: number }>;
   summary: { total: number; average: number; peak: number };
@@ -46,7 +52,7 @@ export interface EnergyHistoricalResponse {
 
 export const dashboardAPI = {
   employees: {
-    list: () => request<EmployeeDTO[]>('/employees'),
+    list: () => request<EmployeeListResponse>('/employees'),
   },
   reports: {
     my: () => request<ReportDTO[]>('/reports/my-reports'),
