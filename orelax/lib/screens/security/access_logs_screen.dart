@@ -58,19 +58,28 @@ class _AccessLogsScreenState extends State<AccessLogsScreen> {
                 ChoiceChip(
                   label: const Text('All'),
                   selected: _filter == 'All',
-                  onSelected: (s) => setState(() => _filter = 'All'),
+                  onSelected: (selected) => setState(() {
+                    _filter = 'All';
+                    _hoveredIndex = null;
+                  }),
                 ),
                 const SizedBox(width: 8),
                 ChoiceChip(
                   label: const Text('Entry'),
                   selected: _filter == 'Entry',
-                  onSelected: (s) => setState(() => _filter = 'Entry'),
+                  onSelected: (selected) => setState(() {
+                    _filter = 'Entry';
+                    _hoveredIndex = null;
+                  }),
                 ),
                 const SizedBox(width: 8),
                 ChoiceChip(
                   label: const Text('Exit'),
                   selected: _filter == 'Exit',
-                  onSelected: (s) => setState(() => _filter = 'Exit'),
+                  onSelected: (selected) => setState(() {
+                    _filter = 'Exit';
+                    _hoveredIndex = null;
+                  }),
                 ),
               ],
             ),
@@ -102,7 +111,7 @@ class _AccessLogsScreenState extends State<AccessLogsScreen> {
                             final time = log['time'] as DateTime;
                             final isEntry = log['action'] == 'Entry';
 
-                            final isHovered = _hoveredIndex == index && _filter == 'All' ? _hoveredIndex == index : _hoveredIndex == index;
+                            final isHovered = _hoveredIndex == index;
                             return MouseRegion(
                               onEnter: (_) {
                                 if (_hoveredIndex != index) setState(() => _hoveredIndex = index);

@@ -178,15 +178,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Report Details'),
-        backgroundColor: const Color(0xFF034808),
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check_circle_outline),
-            onPressed: _updateStatus,
-            tooltip: 'Update Status',
-          ),
-        ],
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -243,16 +241,37 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Report Details
+            // Report Details (styled)
             Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Report Information',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Report Information',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.pink.shade50,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: Colors.pink.shade100),
+                          ),
+                          child: Text(
+                            widget.alert.statusText.toUpperCase(),
+                            style: TextStyle(color: Colors.pink.shade400, fontWeight: FontWeight.w700, fontSize: 12),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     _buildDetailRow('Category', widget.alert.category),
@@ -274,6 +293,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
             // Description
             Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -288,6 +309,18 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                       _reportData?['description'] ?? 'No description provided',
                       style: const TextStyle(height: 1.5),
                     ),
+                    if (_reportData?['photoBase64'] != null && _reportData!['photoBase64'].isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.memory(
+                          base64Decode(_reportData!['photoBase64']),
+                          height: 140,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
