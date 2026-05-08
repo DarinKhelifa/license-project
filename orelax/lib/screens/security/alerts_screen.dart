@@ -19,10 +19,9 @@ class _AlertsScreenState extends State<AlertsScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AlertProvider>(context, listen: false).fetchAlerts();
-      // fetch fire alerts history
       try {
         Provider.of<FireAlertProvider>(context, listen: false).fetchHistory();
       } catch (_) {}
@@ -38,6 +37,7 @@ class _AlertsScreenState extends State<AlertsScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final alertProvider = Provider.of<AlertProvider>(context);
+    final fireAlertProvider = Provider.of<FireAlertProvider>(context);
     final alerts = alertProvider.alerts;
     
     // Filter alerts
@@ -60,7 +60,6 @@ class _AlertsScreenState extends State<AlertsScreen> with SingleTickerProviderSt
           tabs: const [
             Tab(text: 'All Alerts'),
             Tab(text: 'Unread'),
-            Tab(text: 'Fire Alerts'),
           ],
           indicatorColor: Colors.white,
           labelColor: Colors.white,
@@ -98,73 +97,259 @@ class _AlertsScreenState extends State<AlertsScreen> with SingleTickerProviderSt
       body: TabBarView(
         controller: _tabController,
         children: [
-          // All Alerts
+          // All Alerts (with fire alerts integrated)
           alertProvider.isLoading
               ? const Center(child: CircularProgressIndicator())
-              : filteredAlerts.isEmpty
-                  ? _buildEmptyState()
-                  : RefreshIndicator(
-                      onRefresh: () => alertProvider.fetchAlerts(),
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: filteredAlerts.length,
-                        itemBuilder: (context, index) {
-                          final alert = filteredAlerts[index];
-                          final isUnread = !alert.isRead;
-                          return _buildAlertCard(alert, isUnread);
-                        },
-                      ),
-                    ),
+              : _buildCombinedAlertsList(filteredAlerts, fireAlertProvider, false),
 
-          // Unread
-          RefreshIndicator(
-            onRefresh: () => alertProvider.fetchAlerts(),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: alertProvider.unreadAlerts.length,
-              itemBuilder: (context, index) {
-                final alert = alertProvider.unreadAlerts[index];
-                return _buildAlertCard(alert, true);
-              },
-            ),
-          ),
-
-          // Fire Alerts (from FireAlertProvider)
-          Consumer<FireAlertProvider>(builder: (context, fp, _) {
-            final list = fp.alerts;
-            if (list.isEmpty) {
-              return const Center(child: Text('No fire alerts yet ✅'));
-            }
-            return RefreshIndicator(
-              onRefresh: () => fp.fetchHistory(),
-              child: ListView.separated(
-                padding: const EdgeInsets.all(12),
-                itemCount: list.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, idx) {
-                  final a = list[idx];
-                  final date = '${a.timestamp.day.toString().padLeft(2,'0')} ${_monthName(a.timestamp.month)} ${a.timestamp.year}';
-                  final time = '${a.timestamp.hour.toString().padLeft(2,'0')}:${a.timestamp.minute.toString().padLeft(2,'0')}:${a.timestamp.second.toString().padLeft(2,'0')}';
-                  final isActive = a.status.toLowerCase() == 'active';
-                  return ListTile(
-                    leading: const Text('🔥', style: TextStyle(fontSize: 28)),
-                    title: Text('$date • $time'),
-                    subtitle: Text(isActive ? 'Active' : 'Acknowledged', style: TextStyle(color: isActive ? Colors.red : Colors.green)),
-                    trailing: isActive
-                        ? ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                            onPressed: () {
-                              fp.acknowledge(a.id);
-                            },
-                            child: const Text('Acknowledge'))
-                        : null,
-                  );
-                },
-              ),
-            );
-          }),
+          // Unread (with unread fire alerts)
+          _buildUnreadAlertsList(alertProvider, fireAlertProvider),
         ],
       ),
+    );
+  }
+
+  Widget _buildCombinedAlertsList(List<Alert> regularAlerts, FireAlertProvider fireAlerts, bool unreadOnly) {
+    if (regularAlerts.isEmpty && fireAlerts.alerts.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Provider.of<AlertProvider>(context, listen: false).fetchAlerts();
+        await fireAlerts.fetchHistory();
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(12),
+        itemCount: regularAlerts.length + fireAlerts.alerts.length,
+        itemBuilder: (context, index) {
+          // Show fire alerts first
+          if (index < fireAlerts.alerts.length) {
+            final fireAlert = fireAlerts.alerts[index];
+            return _buildFireAlertCard(fireAlert, fireAlerts);
+          } else {
+            final alert = regularAlerts[index - fireAlerts.alerts.length];
+            final isUnread = !alert.isRead;
+            return _buildAlertCard(alert, isUnread);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildUnreadAlertsList(AlertProvider alertProvider, FireAlertProvider fireAlerts) {
+    final unreadAlerts = alertProvider.unreadAlerts;
+    
+    if (unreadAlerts.isEmpty && fireAlerts.alerts.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        await alertProvider.fetchAlerts();
+        await fireAlerts.fetchHistory();
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(12),
+        itemCount: unreadAlerts.length + fireAlerts.alerts.length,
+        itemBuilder: (context, index) {
+          if (index < fireAlerts.alerts.length) {
+            final fireAlert = fireAlerts.alerts[index];
+            return _buildFireAlertCard(fireAlert, fireAlerts);
+          } else {
+            final alert = unreadAlerts[index - fireAlerts.alerts.length];
+            return _buildAlertCard(alert, true);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildFireAlertCard(dynamic fireAlert, FireAlertProvider fp) {
+    final date = '${fireAlert.timestamp.day.toString().padLeft(2, '0')} ${_monthName(fireAlert.timestamp.month)} ${fireAlert.timestamp.year}';
+    final time = '${fireAlert.timestamp.hour.toString().padLeft(2, '0')}:${fireAlert.timestamp.minute.toString().padLeft(2, '0')}:${fireAlert.timestamp.second.toString().padLeft(2, '0')}';
+    final isActive = fireAlert.status.toLowerCase() == 'active';
+
+    return GestureDetector(
+      onTap: () {
+        // Show fire alert detail
+        _showFireAlertDetail(fireAlert);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.red.withOpacity(0.05) : Colors.green.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isActive ? Colors.red : Colors.green,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isActive ? Colors.red : Colors.green).withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isActive ? Colors.red.withOpacity(0.15) : Colors.green.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '🔥',
+                  style: TextStyle(fontSize: 24),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Fire Alert',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isActive ? Colors.red.shade800 : Colors.green.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$date • $time',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      isActive ? '🔴 ACTIVE - Immediate action required' : '✅ Acknowledged - Safe',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isActive ? Colors.red : Colors.green,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isActive)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  onPressed: () {
+                    fp.acknowledge(fireAlert.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fire alert acknowledged')),
+                    );
+                  },
+                  child: const Text('Ack', style: TextStyle(fontSize: 12)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFireAlertDetail(dynamic fireAlert) {
+    final date = '${fireAlert.timestamp.day.toString().padLeft(2, '0')} ${_monthName(fireAlert.timestamp.month)} ${fireAlert.timestamp.year}';
+    final time = '${fireAlert.timestamp.hour.toString().padLeft(2, '0')}:${fireAlert.timestamp.minute.toString().padLeft(2, '0')}:${fireAlert.timestamp.second.toString().padLeft(2, '0')}';
+    final isActive = fireAlert.status.toLowerCase() == 'active';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text('🔥', style: TextStyle(fontSize: 32)),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Fire Alert Details',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isActive ? 'Status: ACTIVE' : 'Status: ACKNOWLEDGED',
+                        style: TextStyle(
+                          color: isActive ? Colors.red : Colors.green,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildDetailRow('Date', date),
+            const SizedBox(height: 16),
+            _buildDetailRow('Time', time),
+            const SizedBox(height: 16),
+            _buildDetailRow('Status', isActive ? 'ACTIVE - Action Required' : 'ACKNOWLEDGED - Safe'),
+            const SizedBox(height: 24),
+            if (isActive)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  onPressed: () {
+                    Provider.of<FireAlertProvider>(context, listen: false).acknowledge(fireAlert.id);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fire alert acknowledged')),
+                    );
+                  },
+                  child: const Text('Acknowledge Fire Alert', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 

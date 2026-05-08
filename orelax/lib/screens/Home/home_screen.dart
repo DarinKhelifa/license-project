@@ -10,6 +10,8 @@ import '../../providers/facility_provider.dart';
 import '../../providers/employee_provider.dart';
 import '../../providers/event_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/alert_provider.dart';
+import '../../providers/fire_alert_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,11 +25,202 @@ class _HomeScreenState extends State<HomeScreen> {
   String _role = 'resident';
   bool _roleResolved = false;
   String _searchQuery = '';
+  int _lastAlertCount = 0;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadRole());
+    _startAlertListener();
+  }
+
+  void _startAlertListener() {
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+        final fireAlertProvider = Provider.of<FireAlertProvider>(context, listen: false);
+        
+        alertProvider.addListener(_checkForNewAlerts);
+        fireAlertProvider.addListener(_checkForNewFireAlerts);
+      }
+    });
+  }
+
+  void _checkForNewAlerts() {
+    if (!mounted) return;
+    final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+    final currentAlertCount = alertProvider.alerts.length;
+    
+    if (currentAlertCount > _lastAlertCount) {
+      _lastAlertCount = currentAlertCount;
+      if (alertProvider.alerts.isNotEmpty) {
+        final latestAlert = alertProvider.alerts.last;
+        _showFullScreenAlert(latestAlert.title, latestAlert.message, 'alert');
+      }
+    }
+  }
+
+  void _checkForNewFireAlerts() {
+    if (!mounted) return;
+    final fireAlertProvider = Provider.of<FireAlertProvider>(context, listen: false);
+    
+    if (fireAlertProvider.alerts.isNotEmpty) {
+      final latestFireAlert = fireAlertProvider.alerts.first;
+      final isActive = latestFireAlert.status.toLowerCase() == 'active';
+      
+      if (isActive) {
+        _showFullScreenAlert('🔥 FIRE ALERT', 'Fire detected! Immediate action required', 'fire');
+      }
+    }
+  }
+
+  void _showFullScreenAlert(String title, String message, String type) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Stack(
+          children: [
+            // Full screen red background
+            Container(
+              color: Colors.red.shade900.withOpacity(0.95),
+            ),
+            // Alert content
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Animated alert icon
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0.5, end: 1.0),
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.elasticOut,
+                    builder: (context, value, child) {
+                      return Transform.scale(
+                        scale: value,
+                        child: child,
+                      );
+                    },
+                    child: Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 4,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          type == 'fire' ? '🔥' : '⚠️',
+                          style: const TextStyle(fontSize: 64),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  // Alert title
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Alert message
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        color: Colors.white.withOpacity(0.9),
+                        height: 1.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+                  
+                  // Blinking action button
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.easeInOut,
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: 0.5 + (value * 0.5),
+                        child: child,
+                      );
+                    },
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red.shade900,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 48,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        shadowColor: Colors.black.withOpacity(0.3),
+                        elevation: 12,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/alerts');
+                      },
+                      child: Text(
+                        'View Alert',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Dismiss option
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      'DISMISS',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withOpacity(0.7),
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+    final fireAlertProvider = Provider.of<FireAlertProvider>(context, listen: false);
+    alertProvider.removeListener(_checkForNewAlerts);
+    fireAlertProvider.removeListener(_checkForNewFireAlerts);
+    super.dispose();
   }
 
   Future<void> _loadRole() async {
@@ -686,14 +879,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'icon': Icons.warning_amber_outlined,
               'iconColor': const Color(0xFFE05C8A),
               'title': 'Alerts',
-              'subtitle': 'Incidents & notices',
-              'route': '/alerts',
-            },
-            {
-              'icon': Icons.local_fire_department,
-              'iconColor': Colors.red,
-              'title': 'Fire Alerts',
-              'subtitle': 'Fire events history',
+              'subtitle': 'Incidents & fire alerts',
               'route': '/alerts',
             },
             {
