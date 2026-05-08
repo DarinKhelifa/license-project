@@ -49,13 +49,33 @@ function initMQTT(io) {
       // Check for alert
       if (data.isAlert) {
         if (io) {
-          io.emit('energy-alert', {
+          const payload = {
             deviceName: data.deviceName,
             location: data.location,
             value: data.value,
             threshold: data.alertThreshold,
             timestamp: data.timestamp,
-          });
+          };
+          io.emit('energy-alert', payload);
+
+          // Persist and emit notifications to maintenance and admin roles
+          try {
+            const { saveAndEmitToRole } = require('../helpers/notificationHelper');
+            await saveAndEmitToRole(io, 'maintenance', {
+              type: 'energy_alert',
+              title: `Energy Alert: ${data.deviceName}`,
+              body: `Device ${data.deviceName} at ${data.location} reported ${data.value} (threshold ${data.alertThreshold})`,
+              metadata: { deviceId: data.deviceId }
+            });
+            await saveAndEmitToRole(io, 'admin', {
+              type: 'energy_alert',
+              title: `Energy Alert: ${data.deviceName}`,
+              body: `Device ${data.deviceName} at ${data.location} reported ${data.value} (threshold ${data.alertThreshold})`,
+              metadata: { deviceId: data.deviceId }
+            });
+          } catch (e) {
+            console.error('Failed to persist/emit energy alert notifications', e);
+          }
         }
       }
     } catch (err) {

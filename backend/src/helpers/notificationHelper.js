@@ -88,3 +88,42 @@ module.exports = {
   saveAndEmitNotification,
   saveAndEmitToAllResidents
 };
+
+// Emit notifications to all users with a specific role (e.g., 'admin', 'security', 'maintenance')
+const saveAndEmitToRole = async (io, role, options) => {
+  try {
+    const { type, title, body, metadata = {} } = options;
+    const users = await User.find({ role });
+    const savedNotifications = [];
+
+    for (const u of users) {
+      const notification = new Notification({
+        userId: u._id,
+        type,
+        title,
+        body,
+        metadata
+      });
+      const saved = await notification.save();
+      savedNotifications.push(saved);
+
+      // Emit to the user room
+      emitToUser(u._id, {
+        _id: saved._id,
+        type: saved.type,
+        title: saved.title,
+        body: saved.body,
+        metadata: saved.metadata,
+        createdAt: saved.createdAt
+      });
+    }
+
+    console.log(`✅ Notifications saved and emitted to role=${role} (${users.length} users)`);
+    return savedNotifications;
+  } catch (error) {
+    console.error('❌ Error in saveAndEmitToRole:', error);
+    throw error;
+  }
+};
+
+module.exports.saveAndEmitToRole = saveAndEmitToRole;

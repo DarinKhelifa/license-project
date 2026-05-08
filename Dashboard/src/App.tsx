@@ -17,6 +17,7 @@ import ManageAccounts from './pages/ManageAccounts';
 import Employees from './pages/Employees';
 import Report from './pages/Report';
 import Events from './pages/Events';
+import Notifications from './pages/Notifications';
 import Guests from './pages/Guests';
 import GuestDetail from './pages/GuestDetail';
 import Settings from './pages/Settings';
@@ -119,6 +120,16 @@ function App() {
                   <AuthGuard>
                     <DashboardLayout>
                       <Events />
+                    </DashboardLayout>
+                  </AuthGuard>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <AuthGuard>
+                    <DashboardLayout>
+                      <Notifications />
                     </DashboardLayout>
                   </AuthGuard>
                 }

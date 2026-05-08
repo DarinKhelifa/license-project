@@ -27,7 +27,7 @@ const createReport = async (req, res) => {
     
     await report.save();
     
-    // Emit real-time alert to security and maintenance roles
+    // Emit real-time alert to security and maintenance roles and save notification entries
     if (io) {
       const alertData = {
         id: report.id,
@@ -41,11 +41,33 @@ const createReport = async (req, res) => {
         status: 'pending',
         reportId: report.id
       };
-      
-      // Send to security and maintenance rooms
+
+      // Send to role rooms for real-time UI updates
+      io.to('role-admin').emit('new-alert', alertData);
       io.to('role-security').emit('new-alert', alertData);
       io.to('role-maintenance').emit('new-alert', alertData);
-      console.log(`🔔 Alert sent to security/maintenance for report ${report.id}`);
+      console.log(`🔔 Alert sent to admin/security/maintenance for report ${report.id}`);
+
+      // Persist notifications for those roles and emit via per-user rooms
+      const { saveAndEmitToRole } = require('../helpers/notificationHelper');
+      await saveAndEmitToRole(io, 'admin', {
+        type: 'report',
+        title: `New ${category} Report`,
+        body: `${req.user.name} reported a ${subCategory.toLowerCase()} at ${location}`,
+        metadata: { reportId: report.id, category, subCategory, location }
+      });
+      await saveAndEmitToRole(io, 'security', {
+        type: 'report',
+        title: `New ${category} Report`,
+        body: `${req.user.name} reported a ${subCategory.toLowerCase()} at ${location}`,
+        metadata: { reportId: report.id, category, subCategory, location }
+      });
+      await saveAndEmitToRole(io, 'maintenance', {
+        type: 'report',
+        title: `New ${category} Report`,
+        body: `${req.user.name} reported a ${subCategory.toLowerCase()} at ${location}`,
+        metadata: { reportId: report.id, category, subCategory, location }
+      });
     }
     
     res.status(201).json({
@@ -126,7 +148,7 @@ const updateReportStatus = async (req, res) => {
     
     await report.save();
     
-    // Emit status update alert
+    // Emit status update alert and persist notifications
     if (io) {
       const updateData = {
         reportId: report.id,
@@ -136,6 +158,20 @@ const updateReportStatus = async (req, res) => {
       };
       io.to('role-security').emit('alert-status-updated', updateData);
       io.to('role-maintenance').emit('alert-status-updated', updateData);
+
+      const { saveAndEmitToRole } = require('../helpers/notificationHelper');
+      await saveAndEmitToRole(io, 'security', {
+        type: 'alert',
+        title: `Report ${status}`,
+        body: `${req.user.name} marked report ${report.id} as ${status}`,
+        metadata: { reportId: report.id, status }
+      });
+      await saveAndEmitToRole(io, 'maintenance', {
+        type: 'alert',
+        title: `Report ${status}`,
+        body: `${req.user.name} marked report ${report.id} as ${status}`,
+        metadata: { reportId: report.id, status }
+      });
     }
     
     res.json({ message: `Report ${status} successfully`, report });

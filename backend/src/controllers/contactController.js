@@ -1,4 +1,5 @@
 const ContactMessage = require('../models/ContactMessage');
+const { saveAndEmitToRole } = require('../helpers/notificationHelper');
 
 exports.createMessage = async (req, res, next) => {
   try {
@@ -10,6 +11,18 @@ exports.createMessage = async (req, res, next) => {
 
     // Log and optionally notify admins via socket or email here
     console.log(`New contact message from ${email}: ${message.substring(0, 120)}`);
+
+    // Notify admins about the new contact message
+    try {
+      await saveAndEmitToRole(null, 'admin', {
+        type: 'contact_message',
+        title: `Contact form: ${subject || 'New Message'}`,
+        body: `${name || email}: ${message.substring(0, 120)}`,
+        metadata: { contactId: saved._id }
+      });
+    } catch (e) {
+      console.error('Failed to save/emit contact notification', e);
+    }
 
     return res.status(201).json(saved);
   } catch (err) {
