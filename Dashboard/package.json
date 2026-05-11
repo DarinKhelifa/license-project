@@ -17,6 +17,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "axios": "^1.16.0",
+    "date-fns": "^2.30.0",
     "framer-motion": "^12.35.2",
     "mathjs": "^15.1.1",
     "ogl": "^1.0.11",
@@ -26,7 +27,6 @@
     "react-scripts": "5.0.1",
     "recharts": "^2.8.0",
     "socket.io-client": "^4.8.0",
-    "date-fns": "^2.30.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

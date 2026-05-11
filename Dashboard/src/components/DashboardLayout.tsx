@@ -51,6 +51,7 @@ const menuItems = [
   { text: 'Fire Alerts', icon: <MonitoringIcon />, path: '/fire-alerts' },
   { text: 'Manage Accounts', icon: <PersonIcon />, path: '/accounts' },
   { text: 'Employees', icon: <BadgeIcon />, path: '/employees' },
+  { text: 'My Residences', icon: <BusinessIcon />, path: '/residences' },
   { text: 'Report', icon: <AssessmentIcon />, path: '/report' },
   { text: 'Events', icon: <EventIcon />, path: '/events' },
 ];
