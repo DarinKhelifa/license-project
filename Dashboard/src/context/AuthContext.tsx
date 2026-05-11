@@ -11,6 +11,8 @@ export interface UserData {
   specialization?: 'cleaning' | 'electrician' | 'repair' | 'plumber' | 'other' | null;
   phone: string;
   apartment: string;
+  residence?: string | null;
+  building?: string | null;
   role: 'resident' | 'security' | 'admin' | 'maintenance' | 'facility_manager';
   status: 'active' | 'pending' | 'inactive';
   joinDate: string;
@@ -30,6 +32,7 @@ interface AuthContextType {
   getAllUsers: () => Promise<UserData[]>;
   updateUserRole: (uid: string, role: UserData['role']) => Promise<void>;
   updateUserStatus: (uid: string, status: UserData['status']) => Promise<void>;
+  updateUser: (uid: string, userData: any) => Promise<void>;
   deleteUser: (uid: string) => Promise<void>;  // Add this
   createUser: (userData: any) => Promise<any>;  // Add this
 }
@@ -110,6 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await adminAPI.updateUserStatus(uid, status);
   };
 
+  const updateUser = async (uid: string, userData: any) => {
+    await adminAPI.updateUser(uid, userData);
+  };
+
   const deleteUser = async (uid: string) => {
     await adminAPI.deleteUser(uid);
   };
@@ -142,6 +149,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       password: userDataInput.password || undefined,
       name: userDataInput.name,
       phone: userDataInput.phone,
+      residence: userDataInput.residence,
+      building: userDataInput.building,
       role: userDataInput.role,
     });
     return res;
@@ -160,6 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getAllUsers,
       updateUserRole,
       updateUserStatus,
+      updateUser,
       deleteUser,
       createUser,
     }}>
