@@ -11,6 +11,7 @@ const {
   getAllUsers,
   updateUserRole,
   updateUserStatus,
+  updateUserAdmin,
   deleteUser,
   verifyOTP,
   resendOTP,
@@ -31,6 +32,7 @@ router.put('/change-password', protect, changePassword);
 // Admin routes
 router.get('/users', protect, authorize('admin'), getAllUsers);
 router.post('/users', protect, authorize('admin'), createUserAdmin);
+router.put('/users/:id', protect, authorize('admin'), updateUserAdmin);
 router.put('/users/:id/role', protect, authorize('admin'), updateUserRole);
 router.put('/users/:id/status', protect, authorize('admin'), updateUserStatus);
 router.delete('/users/:id', protect, authorize('admin'), deleteUser);

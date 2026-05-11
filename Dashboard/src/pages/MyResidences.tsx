@@ -1,12 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   Card,
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   FormControl,
   Grid,
@@ -28,6 +33,7 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import {
+  Add as AddIcon,
   AddBusiness as AddBusinessIcon,
   Apartment as ApartmentIcon,
   CheckCircle as CheckCircleIcon,
@@ -40,8 +46,9 @@ import {
   ReservationStatus,
   residencesAPI,
 } from '../services/residences';
+import { adminAPI } from '../services/api';
 
-type TabValue = 'overview' | 'buildings' | 'parking' | 'reservations' | 'create';
+type TabValue = 'overview' | 'buildings' | 'parking' | 'reservations' | 'residents';
 
 function statusChipColor(status: ReservationStatus): 'warning' | 'success' | 'error' {
   if (status === 'approved') return 'success';
@@ -70,11 +77,17 @@ export default function MyResidences() {
   const [reservationBuilding, setReservationBuilding] = useState('');
   const [reservationSpotCode, setReservationSpotCode] = useState('');
 
+  // Create residence dialog
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [newResidenceName, setNewResidenceName] = useState('');
   const [newResidenceAddress, setNewResidenceAddress] = useState('');
   const [newResidenceBuildingCount, setNewResidenceBuildingCount] = useState<number>(1);
   const [newResidenceApartmentsPerBuilding, setNewResidenceApartmentsPerBuilding] = useState<number>(40);
   const [newResidenceParkingCount, setNewResidenceParkingCount] = useState<number>(40);
+
+  // Residents list
+  const [residents, setResidents] = useState<any[]>([]);
+  const [residentsLoading, setResidentsLoading] = useState(false);
 
   const activeResidence = useMemo(
     () => residences.find((r) => r._id === activeResidenceId) ?? residences[0],
@@ -121,6 +134,28 @@ export default function MyResidences() {
     void fetchResidences();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'residents' && activeResidenceId) {
+      loadResidents();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, activeResidenceId]);
+
+  async function loadResidents() {
+    setResidentsLoading(true);
+    try {
+      const allUsers = await adminAPI.getAllUsers();
+      const residentsInActiveResidence = allUsers.filter(
+        (user: any) => user.role === 'resident' && user.residence === activeResidenceId
+      );
+      setResidents(residentsInActiveResidence);
+    } catch (e) {
+      console.error('Failed to load residents:', e);
+    } finally {
+      setResidentsLoading(false);
+    }
+  }
 
   async function handleAddBuilding() {
     if (!activeResidence) return;
@@ -332,15 +367,25 @@ export default function MyResidences() {
             Manage all Orelax residences, buildings, apartments, parking spots, and resident parking reservations.
           </Typography>
         </Box>
-        <Chip
-          icon={<AddBusinessIcon />}
-          label={`${residences.length} residence(s)`}
-          sx={{
-            bgcolor: alpha(theme.palette.primary.main, 0.06),
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
-            fontWeight: 800,
-          }}
-        />
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Button
+            variant="contained"
+            startIcon={<AddBusinessIcon />}
+            onClick={() => setOpenCreateDialog(true)}
+            sx={{ bgcolor: '#034808', '&:hover': { bgcolor: '#023206' } }}
+          >
+            Add New Residence
+          </Button>
+          <Chip
+            icon={<AddBusinessIcon />}
+            label={`${residences.length} residence(s)`}
+            sx={{
+              bgcolor: alpha(theme.palette.primary.main, 0.06),
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.14)}`,
+              fontWeight: 800,
+            }}
+          />
+        </Stack>
       </Stack>
 
       {message ? (
@@ -430,7 +475,7 @@ export default function MyResidences() {
           <Tab value="buildings" label="Buildings" />
           <Tab value="parking" label="Parking" />
           <Tab value="reservations" label="Reservations" />
-          <Tab value="create" label="Add New Residence" />
+          <Tab value="residents" label="Residents" />
         </Tabs>
       </Paper>
 
@@ -683,73 +728,134 @@ export default function MyResidences() {
         </Grid>
       ) : null}
 
-      {activeTab === 'create' ? (
+      {activeTab === 'residents' ? (
         <Card>
           <CardContent>
-            <Typography variant="h6" sx={{ mb: 1.8 }}>Create Brand New Residence</Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Residence Name"
-                  value={newResidenceName}
-                  onChange={(event) => setNewResidenceName(event.target.value)}
-                  placeholder="Example: Orelax Residence Downtown"
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Address"
-                  value={newResidenceAddress}
-                  onChange={(event) => setNewResidenceAddress(event.target.value)}
-                  placeholder="Example: Ali Mendjli"
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Number of Buildings"
-                  value={newResidenceBuildingCount}
-                  onChange={(event) => setNewResidenceBuildingCount(Number(event.target.value))}
-                  inputProps={{ min: 1 }}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Apartments per Building"
-                  value={newResidenceApartmentsPerBuilding}
-                  onChange={(event) => setNewResidenceApartmentsPerBuilding(Number(event.target.value))}
-                  inputProps={{ min: 1 }}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Initial Parking Spots"
-                  value={newResidenceParkingCount}
-                  onChange={(event) => setNewResidenceParkingCount(Number(event.target.value))}
-                  inputProps={{ min: 1 }}
-                />
-              </Grid>
-            </Grid>
-
-            <Button
-              sx={{ mt: 2.2 }}
-              variant="contained"
-              onClick={() => void handleCreateResidence()}
-              disabled={saving}
-              startIcon={<AddBusinessIcon />}
-            >
-              Create Residence
-            </Button>
+            <Typography variant="h6" sx={{ mb: 1.5 }}>Residents in {activeResidence?.name || 'This Residence'}</Typography>
+            {residentsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Name</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Phone</TableCell>
+                      <TableCell>Building</TableCell>
+                      <TableCell>Apartment</TableCell>
+                      <TableCell>Status</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {residents.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6}>
+                          <Typography color="text.secondary" sx={{ py: 2 }}>No residents in this residence yet.</Typography>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      residents.map((resident: any) => (
+                        <TableRow key={resident._id} hover>
+                          <TableCell>
+                            <Stack direction="row" alignItems="center" spacing={1}>
+                              <Avatar sx={{ width: 32, height: 32, bgcolor: '#034808', fontSize: '0.875rem' }}>
+                                {resident.name?.charAt(0) || 'R'}
+                              </Avatar>
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>{resident.name}</Typography>
+                            </Stack>
+                          </TableCell>
+                          <TableCell>{resident.email}</TableCell>
+                          <TableCell>{resident.phone}</TableCell>
+                          <TableCell>{resident.building || '--'}</TableCell>
+                          <TableCell>{resident.apartment || '--'}</TableCell>
+                          <TableCell>
+                            <Chip
+                              size="small"
+                              label={resident.status}
+                              color={resident.status === 'active' ? 'success' : 'warning'}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </CardContent>
         </Card>
       ) : null}
+
+      {/* Create Residence Dialog */}
+      <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#034808', color: 'white' }}>Create New Residence</DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Residence Name"
+                value={newResidenceName}
+                onChange={(event) => setNewResidenceName(event.target.value)}
+                placeholder="Example: Orelax Residence Downtown"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Address"
+                value={newResidenceAddress}
+                onChange={(event) => setNewResidenceAddress(event.target.value)}
+                placeholder="Example: Ali Mendjli"
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Number of Buildings"
+                value={newResidenceBuildingCount}
+                onChange={(event) => setNewResidenceBuildingCount(Number(event.target.value))}
+                inputProps={{ min: 1 }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Apartments per Building"
+                value={newResidenceApartmentsPerBuilding}
+                onChange={(event) => setNewResidenceApartmentsPerBuilding(Number(event.target.value))}
+                inputProps={{ min: 1 }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Initial Parking Spots"
+                value={newResidenceParkingCount}
+                onChange={(event) => setNewResidenceParkingCount(Number(event.target.value))}
+                inputProps={{ min: 1 }}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenCreateDialog(false)}>Cancel</Button>
+          <Button
+            onClick={() => void handleCreateResidence()}
+            disabled={saving}
+            variant="contained"
+            sx={{ bgcolor: '#034808', '&:hover': { bgcolor: '#023206' } }}
+          >
+            Create Residence
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

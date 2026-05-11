@@ -54,7 +54,7 @@ export const authAPI = {
   getMe: () =>
     request<any>('/auth/me'),
 
-  updateProfile: (data: { name?: string; phone?: string; apartment?: string }) =>
+  updateProfile: (data: { name?: string; phone?: string; apartment?: string; residence?: string; building?: string }) =>
     request<any>('/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -86,6 +86,11 @@ export const adminAPI = {
     request(`/auth/users/${userId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
+    }),
+  updateUser: (userId: string, userData: any) =>
+    request(`/auth/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
     }),
   deleteUser: (userId: string) =>
     request(`/auth/users/${userId}`, {

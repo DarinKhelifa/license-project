@@ -326,13 +326,15 @@ const getMe = async (req, res) => {
 // ========== UPDATE PROFILE ==========
 const updateProfile = async (req, res) => {
   try {
-    const { name, phone, apartment } = req.body;
+    const { name, phone, apartment, residence, building } = req.body;
 
     const user = await User.findById(req.user.id);
 
     if (name) user.name = name;
     if (phone) user.phone = phone;
     if (apartment) user.apartment = apartment;
+    if (residence !== undefined) user.residence = residence || null;
+    if (building !== undefined) user.building = building || null;
     
     // Handle profile image upload
     if (req.file) {
@@ -486,7 +488,7 @@ const deleteUser = async (req, res) => {
 // ========== CREATE USER (Admin) ==========
 const createUserAdmin = async (req, res) => {
   try {
-    const { name, email, password, phone, apartment, role, specialization } = req.body;
+    const { name, email, password, phone, apartment, residence, building, role, specialization } = req.body;
     const normalizedEmail = (email || '').trim().toLowerCase();
 
     const normalizedPhone = (phone || '').toString().replace(/\s+/g, '');
@@ -520,6 +522,8 @@ const createUserAdmin = async (req, res) => {
       password: tempPassword,
       phone: normalizedPhone,
       apartment,
+      residence: residence || null,
+      building: building || null,
       role,
       specialization: specialization || null,
       status: 'active',
@@ -550,6 +554,56 @@ const createUserAdmin = async (req, res) => {
   }
 };
 
+// ========== UPDATE USER DETAILS (Admin) ==========
+const updateUserAdmin = async (req, res) => {
+  try {
+    const { name, email, phone, apartment, residence, building, role, specialization } = req.body;
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = (email || '').trim().toLowerCase();
+
+    if (phone !== undefined) {
+      const normalizedPhone = (phone || '').toString().replace(/\s+/g, '');
+      if (!/^0\d{9}$/.test(normalizedPhone)) {
+        return res.status(400).json({ message: 'Invalid phone number. It must start with 0 and be exactly 10 digits.' });
+      }
+      user.phone = normalizedPhone;
+    }
+
+    if (role !== undefined) {
+      user.role = role;
+    }
+
+    if (specialization !== undefined) {
+      user.specialization = specialization || null;
+    }
+
+    if (user.role === 'resident') {
+      if (apartment !== undefined) user.apartment = apartment;
+      if (residence !== undefined) user.residence = residence || null;
+      if (building !== undefined) user.building = building || null;
+    } else {
+      user.apartment = undefined;
+      user.residence = null;
+      user.building = null;
+    }
+
+    user.updatedAt = Date.now();
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select('-password -otp');
+    return res.json(updatedUser);
+  } catch (error) {
+    console.error('Update user admin error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -559,6 +613,7 @@ module.exports = {
   getAllUsers,
   updateUserRole,
   updateUserStatus,
+  updateUserAdmin,
   createUserAdmin,
   deleteUser,
   verifyOTP,

@@ -40,6 +40,7 @@ import {
 } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
+import { residencesAPI, Residence } from '../services/residences';
 
 // Types
 interface User {
@@ -49,6 +50,8 @@ interface User {
   phone: string;
   role: 'resident' | 'security' | 'admin' | 'maintenance' | 'facility_manager';
   apartment?: string;
+  residence?: string;
+  building?: string;
   status: 'active' | 'inactive' | 'pending';
   joinDate: string;
   specialization?: string | null;
@@ -88,6 +91,7 @@ export default function ManageAccounts() {
     updateUserStatus,
     deleteUser,
     createUser,
+    updateUser,
     loading: authLoading,
   } = useAuth();
   
@@ -102,6 +106,10 @@ export default function ManageAccounts() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [employeeSpecFilter, setEmployeeSpecFilter] = useState<string>('');
   
+  // Residences and cascade state
+  const [residences, setResidences] = useState<Residence[]>([]);
+  const [residencesLoading, setResidencesLoading] = useState(false);
+  
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -111,7 +119,33 @@ export default function ManageAccounts() {
     password: '',
     confirmPassword: '',
     apartment: '',
+    residence: '',
+    building: '',
   });
+
+  // Load residences when dialog opens for resident edit
+  useEffect(() => {
+    if (openDialog && editingUser?.role === 'resident') {
+      loadResidences();
+    }
+  }, [openDialog, editingUser?.role]);
+
+  const loadResidences = async () => {
+    setResidencesLoading(true);
+    try {
+      const data = await residencesAPI.list();
+      setResidences(data.residences);
+    } catch (error) {
+      console.error('Failed to load residences:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to load residences',
+        severity: 'error',
+      });
+    } finally {
+      setResidencesLoading(false);
+    }
+  };
 
   // Check if current user is admin
   const isAdmin = user?.role === 'admin';
@@ -128,6 +162,8 @@ export default function ManageAccounts() {
         phone: u.phone,
         role: (((u as any).role === 'facilities_manager') ? 'facility_manager' : (u as any).role) as User['role'],
         apartment: u.apartment,
+        residence: (u as any).residence || '',
+        building: (u as any).building || '',
         status: u.status,
         joinDate: u.joinDate,
         specialization: (u as any).specialization || null,
@@ -148,6 +184,8 @@ export default function ManageAccounts() {
   useEffect(() => {
     if (isAdmin) {
       loadUsers();
+      // Preload residences to make selectors responsive
+      void loadResidences();
     }
   }, [isAdmin, loadUsers]);
 
@@ -165,6 +203,8 @@ export default function ManageAccounts() {
       password: '',
       confirmPassword: '',
       apartment: '',
+      residence: '',
+      building: '',
     });
     setOpenDialog(true);
   };
@@ -179,6 +219,8 @@ export default function ManageAccounts() {
       password: '',
       confirmPassword: '',
       apartment: user.apartment || '',
+      residence: (user as any).residence || '',
+      building: (user as any).building || '',
     });
     setOpenDialog(true);
   };
@@ -294,14 +336,26 @@ export default function ManageAccounts() {
 
     try {
       if (editingUser) {
-        // Update existing user
-        await updateUserRole(editingUser.id, formData.role);
+        // Update existing user (send role + location fields together)
+        const payload: any = {
+          name: formData.name,
+          phone: normalizedPhone,
+          role: formData.role,
+        };
+
+        if (formData.role === 'resident') {
+          payload.apartment = formData.apartment || '';
+          payload.residence = formData.residence || null;
+          payload.building = formData.building || null;
+        } else {
+          payload.apartment = undefined;
+          payload.residence = null;
+          payload.building = null;
+        }
+
+        await updateUser(editingUser.id, payload);
         await loadUsers();
-        setSnackbar({
-          open: true,
-          message: `User ${formData.name} updated successfully`,
-          severity: 'success',
-        });
+        setSnackbar({ open: true, message: `User ${formData.name} updated successfully`, severity: 'success' });
       } else {
         // Add new user via admin API
         const res = await createUser({
@@ -310,6 +364,8 @@ export default function ManageAccounts() {
           phone: normalizedPhone,
           role: formData.role,
           password: formData.password,
+          residence: formData.residence || undefined,
+          building: formData.building || undefined,
         });
         await loadUsers();
         const tempPass = (res as any)?.tempPassword;
@@ -634,15 +690,67 @@ export default function ManageAccounts() {
               </>
             )}
             {editingUser && formData.role === 'resident' && (
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Apartment Number"
-                  value={formData.apartment}
-                  onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
-                  margin="normal"
-                />
-              </Grid>
+              <>
+                <Grid item xs={12}>
+                  <FormControl fullWidth margin="normal" disabled={residencesLoading}>
+                    <InputLabel>Residence</InputLabel>
+                    <Select
+                      value={formData.residence}
+                      label="Residence"
+                      onChange={(e) => setFormData({ ...formData, residence: e.target.value, building: '', apartment: '' })}
+                    >
+                      <MenuItem value="">-- Select Residence --</MenuItem>
+                      {residences.map((res) => (
+                        <MenuItem key={res._id} value={res._id}>
+                          {res.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                {formData.residence && (
+                  <>
+                    <Grid item xs={12}>
+                      <FormControl fullWidth margin="normal">
+                        <InputLabel>Building</InputLabel>
+                        <Select
+                          value={formData.building}
+                          label="Building"
+                          onChange={(e) => setFormData({ ...formData, building: e.target.value, apartment: '' })}
+                        >
+                          <MenuItem value="">-- Select Building --</MenuItem>
+                          {residences
+                            .find((res) => res._id === formData.residence)
+                            ?.buildings.map((bldg) => (
+                              <MenuItem key={bldg.id} value={bldg.id}>
+                                {bldg.name}
+                              </MenuItem>
+                            ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    {formData.building && (
+                      <Grid item xs={12}>
+                        <FormControl fullWidth margin="normal">
+                          <InputLabel>Apartment Number</InputLabel>
+                          <Select
+                            value={formData.apartment}
+                            label="Apartment Number"
+                            onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
+                          >
+                            <MenuItem value="">-- Select Apartment --</MenuItem>
+                            {Array.from({ length: residences.find((res) => res._id === formData.residence)?.buildings.find((b) => b.id === formData.building)?.apartments || 0 }, (_, i) => i + 1).map((num) => (
+                              <MenuItem key={num} value={num.toString()}>
+                                {num}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    )}
+                  </>
+                )}
+              </>
             )}
           </Grid>
         </DialogContent>
