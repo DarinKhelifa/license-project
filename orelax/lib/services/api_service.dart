@@ -520,6 +520,66 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> editChatMessage({
+    required String messageId,
+    required String content,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.patch(
+      Uri.parse('$baseUrl/messages/$messageId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'content': content}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    try {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to edit message');
+    } catch (_) {
+      throw Exception('Failed to edit message: ${response.statusCode}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteChatMessage({
+    required String messageId,
+    bool forEveryone = true,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final uri = Uri.parse('$baseUrl/messages/$messageId${forEveryone ? '?scope=everyone' : ''}');
+    final response = await http.delete(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      try {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        return {'messageId': messageId};
+      }
+    }
+
+    try {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to delete message');
+    } catch (_) {
+      throw Exception('Failed to delete message: ${response.statusCode}');
+    }
+  }
+
   // ========== EVENT METHODS ==========
 
 // Get all approved events
