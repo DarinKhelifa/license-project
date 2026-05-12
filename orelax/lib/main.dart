@@ -21,7 +21,6 @@ import 'screens/security/visitors_screen.dart';
 import 'screens/security/alerts_screen.dart';
 import 'screens/security/access_logs_screen.dart';
 import 'screens/maintenance/work_orders_screen.dart';
-import 'screens/maintenance/pending_requests_screen.dart';
 import 'screens/maintenance/schedule_screen.dart';
 import 'screens/resident/helping_staff/helping_staff_home_screen.dart';
 import 'screens/resident/facilities/resident_facilities_screen.dart';
@@ -138,7 +137,6 @@ class OrelaxApp extends StatelessWidget {
           '/access-logs': (_) => const AccessLogsScreen(),
           // Maintenance screens
           '/work-orders': (_) => const WorkOrdersScreen(),
-          '/pending-requests': (_) => const PendingRequestsScreen(),
           '/schedule': (_) => const MaintenanceScheduleScreen(),
           // Facilities Manager
           '/create-facility': (_) => const CreateEditFacilityScreen(),

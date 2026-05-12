@@ -8,9 +8,9 @@ const {
   deleteNote,
 } = require('../controllers/securityNoteController');
 
-router.get('/', protect, authorize('security', 'admin'), getMyNotes);
-router.post('/', protect, authorize('security', 'admin'), createNote);
-router.put('/:id', protect, authorize('security', 'admin'), updateNote);
-router.delete('/:id', protect, authorize('security', 'admin'), deleteNote);
+router.get('/', protect, authorize('security', 'admin', 'maintenance'), getMyNotes);
+router.post('/', protect, authorize('security', 'admin', 'maintenance'), createNote);
+router.put('/:id', protect, authorize('security', 'admin', 'maintenance'), updateNote);
+router.delete('/:id', protect, authorize('security', 'admin', 'maintenance'), deleteNote);
 
 module.exports = router;

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
+import '../../widgets/maintenance_bottom_nav_bar.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -215,23 +216,39 @@ class _NotesScreenState extends State<NotesScreen> {
                         final content = contentController.text.trim();
                         if (title.isEmpty && content.isEmpty) return;
 
-                        if (existing != null) {
-                          await ApiService.updateSecurityNote(
-                            noteId: existing.id,
-                            title: title,
-                            content: content,
-                            reminder: reminder,
+                        try {
+                          if (existing != null) {
+                            await ApiService.updateSecurityNote(
+                              noteId: existing.id,
+                              title: title,
+                              content: content,
+                              reminder: reminder,
+                            );
+                          } else {
+                            await ApiService.createSecurityNote(
+                              title: title,
+                              content: content,
+                              reminder: reminder,
+                            );
+                          }
+
+                          if (!mounted) return;
+                          Navigator.pop(ctx);
+                          await _loadNotes();
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(existing != null ? 'Note updated' : 'Note saved'),
+                            ),
                           );
-                        } else {
-                          await ApiService.createSecurityNote(
-                            title: title,
-                            content: content,
-                            reminder: reminder,
+                        } catch (error) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to save note: $error'),
+                            ),
                           );
                         }
-
-                        if (mounted) Navigator.pop(ctx);
-                        await _loadNotes();
                       },
                       child: Text(existing != null ? 'Save' : 'Add Note'),
                     ),
@@ -305,11 +322,15 @@ class _NotesScreenState extends State<NotesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    final isMaintenance = (auth.user?['role'] ?? 'resident').toString() == 'maintenance';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notes'),
         centerTitle: true,
       ),
+      bottomNavigationBar: isMaintenance ? const MaintenanceBottomNavBar(currentIndex: 1) : null,
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: _isLoading

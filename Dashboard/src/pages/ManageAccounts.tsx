@@ -559,9 +559,24 @@ export default function ManageAccounts() {
             users={filteredUsers}
             onEdit={handleOpenEditDialog}
             onDelete={handleOpenDeleteDialog}
-            onToggleActive={(u) => {
+            onToggleActive={async (u) => {
               const newStatus = u.status === 'active' ? 'inactive' : 'active';
-              updateUserStatus(u.id, newStatus).then(() => loadUsers());
+              try {
+                await updateUserStatus(u.id, newStatus);
+                await loadUsers();
+                setSnackbar({
+                  open: true,
+                  message: u.status === 'pending' ? `User ${u.name} approved successfully` : `User ${u.name} updated to ${newStatus}`,
+                  severity: 'success',
+                });
+              } catch (error) {
+                console.error('Failed to update user status:', error);
+                setSnackbar({
+                  open: true,
+                  message: error instanceof Error ? error.message : 'Failed to update user status',
+                  severity: 'error',
+                });
+              }
             }}
             getRoleChipColor={getRoleChipColor}
             getStatusChip={getStatusChip}
@@ -574,9 +589,24 @@ export default function ManageAccounts() {
             users={filteredUsers}
             onEdit={handleOpenEditDialog}
             onDelete={handleOpenDeleteDialog}
-            onToggleActive={(u) => {
+            onToggleActive={async (u) => {
               const newStatus = u.status === 'active' ? 'inactive' : 'active';
-              updateUserStatus(u.id, newStatus).then(() => loadUsers());
+              try {
+                await updateUserStatus(u.id, newStatus);
+                await loadUsers();
+                setSnackbar({
+                  open: true,
+                  message: u.status === 'pending' ? `User ${u.name} approved successfully` : `User ${u.name} updated to ${newStatus}`,
+                  severity: 'success',
+                });
+              } catch (error) {
+                console.error('Failed to update user status:', error);
+                setSnackbar({
+                  open: true,
+                  message: error instanceof Error ? error.message : 'Failed to update user status',
+                  severity: 'error',
+                });
+              }
             }}
             getRoleChipColor={getRoleChipColor}
             getStatusChip={getStatusChip}
@@ -589,9 +619,24 @@ export default function ManageAccounts() {
             users={filteredUsers}
             onEdit={handleOpenEditDialog}
             onDelete={handleOpenDeleteDialog}
-            onToggleActive={(u) => {
+            onToggleActive={async (u) => {
               const newStatus = u.status === 'active' ? 'inactive' : 'active';
-              updateUserStatus(u.id, newStatus).then(() => loadUsers());
+              try {
+                await updateUserStatus(u.id, newStatus);
+                await loadUsers();
+                setSnackbar({
+                  open: true,
+                  message: u.status === 'pending' ? `User ${u.name} approved successfully` : `User ${u.name} updated to ${newStatus}`,
+                  severity: 'success',
+                });
+              } catch (error) {
+                console.error('Failed to update user status:', error);
+                setSnackbar({
+                  open: true,
+                  message: error instanceof Error ? error.message : 'Failed to update user status',
+                  severity: 'error',
+                });
+              }
             }}
             getRoleChipColor={getRoleChipColor}
             getStatusChip={getStatusChip}
@@ -603,9 +648,24 @@ export default function ManageAccounts() {
             users={filteredUsers}
             onEdit={handleOpenEditDialog}
             onDelete={handleOpenDeleteDialog}
-            onToggleActive={(u) => {
+            onToggleActive={async (u) => {
               const newStatus = u.status === 'active' ? 'inactive' : 'active';
-              updateUserStatus(u.id, newStatus).then(() => loadUsers());
+              try {
+                await updateUserStatus(u.id, newStatus);
+                await loadUsers();
+                setSnackbar({
+                  open: true,
+                  message: u.status === 'pending' ? `User ${u.name} approved successfully` : `User ${u.name} updated to ${newStatus}`,
+                  severity: 'success',
+                });
+              } catch (error) {
+                console.error('Failed to update user status:', error);
+                setSnackbar({
+                  open: true,
+                  message: error instanceof Error ? error.message : 'Failed to update user status',
+                  severity: 'error',
+                });
+              }
             }}
             getRoleChipColor={getRoleChipColor}
             getStatusChip={getStatusChip}
@@ -902,13 +962,24 @@ function UserTable({ users, onEdit, onDelete, onToggleActive, getRoleChipColor, 
                   </Typography>
                 </TableCell>
                 <TableCell align="center">
-                  <IconButton
-                    size="small"
-                    onClick={() => onToggleActive && onToggleActive(user)}
-                    sx={{ color: user.status === 'active' ? '#4CAF50' : '#9E9E9E', mr: 1 }}
-                  >
-                    {user.status === 'active' ? <ToggleOffIcon /> : <ToggleOnIcon />}
-                  </IconButton>
+                  {user.status === 'pending' ? (
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => onToggleActive && onToggleActive(user)}
+                      sx={{ bgcolor: '#034808', mr: 1, '&:hover': { bgcolor: '#023206' } }}
+                    >
+                      Approve
+                    </Button>
+                  ) : (
+                    <IconButton
+                      size="small"
+                      onClick={() => onToggleActive && onToggleActive(user)}
+                      sx={{ color: user.status === 'active' ? '#4CAF50' : '#9E9E9E', mr: 1 }}
+                    >
+                      {user.status === 'active' ? <ToggleOffIcon /> : <ToggleOnIcon />}
+                    </IconButton>
+                  )}
                   <IconButton
                     size="small"
                     onClick={() => onEdit(user)}

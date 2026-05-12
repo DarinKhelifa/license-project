@@ -12,6 +12,7 @@ import '../../providers/event_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/alert_provider.dart';
 import '../../providers/fire_alert_provider.dart';
+// IoT screen removed
 import '../../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -45,6 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
         fireAlertProvider.addListener(_checkForNewFireAlerts);
       }
     });
+  }
+  
+  void _navigateServiceRoute(String route) {
+    Navigator.pushNamed(context, route);
   }
 
   void _checkForNewAlerts() {
@@ -217,10 +222,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    final alertProvider = Provider.of<AlertProvider>(context, listen: false);
-    final fireAlertProvider = Provider.of<FireAlertProvider>(context, listen: false);
-    alertProvider.removeListener(_checkForNewAlerts);
-    fireAlertProvider.removeListener(_checkForNewFireAlerts);
+    if (mounted) {
+      try {
+        final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+        final fireAlertProvider = Provider.of<FireAlertProvider>(context, listen: false);
+        alertProvider.removeListener(_checkForNewAlerts);
+        fireAlertProvider.removeListener(_checkForNewFireAlerts);
+      } catch (_) {
+        // Ignore errors accessing providers during dispose
+      }
+    }
     super.dispose();
   }
 
@@ -281,13 +292,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() => _currentIndex = index);
 
-    // Security role uses a different 3-item layout: Home(0) / Notes(1) / Profile(2)
+    // Security and maintenance roles use a different 3-item layout.
     if (_role == 'security') {
       switch (index) {
         case 0:
           break;
         case 1:
           Navigator.pushNamed(context, '/notes');
+          break;
+        case 2:
+          Navigator.pushNamed(context, '/profile');
+          break;
+      }
+      return;
+    }
+
+    if (_role == 'maintenance') {
+      switch (index) {
+        case 0:
+          break;
+        case 1:
+          Navigator.pushNamed(context, '/work-orders');
           break;
         case 2:
           Navigator.pushNamed(context, '/profile');
@@ -467,7 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       // ...existing code for bottomNavigationBar...
-      bottomNavigationBar: _role.toLowerCase() != 'resident'
+        bottomNavigationBar: _role.toLowerCase() != 'resident'
           ? Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Container(
@@ -491,7 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 child: DockNavBar(
-                  items: _role == 'security'
+                  items: _role == 'security' || _role == 'maintenance'
                       ? [
                           _DockNavBarItem(
                             icon: 'assets/icon/house.svg',
@@ -844,17 +869,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 letterSpacing: 0.5,
               ),
             ),
-            GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/reports'),
-              child: const Text(
-                'View All',
-                style: TextStyle(
-                  color: Color(0xFF1A5C2A),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -883,13 +897,7 @@ class _HomeScreenState extends State<HomeScreen> {
               'subtitle': 'Incidents & fire alerts',
               'route': '/alerts',
             },
-            {
-              'icon': Icons.history,
-              'iconColor': const Color(0xFF9B59B6),
-              'title': 'Access logs',
-              'subtitle': 'Recent activity',
-              'route': '/access-logs',
-            },
+            // Access logs card removed
           ];
 
           final lowerQuery = _searchQuery.trim().toLowerCase();
@@ -916,7 +924,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 iconColor: card['iconColor'] as Color,
                 title: card['title'] as String,
                 subtitle: card['subtitle'] as String,
-                onTap: () => Navigator.pushNamed(context, card['route'] as String),
+                onTap: () => _navigateServiceRoute(card['route'] as String),
               );
             }),
           );
@@ -1080,7 +1088,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Open work orders and pending requests below — Home · Chat · Report · Profile stay the same.',
+                            'Open work orders and the schedule below — Home · Notes · Profile stay the same.',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white.withOpacity(0.85),
@@ -1147,17 +1155,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 letterSpacing: 0.5,
               ),
             ),
-            GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/schedule'),
-              child: const Text(
-                'View All',
-                style: TextStyle(
-                  color: Color(0xFF1A5C2A),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -1173,26 +1170,14 @@ class _HomeScreenState extends State<HomeScreen> {
               'route': '/work-orders',
             },
             {
-              'icon': Icons.pending_actions_outlined,
-              'iconColor': const Color(0xFFE07B3F),
-              'title': 'Pending',
-              'subtitle': 'Awaiting action',
-              'route': '/pending-requests',
-            },
-            {
               'icon': Icons.calendar_today_outlined,
               'iconColor': const Color(0xFFE05C8A),
               'title': 'Schedule',
               'subtitle': 'Your calendar',
               'route': '/schedule',
             },
-            {
-              'icon': Icons.report_problem_outlined,
-              'iconColor': const Color(0xFF9B59B6),
-              'title': 'Report',
-              'subtitle': 'Submit an issue',
-              'route': '/report',
-            },
+            // IoT Dashboard removed
+            // Access logs card removed
           ];
 
           final lowerQuery = _searchQuery.trim().toLowerCase();
@@ -1231,10 +1216,10 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: Icons.build,
           title: 'Team note',
           subtitle: 'Today • Maintenance',
-          buttonLabel: 'PENDING',
+          buttonLabel: 'SCHEDULE',
           content:
-              'Prioritize common-area repairs before unit callbacks. Use Report in the bottom bar for new tickets.',
-          onButtonTap: () => Navigator.pushNamed(context, '/pending-requests'),
+              'Prioritize common-area repairs before unit callbacks. Use the schedule and work orders views to plan the shift.',
+          onButtonTap: () => Navigator.pushNamed(context, '/schedule'),
           delay: const Duration(milliseconds: 400),
         ),
 
@@ -1616,8 +1601,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       iconColor: card['iconColor'] as Color,
                       title: card['title'] as String,
                       subtitle: card['subtitle'] as String,
-                      onTap: () =>
-                          Navigator.pushNamed(context, card['route'] as String),
+                      onTap: () => _navigateServiceRoute(card['route'] as String),
                     );
                   },
                 ),
@@ -2583,6 +2567,8 @@ class _SearchBarWithResultsState extends State<_SearchBarWithResults> {
     }
   }
 
+  // navigation helper is defined in the parent state
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -3161,6 +3147,8 @@ class _DockNavBarState extends State<DockNavBar>
       item.onTap();
     }
   }
+
+  // navigation helper is defined in the parent state
 
   @override
   Widget build(BuildContext context) {
