@@ -30,11 +30,19 @@ class AuthProvider extends ChangeNotifier {
     
     try {
       final user = await ApiService.getCurrentUser();
-      _user = user;
-      _errorMessage = null;
-      
-      if (_user != null) {
+      final isEmailVerified = user['isEmailVerified'] == true;
+      final status = (user['status'] ?? '').toString().toLowerCase();
+
+      if (isEmailVerified && status == 'active') {
+        _user = user;
+        _errorMessage = null;
         await initializeChat();
+      } else {
+        await ApiService.removeToken();
+        _user = null;
+        _errorMessage = !isEmailVerified
+            ? 'Please verify your email address before logging in.'
+            : 'Account is pending approval. Please wait for admin approval.';
       }
     } catch (e) {
       _user = null;

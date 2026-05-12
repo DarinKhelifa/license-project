@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/booking_model.dart';
 
 class BookingApiService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  static const String baseUrl = 'http://localhost:5001/api';
   static const Duration httpTimeout = Duration(seconds: 30);
 
   static Future<String?> _getToken() async {

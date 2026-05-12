@@ -116,6 +116,7 @@ export default function ManageAccounts() {
     email: '',
     phone: '',
     role: 'security' as User['role'],
+    status: 'active' as User['status'],
     password: '',
     confirmPassword: '',
     apartment: '',
@@ -200,6 +201,7 @@ export default function ManageAccounts() {
       email: '',
       phone: '',
       role: 'security',
+      status: 'active',
       password: '',
       confirmPassword: '',
       apartment: '',
@@ -216,6 +218,7 @@ export default function ManageAccounts() {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      status: user.status,
       password: '',
       confirmPassword: '',
       apartment: user.apartment || '',
@@ -336,11 +339,12 @@ export default function ManageAccounts() {
 
     try {
       if (editingUser) {
-        // Update existing user (send role + location fields together)
+        // Update existing user (send role + status + location fields together)
         const payload: any = {
           name: formData.name,
           phone: normalizedPhone,
           role: formData.role,
+          status: formData.status,
         };
 
         if (formData.role === 'resident') {
@@ -664,6 +668,22 @@ export default function ManageAccounts() {
                 </Select>
               </FormControl>
             </Grid>
+            {editingUser && (
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>Account Status</InputLabel>
+                  <Select
+                    value={formData.status}
+                    label="Account Status"
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value as User['status'] })}
+                  >
+                    <MenuItem value="pending">Pending (Waiting for Approval)</MenuItem>
+                    <MenuItem value="active">Active (Approved)</MenuItem>
+                    <MenuItem value="inactive">Inactive</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
             {!editingUser && (
               <>
                 <Grid item xs={12} md={6}>

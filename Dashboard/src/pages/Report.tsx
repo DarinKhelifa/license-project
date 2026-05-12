@@ -21,7 +21,7 @@ import Tab from '@mui/material/Tab';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://localhost:5001';
 
 interface ReportItem {
   _id: string;

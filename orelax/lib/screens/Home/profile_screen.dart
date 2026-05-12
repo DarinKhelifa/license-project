@@ -250,7 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Construct full URL if it's a relative path
       String imageUrl = profileImage.toString();
       if (!imageUrl.startsWith('http')) {
-        imageUrl = 'http://localhost:5000$imageUrl';
+        imageUrl = 'http://localhost:5001$imageUrl';
       }
       
       // Display network image if available

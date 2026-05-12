@@ -10,7 +10,7 @@ class ApiService {
   // - Web: localhost
   // - Android emulator: 10.0.2.2
   // - Physical device: replace with your computer IP
-  static String get serverUrl => kIsWeb ? 'http://localhost:5000' : 'http://10.0.2.2:5000';
+  static String get serverUrl => kIsWeb ? 'http://localhost:5001' : 'http://10.0.2.2:5001';
   static String get baseUrl => '$serverUrl/api';
 
   static MediaType _parseMediaType(String? mimeType) {
@@ -266,6 +266,104 @@ class ApiService {
   
   static Future<void> logout() async {
     await removeToken();
+  }
+
+  // ========== SECURITY NOTE METHODS ==========
+
+  static Future<List<Map<String, dynamic>>> getSecurityNotes() async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/security-notes'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    }
+
+    throw Exception('Failed to load security notes');
+  }
+
+  static Future<Map<String, dynamic>> createSecurityNote({
+    required String title,
+    required String content,
+    DateTime? reminder,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/security-notes'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'title': title,
+        'content': content,
+        'reminder': reminder?.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    }
+
+    final error = jsonDecode(response.body);
+    throw Exception(error['message'] ?? 'Failed to create security note');
+  }
+
+  static Future<Map<String, dynamic>> updateSecurityNote({
+    required String noteId,
+    required String title,
+    required String content,
+    DateTime? reminder,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/security-notes/$noteId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'title': title,
+        'content': content,
+        'reminder': reminder?.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    final error = jsonDecode(response.body);
+    throw Exception(error['message'] ?? 'Failed to update security note');
+  }
+
+  static Future<void> deleteSecurityNote(String noteId) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/security-notes/$noteId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to delete security note');
+    }
   }
 
   // ========== CHAT METHODS ==========

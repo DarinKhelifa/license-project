@@ -31,10 +31,10 @@ class ChatService {
   static String get _serverUrl {
     if (kIsWeb) {
       // For web, use localhost (same as your backend)
-      return 'http://localhost:5000';
+      return 'http://localhost:5001';
     } else {
       // For mobile emulator
-      return 'http://10.0.2.2:5000';
+      return 'http://10.0.2.2:5001';
     }
   }
 

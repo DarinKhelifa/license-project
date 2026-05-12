@@ -154,11 +154,11 @@ const verifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
-    // Mark as verified
+    // Mark as verified but keep account pending until admin approval
     user.isEmailVerified = true;
     user.otp = null;
     user.otpExpire = null;
-    user.status = 'active';
+    user.status = 'pending';
     await user.save();
 
     // Generate new token
@@ -166,7 +166,7 @@ const verifyOTP = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Email verified successfully',
+      message: 'Email verified successfully. Your account is pending admin approval.',
       token,
       user: {
         id: user._id,

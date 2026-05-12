@@ -8,7 +8,7 @@ import '../models/story_model.dart';
 import '../models/comment_model.dart';
 
 class SocialApiService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  static const String baseUrl = 'http://localhost:5001/api';
   static const Duration httpTimeout = Duration(seconds: 30);
 
   static Future<String?> _getToken() async {

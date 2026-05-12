@@ -1,5 +1,5 @@
 // src/services/api.ts
-export const API_URL = 'http://localhost:5000/api';
+export const API_URL = 'http://localhost:5001/api';
 
 // Store token in localStorage
 const getToken = () => localStorage.getItem('auth_token');
@@ -22,13 +22,22 @@ export async function request<T>(
     },
   });
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong');
+  let data: any = null;
+  try {
+    data = await response.json();
+  } catch (err) {
+    // Response had no JSON body
+    data = null;
   }
 
-  return data;
+  if (!response.ok) {
+    // Log detailed info to help debug empty pages / missing data
+    // eslint-disable-next-line no-console
+    console.error(`API request failed: ${response.status} ${response.statusText} -> ${API_URL}${endpoint}`, data);
+    throw new Error((data && data.message) ? data.message : `Request failed with status ${response.status}`);
+  }
+
+  return data as T;
 }
 
 // Auth API

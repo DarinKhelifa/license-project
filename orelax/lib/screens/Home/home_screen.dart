@@ -12,6 +12,7 @@ import '../../providers/event_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/alert_provider.dart';
 import '../../providers/fire_alert_provider.dart';
+import '../../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -926,12 +927,24 @@ class _HomeScreenState extends State<HomeScreen> {
         FutureBuilder<Map<String, String?>>(
           future: () async {
             try {
+              final notes = await ApiService.getSecurityNotes();
+              if (notes.isNotEmpty) {
+                final note = notes.first;
+                return {
+                  'title': (note['title'] as String?) ?? '(No title)',
+                  'content': (note['content'] as String?) ?? '',
+                };
+              }
+
               final prefs = await SharedPreferences.getInstance();
               final auth = Provider.of<AuthProvider>(context, listen: false);
               final uid = auth.userId ?? 'anonymous';
               final key = 'notes_$uid';
               final raw = prefs.getStringList(key) ?? [];
-              if (raw.isEmpty) return {'title': 'No shift notes', 'content': 'No notes yet. Tap Notes to add a shift note.'};
+              if (raw.isEmpty) {
+                return {'title': 'No shift notes', 'content': 'No notes yet. Tap Notes to add a shift note.'};
+              }
+
               final first = raw.first;
               final m = json.decode(first) as Map<String, dynamic>;
               return {
@@ -1907,7 +1920,7 @@ class _PillNotificationToggleState extends State<_PillNotificationToggle>
                         var userAvatar = authProvider.userAvatar;
                         // Construct full URL if it's a relative path
                         if (userAvatar != null && !userAvatar.startsWith('http')) {
-                          userAvatar = 'http://localhost:5000$userAvatar';
+                          userAvatar = 'http://localhost:5001$userAvatar';
                         }
                         return Container(
                           width: 38,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../services/api_service.dart';
+import 'pending_approval_screen.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
   final String userId;
@@ -64,21 +65,35 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
           'otp': _otp,
         }),
       );
-
-      final data = jsonDecode(response.body);
+      Map<String, dynamic> data = {};
+      try {
+        data = response.body.isNotEmpty ? jsonDecode(response.body) as Map<String, dynamic> : {};
+      } catch (err) {
+        // If body isn't JSON, fall back to raw text
+        data = {'message': response.body};
+      }
 
       if (response.statusCode == 200) {
-        await ApiService.saveToken(data['token']);
+        final token = (data['token'] ?? '') as String;
+        if (token.isEmpty) {
+          setState(() => _errorMessage = 'Verification succeeded but token missing from server response.');
+          return;
+        }
+
         if (mounted) {
-          // Navigate to WelcomeScreen with navigateToHome flag to show animation then go to home
-          Navigator.pushReplacementNamed(
-            context,
-            '/welcome',
-            arguments: {'navigateToHome': true},
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => PendingApprovalScreen(
+                userId: widget.userId,
+                email: widget.email,
+                token: token,
+              ),
+            ),
           );
         }
       } else {
-        setState(() => _errorMessage = data['message'] ?? 'Verification failed');
+        final serverMessage = (data['message'] ?? data.values.firstWhere((v) => v != null, orElse: () => null) ?? 'Verification failed').toString();
+        setState(() => _errorMessage = serverMessage);
         if (data['expired'] == true) {
           for (var controller in _otpControllers) {
             controller.clear();
@@ -86,7 +101,13 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
         }
       }
     } catch (e) {
-      setState(() => _errorMessage = 'Connection error. Please try again.');
+      // Provide a more specific error message useful for debugging
+      final msg = e is Exception ? e.toString() : 'Unknown error';
+      // Keep message user-friendly while giving actionable hint
+      setState(() => _errorMessage = 'Connection error: $msg');
+      // Also log error to console for developer inspection
+      // ignore: avoid_print
+      print('OTP verification error: $e');
     } finally {
       setState(() => _isLoading = false);
     }

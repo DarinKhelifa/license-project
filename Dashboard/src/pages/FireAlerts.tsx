@@ -22,7 +22,7 @@ import { motion } from 'framer-motion';
 const RECENT_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 const API_BASE = (((globalThis as typeof globalThis & {
   process?: { env?: Record<string, string | undefined> };
-}).process?.env?.REACT_APP_API_URL) || 'http://localhost:5000').replace(/\/api$/, '');
+}).process?.env?.REACT_APP_API_URL) || 'http://localhost:5001').replace(/\/api$/, '');
 const ALERTS_URL = `${API_BASE}/api/iot/alerts`;
 
 interface AlertItem {

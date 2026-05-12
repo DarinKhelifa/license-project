@@ -56,7 +56,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     // Connect to backend socket
     const SOCKET_URL = ((globalThis as typeof globalThis & {
       process?: { env?: Record<string, string | undefined> };
-    }).process?.env?.REACT_APP_API_URL) || 'http://localhost:5000';
+    }).process?.env?.REACT_APP_API_URL) || 'http://localhost:5001';
     const s = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
 
     s.on('connect', () => {

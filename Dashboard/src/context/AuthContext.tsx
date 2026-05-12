@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (copy.profileImage && typeof copy.profileImage === 'string' && copy.profileImage.startsWith('/uploads')) {
         const apiBase = (((globalThis as typeof globalThis & {
           process?: { env?: Record<string, string | undefined> };
-        }).process?.env?.REACT_APP_API_URL) || 'http://localhost:5000').replace(/\/api$/, '');
+        }).process?.env?.REACT_APP_API_URL) || 'http://localhost:5001').replace(/\/api$/, '');
         copy.profileImage = `${apiBase}${copy.profileImage}`;
       }
       // ensure specialization is preserved
