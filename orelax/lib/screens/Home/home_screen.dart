@@ -897,7 +897,13 @@ class _HomeScreenState extends State<HomeScreen> {
               'subtitle': 'Incidents & fire alerts',
               'route': '/alerts',
             },
-            // Access logs card removed
+            {
+              'icon': Icons.history,
+              'iconColor': const Color(0xFF9B59B6),
+              'title': 'Access logs',
+              'subtitle': 'Recent activity',
+              'route': '/access-logs',
+            },
           ];
 
           final lowerQuery = _searchQuery.trim().toLowerCase();
