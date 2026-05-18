@@ -743,21 +743,10 @@ class _HoverAvatarButtonState extends State<HoverAvatarButton>
     super.dispose();
   }
 
-  void _onHover(bool isHovering) {
-    if (isHovering) {
-      _animationController.forward();
-    } else {
-      _animationController.reverse();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => _onHover(true),
-      onExit: (_) => _onHover(false),
-      child: GestureDetector(
-        onTap: widget.onTap,
+    return GestureDetector(
+      onTap: widget.onTap,
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: Column(
@@ -801,9 +790,8 @@ class _HoverAvatarButtonState extends State<HoverAvatarButton>
                 ),
               ],
             ),
-        ),
-      ),
-    );
+          ),
+        );
   }
 
   Widget _buildAvatar() {

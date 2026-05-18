@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../Home/home_screen.dart';
+import '../../widgets/auth_error_banner.dart';
 
 class SignupScreen extends StatefulWidget {
   final String? initialRole;
@@ -229,9 +230,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         children: [
                           if (_errorMessage != null)
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Text(_errorMessage!,
-                                  style: const TextStyle(color: Colors.red, fontSize: 13)),
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: AuthErrorBanner(message: _errorMessage!),
                             ),
 
                           _field('full name', Icons.person_outline, controller: _nameController),
@@ -420,19 +420,11 @@ class _GoogleSignInButton extends StatefulWidget {
 }
 
 class _GoogleSignInButtonState extends State<_GoogleSignInButton> {
-  bool _isHovered = false;
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _isHovered ? 1.2 : 1.0,
-          duration: const Duration(milliseconds: 200),
-          child: Column(
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Column(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
@@ -452,9 +444,7 @@ class _GoogleSignInButtonState extends State<_GoogleSignInButton> {
                   style: GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.w500, color: Colors.grey)),
             ],
           ),
-        ),
-      ),
-    );
+        );
   }
 }
 

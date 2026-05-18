@@ -1,3 +1,5 @@
+import '../services/api_service.dart';
+
 class Story {
   final String id;
   final String userId;
@@ -31,12 +33,22 @@ class Story {
   }
 
   factory Story.fromMap(Map<String, dynamic> json) {
+    String rawAvatar = json['userAvatar'] as String? ?? '';
+    String rawImage = json['imageUrl'] as String? ?? '';
+
+    String resolveUrl(String raw) {
+      if (raw.isEmpty) return '';
+      if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+      // Already absolute path from backend (e.g. /uploads/filename)
+      return ApiService.serverUrl + raw;
+    }
+
     return Story(
       id: json['_id'] as String? ?? '',
       userId: json['userId'] as String? ?? '',
       userName: json['userName'] as String? ?? 'Anonymous',
-      userAvatar: json['userAvatar'] as String? ?? '',
-      imageUrl: json['imageUrl'] as String? ?? '',
+      userAvatar: resolveUrl(rawAvatar),
+      imageUrl: resolveUrl(rawImage),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : DateTime.now(),

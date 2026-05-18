@@ -8,6 +8,7 @@ import 'providers/employee_provider.dart';
 import 'providers/social_provider.dart';
 import 'providers/notification_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
+import 'screens/auth/pending_approval_screen.dart';
 import 'screens/Welcome/welcome_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/Home/report_screen.dart';
@@ -16,7 +17,7 @@ import 'screens/security/notes_screen.dart';
 import 'screens/Home/profile_screen.dart';
 import 'screens/Home/home_screen.dart';
 import 'screens/chat/chat_screen.dart';
-// AccessControlScreen removed from navigation; reports route used instead
+// AccessControlScreen removed from navigation; reports route used instead.
 import 'screens/security/visitors_screen.dart';
 import 'screens/security/alerts_screen.dart';
 import 'screens/security/access_logs_screen.dart';
@@ -24,7 +25,6 @@ import 'screens/maintenance/work_orders_screen.dart';
 import 'screens/maintenance/schedule_screen.dart';
 import 'screens/resident/helping_staff/helping_staff_home_screen.dart';
 import 'screens/resident/facilities/resident_facilities_screen.dart';
-import 'screens/resident/parking/parking_screen.dart';
 import 'screens/facilities_manager/create_edit_facility_screen.dart';
 import 'screens/facilities_manager/facility_detail_screen.dart';
 import 'screens/facilities_manager/booking_history_screen.dart';
@@ -33,7 +33,6 @@ import 'screens/resident/community/community_feed_screen.dart';
 import 'providers/event_provider.dart';
 import 'providers/report_provider.dart';
 import 'providers/alert_provider.dart';
-import 'providers/fire_alert_provider.dart';
 import 'screens/resident/guest_qr/guest_qr_form_screen.dart';
 import 'screens/resident/guest_qr/guest_qr_view_screen.dart';
 import 'providers/energy_provider.dart';
@@ -65,7 +64,6 @@ class OrelaxApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => ReportProvider()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
         ChangeNotifierProvider(create: (context) => AlertProvider()),
-        ChangeNotifierProvider(create: (context) => FireAlertProvider()),
         ChangeNotifierProvider(create: (context) => EnergyProvider()),
       ],
       child: MaterialApp(
@@ -153,98 +151,23 @@ class OrelaxApp extends StatelessWidget {
               email: args['email'] as String,
             );
           },
+          '/pending-approval': (ctx) {
+            final args = ModalRoute.of(ctx)!.settings.arguments as Map<String, dynamic>;
+            return PendingApprovalScreen(
+              userId: args['userId'] as String,
+              email: args['email'] as String,
+              token: args['token'] as String,
+            );
+          },
           '/childcare': (_) => const _ComingSoonScreen(title: 'Childcare'),
           '/helping-staff': (_) => const HelpingStaffScreen(),
-          '/parking': (_) => const ParkingScreen(),
           '/manage-accounts': (_) => const _ComingSoonScreen(title: 'Manage Accounts'),
           '/security-management': (_) => const _ComingSoonScreen(title: 'Security Management'),
           '/monitoring': (_) => const EnergyMonitoringScreen(),
           '/temperature': (_) => const TemperatureScreen(),
-          // Fire alerts history is embedded in '/alerts'
         },
       ),
     );
-  }
-}
-
-// Global overlay for fire alerts
-class GlobalFireAlertOverlay extends StatefulWidget {
-  final Widget child;
-  const GlobalFireAlertOverlay({super.key, required this.child});
-
-  @override
-  State<GlobalFireAlertOverlay> createState() => _GlobalFireAlertOverlayState();
-}
-
-class _GlobalFireAlertOverlayState extends State<GlobalFireAlertOverlay> with SingleTickerProviderStateMixin {
-  late AnimationController _blinkController;
-
-  @override
-  void initState() {
-    super.initState();
-    _blinkController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))
-      ..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _blinkController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        widget.child,
-        Consumer<FireAlertProvider>(builder: (context, p, _) {
-          final active = p.activeAlert;
-          if (active == null) return const SizedBox.shrink();
-
-          final date = '${active.timestamp.day.toString().padLeft(2, '0')} ${_monthName(active.timestamp.month)} ${active.timestamp.year}';
-          final time = '${active.timestamp.hour.toString().padLeft(2, '0')}:${active.timestamp.minute.toString().padLeft(2, '0')}:${active.timestamp.second.toString().padLeft(2, '0')}';
-
-          return Positioned.fill(
-            child: Material(
-              color: Colors.red.shade700.withOpacity(0.95),
-              child: SafeArea(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    FadeTransition(
-                      opacity: _blinkController,
-                      child: const Text('🔥', style: TextStyle(fontSize: 96)),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text('FIRE DETECTED!', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    Text('$date • $time', style: const TextStyle(color: Colors.white70, fontSize: 16)),
-                    const SizedBox(height: 36),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-                      onPressed: () {
-                        if (active != null) {
-                          context.read<FireAlertProvider>().acknowledge(active.id);
-                        }
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        child: Text('ACKNOWLEDGE', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        })
-      ],
-    );
-  }
-
-  String _monthName(int m) {
-    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return names[m-1];
   }
 }
 
@@ -307,7 +230,7 @@ class _NotificationBootstrapperState extends State<NotificationBootstrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return GlobalFireAlertOverlay(child: widget.child);
+    return widget.child;
   }
 }
 

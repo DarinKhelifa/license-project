@@ -15,7 +15,7 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
 
   bool _isLoading = false;
   String? _error;
-  int? _hoveredVisitorIndex;
+
 
   @override
   void initState() {
@@ -248,7 +248,6 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
                             visitor,
                             timeIn,
                             index: index,
-                            isHovered: _hoveredVisitorIndex == index,
                           );
                         }),
                     ],
@@ -288,7 +287,6 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
     Map<String, dynamic> visitor,
     DateTime? timeIn, {
     required int index,
-    required bool isHovered,
   }) {
     final name = visitor['name']?.toString() ?? 'Unknown';
     final apartment = visitor['apartment']?.toString() ?? '';
@@ -296,40 +294,26 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'V';
     final accentColor = _accentForName(name);
 
-    return MouseRegion(
-      onEnter: (_) {
-        if (_hoveredVisitorIndex != index) {
-          setState(() => _hoveredVisitorIndex = index);
-        }
-      },
-      onExit: (_) {
-        if (_hoveredVisitorIndex == index) {
-          setState(() => _hoveredVisitorIndex = null);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        margin: const EdgeInsets.only(bottom: 14),
-        transform: Matrix4.identity()..translate(0.0, isHovered ? -2.0 : 0.0),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isHovered ? const Color(0xFFF9FBFF) : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isHovered ? const Color(0xFFB9CAE6) : Colors.transparent,
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isHovered ? Colors.black.withOpacity(0.08) : Colors.black.withOpacity(0.05),
-              blurRadius: isHovered ? 24 : 18,
-              offset: Offset(0, isHovered ? 10 : 8),
-            ),
-          ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.transparent,
+          width: 1,
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               width: 42,
@@ -403,7 +387,6 @@ class _VisitorsScreenState extends State<VisitorsScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 

@@ -8,6 +8,56 @@ class AuthProvider extends ChangeNotifier {
   Map<String, dynamic>? _user;
   bool _isLoading = false;
   String? _errorMessage;
+
+  bool _isAdminRole(Map<String, dynamic>? user) {
+    final role = (user?['role'] ?? '').toString().trim().toLowerCase();
+    return role == 'admin';
+  }
+
+  Future<void> _denyAdminAccess(String message) async {
+    await ApiService.removeToken();
+    _user = null;
+    _errorMessage = message;
+  }
+
+    String _friendlyAuthError(Object error, {required String fallback}) {
+      final raw = error.toString();
+      final message = raw.startsWith('Exception: ') ? raw.substring('Exception: '.length) : raw;
+      final normalized = message.trim();
+
+      if (normalized.contains('Please provide email and password')) {
+        return 'Please enter both your email and password.';
+      }
+      if (normalized.contains('Invalid credentials')) {
+        return 'The email or password you entered is incorrect.';
+      }
+      if (normalized.contains('Please verify your email address before logging in')) {
+        return 'Please verify your email address before signing in.';
+      }
+      if (normalized.contains('Account is pending approval')) {
+        return 'Your account is waiting for approval. Please try again later.';
+      }
+      if (normalized.contains('User already exists with this email')) {
+        return 'An account already exists with this email address.';
+      }
+      if (normalized.contains('Failed to send verification email')) {
+        return 'We could not send the verification email. Please try again.';
+      }
+      if (normalized.contains('Password must be at least 8 characters')) {
+        return 'Your password must be at least 8 characters and include a letter, a number, and one symbol (._@).';
+      }
+      if (normalized.contains('Google Sign In coming soon')) {
+        return 'Google sign-in is not available yet.';
+      }
+      if (normalized.contains('Password reset coming soon')) {
+        return 'Password reset is not available yet.';
+      }
+      if (normalized.contains('Admin accounts must use the Dashboard')) {
+        return 'Admin accounts must use the Dashboard, not the mobile app.';
+      }
+
+      return fallback;
+    }
   
   Map<String, dynamic>? get user => _user;
   bool get isLoading => _isLoading;
@@ -33,7 +83,9 @@ class AuthProvider extends ChangeNotifier {
       final isEmailVerified = user['isEmailVerified'] == true;
       final status = (user['status'] ?? '').toString().toLowerCase();
 
-      if (isEmailVerified && status == 'active') {
+      if (_isAdminRole(user)) {
+        await _denyAdminAccess('Admin accounts must use the Dashboard, not the mobile app.');
+      } else if (isEmailVerified && status == 'active') {
         _user = user;
         _errorMessage = null;
         await initializeChat();
@@ -73,6 +125,13 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await ApiService.login(email: email, password: password);
       _user = response['user'];
+
+      if (_isAdminRole(_user)) {
+        await _denyAdminAccess('Admin accounts must use the Dashboard, not the mobile app.');
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
       
       if (_user != null) {
         await initializeChat();
@@ -84,7 +143,10 @@ class AuthProvider extends ChangeNotifier {
       return true;
       
     } catch (e) {
-      _errorMessage = e.toString();
+        _errorMessage = _friendlyAuthError(
+          e,
+          fallback: 'We could not sign you in. Please check your details and try again.',
+        );
       _isLoading = false;
       notifyListeners();
       return false;
@@ -118,6 +180,13 @@ class AuthProvider extends ChangeNotifier {
         role: role,
       );
       _user = response['user'];
+
+      if (_isAdminRole(_user)) {
+        await _denyAdminAccess('Admin accounts must use the Dashboard, not the mobile app.');
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
       
       if (_user != null) {
         // Check if email is verified
@@ -147,7 +216,10 @@ class AuthProvider extends ChangeNotifier {
       return true;
       
     } catch (e) {
-      _errorMessage = e.toString();
+        _errorMessage = _friendlyAuthError(
+          e,
+          fallback: 'We could not create your account. Please review your information and try again.',
+        );
       _isLoading = false;
       notifyListeners();
       return false;
@@ -194,7 +266,10 @@ Future<bool> updateUserData(Map<String, dynamic> data) async {
     return true;
 
   } catch (e) {
-    _errorMessage = e.toString();
+      _errorMessage = _friendlyAuthError(
+        e,
+        fallback: 'We could not update your profile right now. Please try again.',
+      );
     _isLoading = false;
     notifyListeners();
     return false;
@@ -216,7 +291,10 @@ Future<bool> updateUserData(Map<String, dynamic> data) async {
       return true;
       
     } catch (e) {
-      _errorMessage = e.toString();
+        _errorMessage = _friendlyAuthError(
+          e,
+          fallback: 'We could not change your password right now. Please try again.',
+        );
       _isLoading = false;
       notifyListeners();
       return false;

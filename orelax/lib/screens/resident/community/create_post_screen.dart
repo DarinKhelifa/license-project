@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import '../../../providers/social_provider.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -16,16 +17,24 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _contentController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
-  List<File> _selectedImages = [];
-  List<File> _selectedAttachments = [];
+  final List<XFile> _selectedImages = [];
+  final List<Uint8List> _selectedImageBytes = [];
   bool _isPosting = false;
 
   Future<void> _pickImages() async {
     final pickedFiles = await _imagePicker.pickMultiImage();
+
+    if (pickedFiles.isEmpty) return;
+
+    final bytesList = await Future.wait(
+      pickedFiles.map((file) => file.readAsBytes()),
+    );
+
+    if (!mounted) return;
+
     setState(() {
-      _selectedImages.addAll(
-        pickedFiles.map((file) => File(file.path)),
-      );
+      _selectedImages.addAll(pickedFiles);
+      _selectedImageBytes.addAll(bytesList);
     });
   }
 
@@ -39,6 +48,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void _removeImage(int index) {
     setState(() {
       _selectedImages.removeAt(index);
+      _selectedImageBytes.removeAt(index);
     });
   }
 
@@ -54,8 +64,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     final success = await context.read<SocialProvider>().createPost(
       content: _contentController.text,
-      images: _selectedImages.isNotEmpty ? _selectedImages : null,
-      attachments: _selectedAttachments.isNotEmpty ? _selectedAttachments : null,
+      images: _selectedImages.isNotEmpty ? _selectedImageBytes : null,
+      imageNames: _selectedImages.isNotEmpty ? _selectedImages.map((file) => file.name).toList() : null,
     );
 
     if (mounted) {
@@ -221,9 +231,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            _selectedImages[index],
+                          child: Image.memory(
+                            _selectedImageBytes[index],
                             fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
                           ),
                         ),
                         Positioned(

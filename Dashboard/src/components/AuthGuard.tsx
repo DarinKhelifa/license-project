@@ -22,5 +22,9 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     return <Navigate to="/login" replace />;
   }
 
+  if (user.role !== 'admin') {
+    return <Navigate to="/login" replace />;
+  }
+
   return <>{children}</>;
 }

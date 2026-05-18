@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../models/story_model.dart';
@@ -42,8 +42,10 @@ class SocialProvider extends ChangeNotifier {
   // Create post
   Future<bool> createPost({
     required String content,
-    List<File>? images,
-    List<File>? attachments,
+    List<Uint8List>? images,
+    List<String>? imageNames,
+    List<Uint8List>? attachments,
+    List<String>? attachmentNames,
   }) async {
     _isLoading = true;
     _error = null;
@@ -53,7 +55,9 @@ class SocialProvider extends ChangeNotifier {
       final newPost = await SocialApiService.createPost(
         content: content,
         images: images,
+        imageNames: imageNames,
         attachments: attachments,
+        attachmentNames: attachmentNames,
       );
       _posts.insert(0, newPost);
       _error = null;
@@ -192,13 +196,19 @@ class SocialProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> createStory(File image) async {
+  Future<bool> createStory({
+    required Uint8List imageBytes,
+    required String filename,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final newStory = await SocialApiService.createStory(image);
+      final newStory = await SocialApiService.createStory(
+        imageBytes: imageBytes,
+        filename: filename,
+      );
       _stories.insert(0, newStory);
       _error = null;
       return true;

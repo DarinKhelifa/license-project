@@ -17,6 +17,18 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard> {
   late bool isLiked;
 
+  String? _resolveAvatarUrl(String raw) {
+    if (raw.isEmpty) {
+      return null;
+    }
+
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return raw;
+    }
+
+    return 'http://localhost:5001$raw';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -26,38 +38,60 @@ class _PostCardState extends State<PostCard> {
   @override
   Widget build(BuildContext context) {
     const Color darkGreen = Color(0xFF1A5C2A);
-    const Color lightGreen = Color(0xFFE8F5E9);
+    const Color lightGreen = Color(0xFFEAF8EF);
+    final avatarUrl = _resolveAvatarUrl(widget.post.userAvatar);
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFF9FCFA)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE6EEE8)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            height: 4,
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              gradient: LinearGradient(
+                colors: [Color(0xFF1A5C2A), Color(0xFF4CAF50)],
+              ),
+            ),
+          ),
+
           // Header
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
             child: Row(
               children: [
-                // Avatar
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: lightGreen,
-                  backgroundImage: widget.post.userAvatar.isNotEmpty
-                      ? NetworkImage(widget.post.userAvatar)
-                      : null,
-                  child: widget.post.userAvatar.isEmpty
-                      ? const Icon(Icons.person, color: darkGreen)
-                      : null,
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [darkGreen, Colors.green.shade400],
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: lightGreen,
+                    backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                    child: avatarUrl == null
+                        ? const Icon(Icons.person, color: darkGreen)
+                        : null,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 // Name and Time
@@ -65,19 +99,43 @@ class _PostCardState extends State<PostCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.post.userName,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.post.userName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: lightGreen,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              widget.post.formattedDate,
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: darkGreen,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 4),
                       Text(
-                        widget.post.formattedDate,
+                        'Shared a post in the community',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey.shade500,
+                          color: Colors.grey.shade600,
                         ),
                       ),
                     ],
@@ -85,7 +143,7 @@ class _PostCardState extends State<PostCard> {
                 ),
                 // Menu
                 PopupMenuButton(
-                  icon: Icon(Icons.more_vert, color: Colors.grey.shade600),
+                  icon: Icon(Icons.more_horiz, color: Colors.grey.shade600),
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       child: Text('Report'),
@@ -103,12 +161,12 @@ class _PostCardState extends State<PostCard> {
 
           // Content
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               widget.post.content,
               style: GoogleFonts.poppins(
-                fontSize: 14,
-                height: 1.5,
+                fontSize: 14.5,
+                height: 1.6,
                 color: Colors.grey.shade800,
               ),
             ),
@@ -117,14 +175,14 @@ class _PostCardState extends State<PostCard> {
           // Images
           if (widget.post.imageUrls.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
               child: _buildImageGallery(),
             ),
 
           // Attachments indicator
           if (widget.post.attachmentUrls.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
                   Icon(Icons.attach_file, size: 16, color: Colors.grey.shade600),
@@ -142,41 +200,25 @@ class _PostCardState extends State<PostCard> {
 
           // Reactions and stats
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Reaction stats
-                Row(
-                  children: [
-                    Text(
-                      '👍 ${widget.post.likes}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
+                _buildStatChip(
+                  icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                  label: '${widget.post.likes}',
+                  color: isLiked ? Colors.redAccent : darkGreen,
                 ),
-                // Comments and shares
-                Row(
-                  children: [
-                    Text(
-                      '${widget.post.comments} comments',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${widget.post.shares} shares',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 10),
+                _buildStatChip(
+                  icon: Icons.mode_comment_outlined,
+                  label: '${widget.post.comments}',
+                  color: Colors.blueGrey,
+                ),
+                const SizedBox(width: 10),
+                _buildStatChip(
+                  icon: Icons.ios_share_rounded,
+                  label: '${widget.post.shares}',
+                  color: Colors.deepOrange,
                 ),
               ],
             ),
@@ -186,14 +228,19 @@ class _PostCardState extends State<PostCard> {
           Divider(height: 1, color: Colors.grey.shade200),
 
           // Action buttons
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+          Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7FBF8),
+              borderRadius: BorderRadius.circular(18),
+            ),
             child: Row(
               children: [
                 _buildActionButton(
                   icon: isLiked ? Icons.favorite : Icons.favorite_border,
                   label: 'Like',
-                  color: isLiked ? Colors.red : Colors.grey.shade600,
+                  color: isLiked ? Colors.redAccent : darkGreen,
                   onTap: () async {
                     setState(() => isLiked = !isLiked);
                     await context.read<SocialProvider>().likePost(widget.post.id);
@@ -202,7 +249,7 @@ class _PostCardState extends State<PostCard> {
                 _buildActionButton(
                   icon: Icons.comment_outlined,
                   label: 'Comment',
-                  color: Colors.grey.shade600,
+                  color: Colors.blueGrey,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -213,7 +260,7 @@ class _PostCardState extends State<PostCard> {
                 _buildActionButton(
                   icon: Icons.share_outlined,
                   label: 'Share',
-                  color: Colors.grey.shade600,
+                  color: Colors.deepOrange,
                   onTap: () => context.read<SocialProvider>().sharePost(widget.post.id),
                 ),
               ],
@@ -231,15 +278,15 @@ class _PostCardState extends State<PostCard> {
 
     if (images.length == 1) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(18),
         child: Image.network(
           images[0],
           width: double.infinity,
-          height: 300,
+          height: 320,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => Container(
             width: double.infinity,
-            height: 300,
+            height: 320,
             color: Colors.grey.shade200,
             child: const Icon(Icons.image_not_supported, color: Colors.grey),
           ),
@@ -258,7 +305,7 @@ class _PostCardState extends State<PostCard> {
       itemCount: images.length,
       itemBuilder: (context, index) {
         return ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           child: Image.network(
             images[index],
             fit: BoxFit.cover,
@@ -282,23 +329,52 @@ class _PostCardState extends State<PostCard> {
       child: GestureDetector(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 18, color: color),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Text(
                 label,
                 style: GoogleFonts.poppins(
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w700,
                   color: color,
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }

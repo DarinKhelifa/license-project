@@ -1785,14 +1785,7 @@ class _PillNotificationToggleState extends State<_PillNotificationToggle>
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        _swapController.forward();
-      },
-      onExit: (_) {
-        _swapController.reverse();
-      },
-      child: Container(
+    return Container(
         width: 140,
         height: 50,
         decoration: BoxDecoration(
@@ -1944,7 +1937,6 @@ class _PillNotificationToggleState extends State<_PillNotificationToggle>
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -1958,42 +1950,33 @@ class _HoverableQRButton extends StatefulWidget {
 }
 
 class _HoverableQRButtonState extends State<_HoverableQRButton> {
-  bool _isHovered = false;
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: _isHovered ? 78 : 70,
-          height: _isHovered ? 78 : 70,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: _isHovered
-                  ? const Color(0xFF1A5C2A)
-                  : const Color(0xFFE05C8A).withOpacity(0.5),
-              width: _isHovered ? 3 : 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(_isHovered ? 0.3 : 0.2),
-                blurRadius: _isHovered ? 20 : 15,
-                offset: Offset(0, _isHovered ? 10 : 8),
-              ),
-            ],
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Container(
+        width: 70,
+        height: 70,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFFE05C8A).withOpacity(0.5),
+            width: 2,
           ),
-          child: Center(
-            child: Icon(
-              Icons.qr_code_scanner_rounded,
-              size: _isHovered ? 38 : 32,
-              color: const Color(0xFF1A5C2A),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
+          ],
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.qr_code_scanner_rounded,
+            size: 32,
+            color: Color(0xFF1A5C2A),
           ),
         ),
       ),
@@ -2828,41 +2811,27 @@ class _BannerWithHover extends StatefulWidget {
 }
 
 class _BannerWithHoverState extends State<_BannerWithHover> {
-  bool _isHovered = false;
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 800),
-        curve: Curves.easeInOut,
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: _isHovered
-                ? [const Color(0xFF1A5C2A), const Color(0xFF2E7D32)]
-                : [
-                    const Color(0xFF1A5C2A),
-                    const Color(0xFF2A7D3A),
-                    const Color(0xFF1A5C2A)
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  const Color(0xFF1A5C2A).withOpacity(_isHovered ? 0.3 : 0.2),
-              blurRadius: _isHovered ? 25 : 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A5C2A), Color(0xFF2A7D3A), Color(0xFF1A5C2A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Stack(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1A5C2A).withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
           children: [
             ...List.generate(4, (index) {
               final positions = [
@@ -2882,44 +2851,9 @@ class _BannerWithHoverState extends State<_BannerWithHover> {
                 ),
               );
             }),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 600),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              child: _isHovered
-                  ? Center(
-                      key: const ValueKey('hoverContent'),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Orelax Real Estate',
-                            style: GoogleFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFFF5C518),
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            "Your comfort, our priority. A secure and peaceful home for your family's brightest future.",
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white.withOpacity(0.9),
-                              fontStyle: FontStyle.italic,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Column(
-                      key: const ValueKey('normalContent'),
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            Column(
+              key: const ValueKey('normalContent'),
+              crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -2956,36 +2890,40 @@ class _BannerWithHoverState extends State<_BannerWithHover> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5C518),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Learn More',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                        GestureDetector(
+                          onTap: () {
+                            // Navigate to announcement details or open dialog
+                            Navigator.pushNamed(context, '/events');
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5C518),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Learn More',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward,
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward,
                                   color: Colors.black, size: 16),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],
-                    ),
-            ),
+                    )
           ],
         ),
-      ),
     );
   }
 }

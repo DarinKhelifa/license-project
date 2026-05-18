@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../services/api_service.dart';
+import '../../widgets/auth_error_banner.dart';
 import 'pending_approval_screen.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
@@ -203,20 +204,8 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
             
             if (_errorMessage != null) ...[
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))),
-                  ],
-                ),
+              AuthErrorBanner(
+                message: _errorMessage!,
               ),
             ],
             

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import '../../services/api_service.dart';
+import '../../widgets/auth_error_banner.dart';
 
 class PendingApprovalScreen extends StatefulWidget {
   final String userId;
@@ -165,27 +166,43 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
 
                 // Main Message
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3CD),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFFE69C), width: 1),
+                    color: const Color(0xFFFFF8E8),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFF2D38A), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.amber.withOpacity(0.08),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
                   ),
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.hourglass_top,
-                        color: Color(0xFFFFC107),
-                        size: 32,
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFFFFE9B8),
+                        ),
+                        child: const Icon(
+                          Icons.hourglass_top,
+                          color: Color(0xFFB58100),
+                          size: 24,
+                        ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       const Text(
                         'Waiting for Admin Approval',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF856404),
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF7A5A00),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -194,19 +211,14 @@ class _PendingApprovalScreenState extends State<PendingApprovalScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF856404),
+                          color: Color(0xFF7A5A00),
                           height: 1.5,
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'You will be automatically redirected to your dashboard once your account is approved.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF856404),
-                          fontStyle: FontStyle.italic,
-                        ),
+                      AuthErrorBanner(
+                        message: 'You will be redirected automatically once your account is approved.',
+                        variant: AuthBannerVariant.info,
                       ),
                     ],
                   ),
