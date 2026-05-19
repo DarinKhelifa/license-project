@@ -29,6 +29,9 @@ router.post('/posts/:postId/react', auth, socialController.addReaction);
 // Share a post (auth required)
 router.post('/posts/:postId/share', auth, socialController.sharePost);
 
+// Share a post with a specific user (auth required)
+router.post('/posts/:postId/share-with-user', auth, socialController.sharePostWithUser);
+
 // ============ COMMENTS ============
 
 // Get all comments for a post (public)

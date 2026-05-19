@@ -194,6 +194,26 @@ class ChatService {
         }
       });
 
+      socket?.on('energy-update', (data) {
+        print('⚡ Energy update received: $data');
+        final payload = (data is Map && data['type'] == 'energy-update' && data['data'] != null)
+            ? data
+            : {'type': 'energy-update', 'data': data};
+        for (var listener in _newMessageListeners) {
+          listener(payload);
+        }
+      });
+
+      socket?.on('energy-alert', (data) {
+        print('⚠️ Energy alert received: $data');
+        final payload = (data is Map && data['type'] == 'energy-alert' && data['data'] != null)
+            ? data
+            : {'type': 'energy-alert', 'data': data};
+        for (var listener in _newAlertListeners) {
+          listener(payload);
+        }
+      });
+
       socket?.on('message-sent', (data) {
         print('✅ Message sent ack: $data');
         for (var listener in _messageSentListeners) {

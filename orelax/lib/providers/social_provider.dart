@@ -254,6 +254,38 @@ class SocialProvider extends ChangeNotifier {
     }
   }
 
+  // Share post with specific user
+  Future<bool> sharePostWithUser(String postId, String recipientUserId) async {
+    try {
+      await SocialApiService.sharePostWithUser(postId, recipientUserId);
+      final index = _posts.indexWhere((p) => p.id == postId);
+      if (index != -1) {
+        final post = _posts[index];
+        _posts[index] = Post(
+          id: post.id,
+          userId: post.userId,
+          userName: post.userName,
+          userAvatar: post.userAvatar,
+          content: post.content,
+          imageUrls: post.imageUrls,
+          attachmentUrls: post.attachmentUrls,
+          createdAt: post.createdAt,
+          likes: post.likes,
+          comments: post.comments,
+          shares: post.shares + 1,
+          isLikedByCurrentUser: post.isLikedByCurrentUser,
+          reactions: post.reactions,
+        );
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error sharing post with user: $e');
+      return false;
+    }
+  }
+
   void clearError() {
     _error = null;
     notifyListeners();

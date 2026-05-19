@@ -2,6 +2,8 @@ const Post = require('../models/Post');
 const Story = require('../models/Story');
 const Comment = require('../models/Comment');
 const User = require('../models/User');
+const Chat = require('../models/Chat');
+const Message = require('../models/Message');
 
 // ============ POSTS ============
 
@@ -210,6 +212,81 @@ exports.sharePost = async (req, res) => {
     res.json({ post: postObj });
   } catch (error) {
     console.error('Error sharing post:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Share a post with a specific user (send via chat)
+exports.sharePostWithUser = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { recipientUserId } = req.body;
+    const senderId = req.user._id.toString();
+
+    // Validate recipient user exists
+    const recipientUser = await User.findById(recipientUserId);
+    if (!recipientUser) {
+      return res.status(404).json({ error: 'Recipient user not found' });
+    }
+
+    // Validate post exists
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    // Prevent sharing to self
+    if (senderId === recipientUserId) {
+      return res.status(400).json({ error: 'Cannot share with yourself' });
+    }
+
+    // Find or create chat
+    let chat = await Chat.findOne({
+      participants: { $all: [senderId, recipientUserId] },
+      type: 'private'
+    });
+
+    if (!chat) {
+      const senderUser = await User.findById(senderId);
+      chat = new Chat({
+        participants: [senderId, recipientUserId],
+        participantNames: [senderUser.name, recipientUser.name],
+        participantAvatars: [senderUser.profileImage || '', recipientUser.profileImage || ''],
+        type: 'private',
+      });
+      await chat.save();
+    }
+
+    // Create message with post information
+    const postText = `🔗 Shared Post: ${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}`;
+    const message = new Message({
+      chatId: chat._id.toString(),
+      senderId: senderId,
+      senderName: req.user.name,
+      text: postText,
+      type: 'text',
+    });
+    await message.save();
+
+    // Update chat's last message
+    chat.lastMessage = postText;
+    chat.lastMessageTime = new Date();
+    chat.lastMessageSenderId = senderId;
+    chat.unreadCount = chat.unreadCount || {};
+    chat.unreadCount[recipientUserId] = (chat.unreadCount[recipientUserId] || 0) + 1;
+    await chat.save();
+
+    // Increment post shares
+    post.shares += 1;
+    await post.save();
+
+    res.json({
+      message: 'Post shared successfully',
+      chatId: chat._id,
+      message: message
+    });
+  } catch (error) {
+    console.error('Error sharing post with user:', error);
     res.status(500).json({ error: error.message });
   }
 };

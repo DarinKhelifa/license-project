@@ -38,6 +38,7 @@ const settingsRoutes = require('./src/routes/settingsRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const parkingRoutes = require('./src/routes/parkingRoutes');
 const iotRoutes = require('./src/routes/iotRoutes');
+const { startWokwiBridge } = require('./src/services/wokwiBridge');
 
 const app = express();
 const server = http.createServer(app);
@@ -113,6 +114,9 @@ app.use('/api/iot', iotRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ORELAX API is running' });
 });
+
+// Wokwi serial bridge for live environment simulation
+startWokwiBridge(2442, io);
 
 // Socket.io Chat Logic
 const Chat = require('./src/models/Chat');

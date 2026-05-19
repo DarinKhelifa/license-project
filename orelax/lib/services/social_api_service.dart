@@ -343,4 +343,22 @@ class SocialApiService {
       rethrow;
     }
   }
+
+  static Future<void> sharePostWithUser(String postId, String recipientUserId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/social/posts/$postId/share-with-user'),
+        headers: await _getHeaders(),
+        body: jsonEncode({
+          'recipientUserId': recipientUserId,
+        }),
+      ).timeout(httpTimeout);
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to share post');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

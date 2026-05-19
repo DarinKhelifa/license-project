@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/social_provider.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -20,6 +21,19 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final List<XFile> _selectedImages = [];
   final List<Uint8List> _selectedImageBytes = [];
   bool _isPosting = false;
+
+  String? _resolveAvatarUrl(String? raw) {
+    final value = raw?.trim() ?? '';
+    if (value.isEmpty) {
+      return null;
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    return 'http://localhost:5001$value';
+  }
 
   Future<void> _pickImages() async {
     final pickedFiles = await _imagePicker.pickMultiImage();
@@ -100,6 +114,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget build(BuildContext context) {
     const Color darkGreen = Color(0xFF1A5C2A);
     const Color lightGreen = Color(0xFFE8F5E9);
+    final authProvider = context.watch<AuthProvider>();
+    final userName = (authProvider.userName ?? 'You').trim().isEmpty ? 'You' : authProvider.userName!.trim();
+    final avatarUrl = _resolveAvatarUrl(authProvider.userAvatar);
 
     return Scaffold(
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
@@ -164,14 +181,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: lightGreen,
-                    child: const Icon(Icons.person, color: darkGreen),
+                    backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                    child: avatarUrl == null ? const Icon(Icons.person, color: darkGreen) : null,
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Your Name',
+                        userName,
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,

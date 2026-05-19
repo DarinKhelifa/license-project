@@ -1,6 +1,7 @@
 const EnergyReading = require('../models/EnergyReading');
 const EnergyDailySummary = require('../models/EnergyDailySummary');
 const mqtt = require('mqtt');
+const { getLatestEnergyReading } = require('../services/wokwiBridge');
 
 let mqttClient;
 
@@ -43,7 +44,10 @@ function initMQTT(io) {
       
       // Emit via WebSocket to connected clients
       if (io) {
-        io.emit('energy-update', data);
+          io.emit('energy-update', {
+            type: 'energy-update',
+            data,
+          });
       }
       
       // Check for alert
@@ -56,7 +60,10 @@ function initMQTT(io) {
             threshold: data.alertThreshold,
             timestamp: data.timestamp,
           };
-          io.emit('energy-alert', payload);
+            io.emit('energy-alert', {
+              type: 'energy-alert',
+              data: payload,
+            });
 
           // Persist and emit notifications to maintenance and admin roles
           try {
@@ -149,7 +156,7 @@ async function updateDailySummary(reading) {
 // API Controllers
 const getCurrentReadings = async (req, res) => {
   try {
-    // Get latest reading for each device
+    // Get latest reading for each device from database
     const readings = await EnergyReading.aggregate([
       { $sort: { timestamp: -1 } },
       { $group: {
@@ -165,10 +172,16 @@ const getCurrentReadings = async (req, res) => {
       { $sort: { deviceName: 1 } },
     ]);
     
+    // Add Wokwi energy readings if available (live simulator data)
+    const wokwiReading = getLatestEnergyReading();
+    if (wokwiReading && wokwiReading.readings) {
+      readings.push(...wokwiReading.readings);
+    }
+    
     res.json(readings);
   } catch (error) {
     console.error('Get current readings error:', error);
-    res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message });
   }
 };
 

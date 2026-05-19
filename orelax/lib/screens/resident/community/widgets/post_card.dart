@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../models/post_model.dart';
 import '../../../../providers/social_provider.dart';
+import '../../../../providers/auth_provider.dart';
 import '../post/post_details_screen.dart';
+import '../share_post_screen.dart';
 
 class PostCard extends StatefulWidget {
   final Post post;
@@ -40,6 +42,8 @@ class _PostCardState extends State<PostCard> {
     const Color darkGreen = Color(0xFF1A5C2A);
     const Color lightGreen = Color(0xFFEAF8EF);
     final avatarUrl = _resolveAvatarUrl(widget.post.userAvatar);
+    final currentUserId = context.read<AuthProvider>().userId;
+    final isPostOwner = currentUserId == widget.post.userId;
 
     return Container(
       decoration: BoxDecoration(
@@ -144,16 +148,32 @@ class _PostCardState extends State<PostCard> {
                 // Menu
                 PopupMenuButton(
                   icon: Icon(Icons.more_horiz, color: Colors.grey.shade600),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      child: Text('Report'),
-                      onTap: () {},
-                    ),
-                    PopupMenuItem(
-                      child: Text('Hide'),
-                      onTap: () {},
-                    ),
-                  ],
+                  itemBuilder: (context) {
+                    final items = [
+                      PopupMenuItem(
+                        child: const Text('Report'),
+                        onTap: () {},
+                      ),
+                      PopupMenuItem(
+                        child: const Text('Hide'),
+                        onTap: () {},
+                      ),
+                    ];
+                    
+                    // Add delete option only if user is post owner
+                    if (isPostOwner) {
+                      items.add(
+                        PopupMenuItem(
+                          child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                          onTap: () {
+                            _showDeleteDialog(context);
+                          },
+                        ),
+                      );
+                    }
+                    
+                    return items;
+                  },
                 ),
               ],
             ),
@@ -261,7 +281,12 @@ class _PostCardState extends State<PostCard> {
                   icon: Icons.share_outlined,
                   label: 'Share',
                   color: Colors.deepOrange,
-                  onTap: () => context.read<SocialProvider>().sharePost(widget.post.id),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SharePostScreen(post: widget.post),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -372,6 +397,56 @@ class _PostCardState extends State<PostCard> {
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context) {
+    const Color darkGreen = Color(0xFF1A5C2A);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Delete Post',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: darkGreen,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete this post? This action cannot be undone.',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Colors.grey.shade700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await context.read<SocialProvider>().deletePost(widget.post.id);
+            },
+            child: Text(
+              'Delete',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: Colors.red,
+              ),
             ),
           ),
         ],
