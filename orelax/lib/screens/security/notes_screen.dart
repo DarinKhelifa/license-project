@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:async';
 
 import '../../providers/auth_provider.dart';
+import '../../services/api_service.dart';
+import '../../widgets/maintenance_bottom_nav_bar.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -33,50 +36,110 @@ class NoteItem {
         'reminder': reminder?.toIso8601String(),
       };
 
-  static NoteItem fromJson(Map<String, dynamic> json) => NoteItem(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        content: json['content'] as String,
-        reminder: json['reminder'] != null
-            ? DateTime.parse(json['reminder'] as String)
+  static NoteItem fromMap(Map<String, dynamic> map) => NoteItem(
+        id: (map['id'] ?? map['_id']).toString(),
+        title: (map['title'] ?? '').toString(),
+        content: (map['content'] ?? '').toString(),
+        reminder: map['reminder'] != null && map['reminder'].toString().isNotEmpty
+            ? DateTime.tryParse(map['reminder'].toString())
             : null,
       );
 }
 
 class _NotesScreenState extends State<NotesScreen> {
   final List<NoteItem> _notes = [];
-  late SharedPreferences _prefs;
+  SharedPreferences? _prefs;
   String? _storageKey;
+  Timer? _reminderTimer;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initPrefs());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadNotes());
   }
 
-  Future<void> _initPrefs() async {
-    _prefs = await SharedPreferences.getInstance();
+  Future<void> _ensureStorageKey() async {
+    _prefs ??= await SharedPreferences.getInstance();
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final uid = auth.userId ?? 'anonymous';
     _storageKey = 'notes_$uid';
-    _loadNotes();
   }
 
-  void _loadNotes() {
-    final raw = _prefs.getStringList(_storageKey ?? '') ?? [];
-    setState(() {
-      _notes.clear();
-      for (final s in raw) {
-        final m = json.decode(s) as Map<String, dynamic>;
-        _notes.add(NoteItem.fromJson(m));
+  List<NoteItem> _readCachedNotes() {
+    final raw = _prefs?.getStringList(_storageKey ?? '') ?? [];
+    final cached = <NoteItem>[];
+
+    for (final value in raw) {
+      try {
+        final decoded = json.decode(value) as Map<String, dynamic>;
+        cached.add(NoteItem.fromMap(decoded));
+      } catch (_) {
+        continue;
       }
-    });
-    _startReminderLoop();
+    }
+
+    return cached;
   }
 
-  Future<void> _saveNotes() async {
-    final list = _notes.map((n) => json.encode(n.toJson())).toList();
-    await _prefs.setStringList(_storageKey ?? '', list);
+  Future<void> _saveCachedNotes() async {
+    if (_prefs == null) return;
+    final list = _notes.map((note) => json.encode(note.toJson())).toList();
+    await _prefs!.setStringList(_storageKey ?? '', list);
+  }
+
+  Future<void> _loadNotes() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _ensureStorageKey();
+
+      List<NoteItem> loadedNotes = [];
+      try {
+        final remoteNotes = await ApiService.getSecurityNotes();
+        loadedNotes = remoteNotes.map(NoteItem.fromMap).toList();
+
+        if (loadedNotes.isEmpty) {
+          final cachedNotes = _readCachedNotes();
+          if (cachedNotes.isNotEmpty) {
+            for (final note in cachedNotes) {
+              await ApiService.createSecurityNote(
+                title: note.title,
+                content: note.content,
+                reminder: note.reminder,
+              );
+            }
+
+            final migratedNotes = await ApiService.getSecurityNotes();
+            loadedNotes = migratedNotes.map(NoteItem.fromMap).toList();
+          }
+        }
+      } catch (error) {
+        loadedNotes = _readCachedNotes();
+        if (loadedNotes.isEmpty) {
+          throw error;
+        }
+      }
+
+      _notes
+        ..clear()
+        ..addAll(loadedNotes);
+      await _saveCachedNotes();
+      _startReminderLoop();
+    } catch (error) {
+      _errorMessage = error.toString();
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _addOrEditNote({NoteItem? existing}) async {
@@ -115,9 +178,11 @@ class _NotesScreenState extends State<NotesScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: Text(reminder == null
-                      ? 'No reminder'
-                      : 'Reminder: ${reminder?.toLocal().toString().split('.').first}'),
+                    child: Text(
+                      reminder == null
+                          ? 'No reminder'
+                          : 'Reminder: ${reminder?.toLocal().toString().split('.').first}',
+                    ),
                   ),
                   TextButton(
                     onPressed: () async {
@@ -151,25 +216,39 @@ class _NotesScreenState extends State<NotesScreen> {
                         final content = contentController.text.trim();
                         if (title.isEmpty && content.isEmpty) return;
 
-                        if (existing != null) {
-                          final idx = _notes.indexWhere((n) => n.id == existing.id);
-                          if (idx >= 0) {
-                            _notes[idx] = NoteItem(
-                              id: existing.id,
+                        try {
+                          if (existing != null) {
+                            await ApiService.updateSecurityNote(
+                              noteId: existing.id,
+                              title: title,
+                              content: content,
+                              reminder: reminder,
+                            );
+                          } else {
+                            await ApiService.createSecurityNote(
                               title: title,
                               content: content,
                               reminder: reminder,
                             );
                           }
-                        } else {
-                          final id = DateTime.now().millisecondsSinceEpoch.toString();
-                          final note = NoteItem(id: id, title: title, content: content, reminder: reminder);
-                          _notes.insert(0, note);
-                        }
 
-                        await _saveNotes();
-                        if (mounted) Navigator.pop(ctx);
-                        setState(() {});
+                          if (!mounted) return;
+                          Navigator.pop(ctx);
+                          await _loadNotes();
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(existing != null ? 'Note updated' : 'Note saved'),
+                            ),
+                          );
+                        } catch (error) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to save note: $error'),
+                            ),
+                          );
+                        }
                       },
                       child: Text(existing != null ? 'Save' : 'Add Note'),
                     ),
@@ -184,19 +263,15 @@ class _NotesScreenState extends State<NotesScreen> {
     );
   }
 
-  Timer? _reminderTimer;
-
   void _startReminderLoop() {
     _reminderTimer?.cancel();
     _reminderTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
       final now = DateTime.now();
       for (final note in List<NoteItem>.from(_notes)) {
         if (note.reminder != null && note.reminder!.isBefore(now)) {
-          // Show an in-app alert and/or SnackBar when a reminder is due
           if (!mounted) return;
-          final idx = _notes.indexWhere((n) => n.id == note.id);
 
-          // Clear reminder so we don't re-notify
+          final idx = _notes.indexWhere((n) => n.id == note.id);
           if (idx >= 0) {
             _notes[idx] = NoteItem(
               id: note.id,
@@ -204,11 +279,18 @@ class _NotesScreenState extends State<NotesScreen> {
               content: note.content,
               reminder: null,
             );
-            await _saveNotes();
-            setState(() {});
+            await _saveCachedNotes();
+            try {
+              await ApiService.updateSecurityNote(
+                noteId: note.id,
+                title: note.title,
+                content: note.content,
+                reminder: null,
+              );
+            } catch (_) {}
+            if (mounted) setState(() {});
           }
 
-          // Prefer showing a dialog if the app is foreground and the screen is visible
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             showDialog(
@@ -234,68 +316,79 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Future<void> _deleteNote(String id) async {
-    _notes.removeWhere((n) => n.id == id);
-    await _saveNotes();
-    setState(() {});
+    await ApiService.deleteSecurityNote(id);
+    await _loadNotes();
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    final isMaintenance = (auth.user?['role'] ?? 'resident').toString() == 'maintenance';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notes'),
         centerTitle: true,
       ),
+      bottomNavigationBar: isMaintenance ? const MaintenanceBottomNavBar(currentIndex: 1) : null,
       body: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: _notes.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.note_alt_outlined, size: 64, color: Colors.grey),
-                    const SizedBox(height: 12),
-                    const Text('No notes yet. Tap + to add a note.'),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                itemCount: _notes.length,
-                itemBuilder: (ctx, i) {
-                  final n = _notes[i];
-                  return Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: ListTile(
-                      title: Text(n.title.isEmpty ? '(No title)' : n.title),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(n.content, maxLines: 3, overflow: TextOverflow.ellipsis),
-                          if (n.reminder != null) ...[
-                            const SizedBox(height: 6),
-                            Text('Reminder: ${n.reminder!.toLocal().toString().split('.').first}', style: const TextStyle(color: Colors.redAccent)),
-                          ]
-                        ],
-                      ),
-                      isThreeLine: true,
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (v) async {
-                          if (v == 'edit') {
-                            await _addOrEditNote(existing: n);
-                          } else if (v == 'delete') {
-                            await _deleteNote(n.id);
-                          }
-                        },
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(value: 'edit', child: Text('Edit')),
-                          PopupMenuItem(value: 'delete', child: Text('Delete')),
-                        ],
-                      ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _notes.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.note_alt_outlined, size: 64, color: Colors.grey),
+                        const SizedBox(height: 12),
+                        Text(
+                          _errorMessage ?? 'No notes yet. Tap + to add a note.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ),
+                  )
+                : ListView.builder(
+                    itemCount: _notes.length,
+                    itemBuilder: (ctx, i) {
+                      final n = _notes[i];
+                      return Card(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          title: Text(n.title.isEmpty ? '(No title)' : n.title),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(n.content, maxLines: 3, overflow: TextOverflow.ellipsis),
+                              if (n.reminder != null) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Reminder: ${n.reminder!.toLocal().toString().split('.').first}',
+                                  style: const TextStyle(color: Colors.redAccent),
+                                ),
+                              ]
+                            ],
+                          ),
+                          isThreeLine: true,
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (v) async {
+                              if (v == 'edit') {
+                                await _addOrEditNote(existing: n);
+                              } else if (v == 'delete') {
+                                await _deleteNote(n.id);
+                              }
+                            },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(value: 'edit', child: Text('Edit')),
+                              PopupMenuItem(value: 'delete', child: Text('Delete')),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _addOrEditNote(),

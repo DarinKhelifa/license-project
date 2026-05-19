@@ -50,7 +50,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (token) {
         try {
           const userData = await authAPI.getMe();
-          setUser(normalizeUser(userData));
+          const normalized = normalizeUser(userData);
+
+          if (normalized?.role !== 'admin') {
+            authAPI.logout();
+            setUser(null);
+          } else {
+            setUser(normalized);
+          }
         } catch (error) {
           localStorage.removeItem('auth_token');
         }
@@ -73,6 +80,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     const userData = await authAPI.login(email, password);
     const normalized = normalizeUser(userData);
+
+    if (normalized?.role !== 'admin') {
+      authAPI.logout();
+      setUser(null);
+      throw new Error('Only admin users can access the dashboard.');
+    }
+
     setUser(normalized);
   };
 
@@ -129,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (copy.profileImage && typeof copy.profileImage === 'string' && copy.profileImage.startsWith('/uploads')) {
         const apiBase = (((globalThis as typeof globalThis & {
           process?: { env?: Record<string, string | undefined> };
-        }).process?.env?.REACT_APP_API_URL) || 'http://localhost:5000').replace(/\/api$/, '');
+        }).process?.env?.REACT_APP_API_URL) || 'http://localhost:5001').replace(/\/api$/, '');
         copy.profileImage = `${apiBase}${copy.profileImage}`;
       }
       // ensure specialization is preserved

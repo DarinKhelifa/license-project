@@ -179,39 +179,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final isInProgress = report.status == 'in-progress';
     final isHovered = _hoveredReportIndex == index;
 
-    return MouseRegion(
-      onEnter: (_) {
-        if (_hoveredReportIndex != index) {
-          setState(() => _hoveredReportIndex = index);
-        }
-      },
-      onExit: (_) {
-        if (_hoveredReportIndex == index) {
-          setState(() => _hoveredReportIndex = null);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        margin: const EdgeInsets.only(bottom: 12),
-        transform: Matrix4.identity()..translate(0.0, isHovered ? -2.0 : 0.0),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isHovered ? const Color(0xFFFAFCFB) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isHovered ? const Color(0xFFD4E5D9) : Colors.transparent,
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isHovered ? Colors.black.withOpacity(0.08) : Colors.black.withOpacity(0.05),
-              blurRadius: isHovered ? 20 : 12,
-              offset: Offset(0, isHovered ? 12 : 4),
-            ),
-          ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.transparent,
+          width: 1,
         ),
-        child: InkWell(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: () {
           Navigator.push(
@@ -286,7 +272,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ],
         ),
       ),
-    ),
     );
   }
 

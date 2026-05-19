@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class QrApiService {
   static const String baseUrl =
-      'http://localhost:5000/api'; // 🔁 your backend URL
+      'http://localhost:5001/api'; // 🔁 your backend URL
 
   static Future<Map<String, dynamic>> getMyQR() async {
     final prefs = await SharedPreferences.getInstance();

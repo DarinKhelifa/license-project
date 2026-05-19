@@ -1,4 +1,5 @@
 const EnvironmentReading = require('../models/EnvironmentReading');
+const { getLatestLiveReading } = require('../services/wokwiBridge');
 
 const getCurrentReadings = async (req, res) => {
   try {
@@ -17,6 +18,12 @@ const getCurrentReadings = async (req, res) => {
       }},
       { $sort: { deviceName: 1 } },
     ]);
+
+    const liveReading = getLatestLiveReading();
+    if (liveReading) {
+      const withoutLive = readings.filter((reading) => reading.deviceId !== liveReading.deviceId);
+      readings.splice(0, readings.length, liveReading, ...withoutLive);
+    }
 
     res.json(readings);
   } catch (error) {

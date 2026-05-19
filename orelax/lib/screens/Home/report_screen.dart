@@ -99,7 +99,7 @@ class _ReportScreenState extends State<ReportScreen> {
         ),
         centerTitle: true,
       ),
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(

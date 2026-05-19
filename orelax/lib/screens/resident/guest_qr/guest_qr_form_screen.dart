@@ -29,7 +29,7 @@ class _GuestQRFormScreenState extends State<GuestQRFormScreen> {
   bool _isLoading = false;
 
   // ✅ Fixed API endpoint
-  static const String _baseUrl = 'http://localhost:5000';
+  static const String _baseUrl = 'http://localhost:5001';
 
   @override
   void initState() {

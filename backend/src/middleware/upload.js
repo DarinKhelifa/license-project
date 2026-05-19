@@ -35,7 +35,7 @@ const fileFilter = (req, file, cb) => {
   ];
 
   if (file.fieldname === 'image' || file.fieldname === 'images') {
-    if (allowedImageMimes.includes(file.mimetype)) {
+    if (allowedImageMimes.includes(file.mimetype) || file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
       cb(new Error('Invalid image format. Only JPEG, PNG, GIF, and WebP are allowed.'));

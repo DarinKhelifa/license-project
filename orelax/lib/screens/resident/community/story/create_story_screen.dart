@@ -3,7 +3,7 @@ import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import '../../../../providers/social_provider.dart';
 
 class CreateStoryScreen extends StatefulWidget {
@@ -14,9 +14,20 @@ class CreateStoryScreen extends StatefulWidget {
 }
 
 class _CreateStoryScreenState extends State<CreateStoryScreen> {
-  File? _selectedImage;
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
   final ImagePicker _imagePicker = ImagePicker();
   bool _isPosting = false;
+
+  Future<void> _setSelectedImage(XFile pickedFile) async {
+    final bytes = await pickedFile.readAsBytes();
+    if (!mounted) return;
+
+    setState(() {
+      _selectedImage = pickedFile;
+      _selectedImageBytes = bytes;
+    });
+  }
 
   Future<void> _pickImage() async {
     final pickedFile = await _imagePicker.pickImage(
@@ -25,9 +36,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     );
 
     if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
+      await _setSelectedImage(pickedFile);
     }
   }
 
@@ -38,14 +47,12 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     );
 
     if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
+      await _setSelectedImage(pickedFile);
     }
   }
 
   Future<void> _postStory() async {
-    if (_selectedImage == null) {
+    if (_selectedImage == null || _selectedImageBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please select an image')),
       );
@@ -54,7 +61,10 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
 
     setState(() => _isPosting = true);
 
-    final success = await context.read<SocialProvider>().createStory(_selectedImage!);
+    final success = await context.read<SocialProvider>().createStory(
+      imageBytes: _selectedImageBytes!,
+      filename: _selectedImage!.name,
+    );
 
     if (mounted) {
       setState(() => _isPosting = false);
@@ -205,12 +215,15 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                 Container(
                   width: double.infinity,
                   height: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: FileImage(_selectedImage!),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                  decoration: const BoxDecoration(),
+                  child: _selectedImageBytes != null
+                      ? Image.memory(
+                          _selectedImageBytes!,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                        )
+                      : const SizedBox.shrink(),
                 ),
 
                 // Overlay

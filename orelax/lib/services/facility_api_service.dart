@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/facility_model.dart';
 
 class FacilityApiService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  static const String baseUrl = 'http://localhost:5001/api';
   static const Duration httpTimeout = Duration(seconds: 30);
 
   static Future<String?> _getToken() async {

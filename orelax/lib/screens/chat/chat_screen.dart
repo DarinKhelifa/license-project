@@ -425,7 +425,7 @@ class _ChatScreenState extends State<ChatScreen>
     final currentUserId = authProvider.userId;
     
     return Scaffold(
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       appBar: AppBar(
         title: const Text('Messages'),
         backgroundColor: Colors.white,
@@ -743,21 +743,10 @@ class _HoverAvatarButtonState extends State<HoverAvatarButton>
     super.dispose();
   }
 
-  void _onHover(bool isHovering) {
-    if (isHovering) {
-      _animationController.forward();
-    } else {
-      _animationController.reverse();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => _onHover(true),
-      onExit: (_) => _onHover(false),
-      child: GestureDetector(
-        onTap: widget.onTap,
+    return GestureDetector(
+      onTap: widget.onTap,
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: Column(
@@ -801,9 +790,8 @@ class _HoverAvatarButtonState extends State<HoverAvatarButton>
                 ),
               ],
             ),
-        ),
-      ),
-    );
+          ),
+        );
   }
 
   Widget _buildAvatar() {

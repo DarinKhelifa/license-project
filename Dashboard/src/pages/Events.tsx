@@ -39,7 +39,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../context/AuthContext';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://localhost:5001';
 
 interface Event {
   _id: string;

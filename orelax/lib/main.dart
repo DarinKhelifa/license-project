@@ -8,6 +8,7 @@ import 'providers/employee_provider.dart';
 import 'providers/social_provider.dart';
 import 'providers/notification_provider.dart';
 import 'screens/auth/auth_wrapper.dart';
+import 'screens/auth/pending_approval_screen.dart';
 import 'screens/Welcome/welcome_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/Home/report_screen.dart';
@@ -16,16 +17,14 @@ import 'screens/security/notes_screen.dart';
 import 'screens/Home/profile_screen.dart';
 import 'screens/Home/home_screen.dart';
 import 'screens/chat/chat_screen.dart';
-// AccessControlScreen removed from navigation; reports route used instead
+// AccessControlScreen removed from navigation; reports route used instead.
 import 'screens/security/visitors_screen.dart';
 import 'screens/security/alerts_screen.dart';
 import 'screens/security/access_logs_screen.dart';
 import 'screens/maintenance/work_orders_screen.dart';
-import 'screens/maintenance/pending_requests_screen.dart';
 import 'screens/maintenance/schedule_screen.dart';
 import 'screens/resident/helping_staff/helping_staff_home_screen.dart';
 import 'screens/resident/facilities/resident_facilities_screen.dart';
-import 'screens/resident/parking/parking_screen.dart';
 import 'screens/facilities_manager/create_edit_facility_screen.dart';
 import 'screens/facilities_manager/facility_detail_screen.dart';
 import 'screens/facilities_manager/booking_history_screen.dart';
@@ -37,6 +36,7 @@ import 'providers/alert_provider.dart';
 import 'providers/fire_alert_provider.dart';
 import 'screens/resident/guest_qr/guest_qr_form_screen.dart';
 import 'screens/resident/guest_qr/guest_qr_view_screen.dart';
+import 'screens/resident/parking/parking_screen.dart';
 import 'providers/energy_provider.dart';
 import 'screens/monitoring/energy_monitoring_screen.dart';
 import 'screens/camera/camera_live_stream_screen.dart';
@@ -138,7 +138,6 @@ class OrelaxApp extends StatelessWidget {
           '/access-logs': (_) => const AccessLogsScreen(),
           // Maintenance screens
           '/work-orders': (_) => const WorkOrdersScreen(),
-          '/pending-requests': (_) => const PendingRequestsScreen(),
           '/schedule': (_) => const MaintenanceScheduleScreen(),
           // Facilities Manager
           '/create-facility': (_) => const CreateEditFacilityScreen(),
@@ -155,6 +154,14 @@ class OrelaxApp extends StatelessWidget {
               email: args['email'] as String,
             );
           },
+          '/pending-approval': (ctx) {
+            final args = ModalRoute.of(ctx)!.settings.arguments as Map<String, dynamic>;
+            return PendingApprovalScreen(
+              userId: args['userId'] as String,
+              email: args['email'] as String,
+              token: args['token'] as String,
+            );
+          },
           '/childcare': (_) => const _ComingSoonScreen(title: 'Childcare'),
           '/helping-staff': (_) => const HelpingStaffScreen(),
           '/parking': (_) => const ParkingScreen(),
@@ -162,7 +169,6 @@ class OrelaxApp extends StatelessWidget {
           '/security-management': (_) => const _ComingSoonScreen(title: 'Security Management'),
           '/monitoring': (_) => const EnergyMonitoringScreen(),
           '/temperature': (_) => const TemperatureScreen(),
-          // Fire alerts history is embedded in '/alerts'
         },
       ),
     );
@@ -331,7 +337,7 @@ class _NotificationBootstrapperState extends State<NotificationBootstrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return GlobalFireAlertOverlay(child: widget.child);
+    return widget.child;
   }
 }
 

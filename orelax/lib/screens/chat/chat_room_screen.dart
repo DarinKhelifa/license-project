@@ -44,10 +44,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isRecordingVoice = false;
   
   // Store listener references
-  late final Function(dynamic) _newMessageListener;
-  late final Function(dynamic) _messageSentListener;
-  late final Function(dynamic) _messageErrorListener;
-  late final Function(dynamic) _messageReadListener;
+  Function(dynamic)? _newMessageListener;
+  Function(dynamic)? _messageSentListener;
+  Function(dynamic)? _messageErrorListener;
+  Function(dynamic)? _messageReadListener;
+  Function(dynamic)? _messageUpdatedListener;
+  Function(dynamic)? _messageDeletedListener;
 
   @override
   void initState() {
@@ -96,10 +98,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _recorder.dispose();
     
     // Remove listeners
-    ChatService.removeNewMessageListener(_newMessageListener);
-    ChatService.removeMessageSentListener(_messageSentListener);
-    ChatService.removeMessageErrorListener(_messageErrorListener);
-    ChatService.removeMessageReadListener(_messageReadListener);
+    if (_newMessageListener != null) ChatService.removeNewMessageListener(_newMessageListener!);
+    if (_messageSentListener != null) ChatService.removeMessageSentListener(_messageSentListener!);
+    if (_messageErrorListener != null) ChatService.removeMessageErrorListener(_messageErrorListener!);
+    if (_messageReadListener != null) ChatService.removeMessageReadListener(_messageReadListener!);
+    if (_messageUpdatedListener != null) ChatService.removeMessageUpdatedListener(_messageUpdatedListener!);
+    if (_messageDeletedListener != null) ChatService.removeMessageDeletedListener(_messageDeletedListener!);
     
     super.dispose();
   }
@@ -231,35 +235,35 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _setupSocketListeners() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = authProvider.userId;
+
     _newMessageListener = (message) {
-      if (message['chatId'] == widget.chatId) {
+      if (message['chatId'] == widget.chatId && mounted) {
         setState(() {
           if (!_messages.any((m) => m['_id'] == message['_id'])) {
             _messages.add(Map<String, dynamic>.from(message));
           }
         });
         _scrollToBottom();
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        ChatService.markAsRead(
-          message['_id'],
-          authProvider.userId,
-          widget.chatId,
-        );
+        final messageId = message['_id']?.toString();
+        if (currentUserId != null && messageId != null) {
+          ChatService.markAsRead(messageId, currentUserId, widget.chatId);
+        }
       }
     };
-    
+
     _messageSentListener = (message) {
-      if (message['chatId'] == widget.chatId) {
+      if (message['chatId'] == widget.chatId && mounted) {
         setState(() {
-          // Check if message already exists to avoid duplicates
           if (!_messages.any((m) => m['_id'] == message['_id'])) {
-            _messages.add(message);
+            _messages.add(Map<String, dynamic>.from(message));
           }
         });
         _scrollToBottom();
       }
     };
-    
+
     _messageErrorListener = (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -271,7 +275,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _messageReadListener = (data) {
       try {
         final messageId = (data is Map ? data['messageId'] : null)?.toString();
-        if (messageId == null) return;
+        if (messageId == null || !mounted) return;
 
         final index = _messages.indexWhere((m) => m['_id']?.toString() == messageId);
         if (index == -1) return;
@@ -285,11 +289,49 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         // ignore
       }
     };
-    
-    ChatService.addNewMessageListener(_newMessageListener);
-    ChatService.addMessageSentListener(_messageSentListener);
-    ChatService.addMessageErrorListener(_messageErrorListener);
-    ChatService.addMessageReadListener(_messageReadListener);
+
+    _messageUpdatedListener = (data) {
+      try {
+        final payload = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+        final messageId = payload['messageId']?.toString();
+        if (messageId == null || !mounted) return;
+
+        final index = _messages.indexWhere((m) => m['_id']?.toString() == messageId);
+        if (index == -1) return;
+
+        setState(() {
+          final updated = Map<String, dynamic>.from(_messages[index]);
+          if (payload['content'] != null) {
+            updated['text'] = payload['content'].toString();
+          }
+          updated['is_edited'] = payload['is_edited'] ?? true;
+          _messages[index] = updated;
+        });
+      } catch (_) {
+        // ignore
+      }
+    };
+
+    _messageDeletedListener = (data) {
+      try {
+        final payload = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+        final messageId = payload['messageId']?.toString();
+        if (messageId == null || !mounted) return;
+
+        setState(() {
+          _messages.removeWhere((m) => m['_id']?.toString() == messageId);
+        });
+      } catch (_) {
+        // ignore
+      }
+    };
+
+    ChatService.addNewMessageListener(_newMessageListener!);
+    ChatService.addMessageSentListener(_messageSentListener!);
+    ChatService.addMessageErrorListener(_messageErrorListener!);
+    ChatService.addMessageReadListener(_messageReadListener!);
+    ChatService.addMessageUpdatedListener(_messageUpdatedListener!);
+    ChatService.addMessageDeletedListener(_messageDeletedListener!);
   }
 
   Future<void> _loadMessages() async {
@@ -347,19 +389,121 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return;
     }
     if (_messageController.text.trim().isEmpty) return;
-    
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final text = _messageController.text.trim();
     _messageController.clear();
-    
+
     ChatService.sendMessage(
       chatId: widget.chatId,
       senderId: authProvider.userId,
       senderName: authProvider.user?['name'] ?? 'User',
       text: text,
     );
-    
+
     _stopTyping();
+  }
+
+  Future<void> _editMessage(Map<String, dynamic> message) async {
+    final messageId = message['_id']?.toString();
+    if (messageId == null) return;
+
+    final controller = TextEditingController(text: (message['text'] ?? '').toString());
+    final newText = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit message'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 5,
+          decoration: const InputDecoration(hintText: 'Update your message'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+
+    if (newText == null || newText.trim().isEmpty) return;
+
+    try {
+      final updated = await ApiService.editChatMessage(
+        messageId: messageId,
+        content: newText.trim(),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        final index = _messages.indexWhere((m) => m['_id']?.toString() == messageId);
+        if (index != -1) {
+          final next = Map<String, dynamic>.from(_messages[index]);
+          next['text'] = (updated['content'] ?? newText.trim()).toString();
+          next['is_edited'] = updated['is_edited'] ?? true;
+          _messages[index] = next;
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Message updated')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to edit message: $e')),
+      );
+    }
+  }
+
+  Future<void> _deleteMessage(Map<String, dynamic> message) async {
+    final messageId = message['_id']?.toString();
+    if (messageId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete message'),
+        content: const Text('Delete this message for everyone?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ApiService.deleteChatMessage(messageId: messageId, forEveryone: true);
+
+      if (!mounted) return;
+      setState(() {
+        _messages.removeWhere((m) => m['_id']?.toString() == messageId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Message deleted')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete message: $e')),
+      );
+    }
   }
 
   String _guessMimeTypeFromName(String name) {
@@ -574,10 +718,51 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                           itemBuilder: (context, index) {
                             final message = _messages[index];
                             final isMe = message['senderId'] == currentUserId;
+                            final canModify = isMe && (message['type'] ?? 'text').toString() == 'text';
+                            final canDelete = isMe;
                             
                             return _MessageBubble(
                               message: message,
                               isMe: isMe,
+                              onEdit: canModify ? () async => await _editMessage(message) : null,
+                              onDelete: canDelete ? () async => await _deleteMessage(message) : null,
+                              onLongPress: canModify || canDelete
+                                  ? () async {
+                                      final choice = await showModalBottomSheet<String>(
+                                        context: context,
+                                        builder: (sheetContext) => SafeArea(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (canModify)
+                                                ListTile(
+                                                  leading: const Icon(Icons.edit),
+                                                  title: const Text('Edit message'),
+                                                  onTap: () => Navigator.of(sheetContext).pop('edit'),
+                                                ),
+                                              if (canDelete)
+                                                ListTile(
+                                                  leading: const Icon(Icons.delete, color: Colors.red),
+                                                  title: const Text('Delete message'),
+                                                  onTap: () => Navigator.of(sheetContext).pop('delete'),
+                                                ),
+                                              ListTile(
+                                                leading: const Icon(Icons.close),
+                                                title: const Text('Cancel'),
+                                                onTap: () => Navigator.of(sheetContext).pop('cancel'),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+
+                                      if (choice == 'edit') {
+                                        await _editMessage(message);
+                                      } else if (choice == 'delete') {
+                                        await _deleteMessage(message);
+                                      }
+                                    }
+                                  : null,
                             );
                           },
                         ),
@@ -704,10 +889,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 class _MessageBubble extends StatelessWidget {
   final Map<String, dynamic> message;
   final bool isMe;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const _MessageBubble({
     required this.message,
     required this.isMe,
+    this.onLongPress,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -718,113 +909,148 @@ class _MessageBubble extends StatelessWidget {
     
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: isMe ? const Color(0xFF034808) : Colors.grey.shade200,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(isMe ? 16 : 4),
-            bottomRight: Radius.circular(isMe ? 4 : 16),
+      child: GestureDetector(
+        onLongPress: onLongPress,
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (type == 'image' && mediaUrl != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  mediaUrl,
-                  width: 220,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 220,
-                      height: 140,
-                      color: isMe ? Colors.white.withOpacity(0.12) : Colors.grey.shade300,
-                      alignment: Alignment.center,
-                      child: Icon(Icons.broken_image, color: isMe ? Colors.white70 : Colors.grey.shade700),
-                    );
+          decoration: BoxDecoration(
+            color: isMe ? const Color(0xFF034808) : Colors.grey.shade200,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(16),
+              topRight: const Radius.circular(16),
+              bottomLeft: Radius.circular(isMe ? 16 : 4),
+              bottomRight: Radius.circular(isMe ? 4 : 16),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (type == 'image' && mediaUrl != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    mediaUrl,
+                    width: 220,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 220,
+                        height: 140,
+                        color: isMe ? Colors.white.withOpacity(0.12) : Colors.grey.shade300,
+                        alignment: Alignment.center,
+                        child: Icon(Icons.broken_image, color: isMe ? Colors.white70 : Colors.grey.shade700),
+                      );
+                    },
+                  ),
+                )
+              else if (type == 'audio' && mediaUrl != null)
+                _AudioMessageBubble(
+                  url: mediaUrl,
+                  isMe: isMe,
+                )
+              else if (type == 'file' && mediaUrl != null)
+                InkWell(
+                  onTap: () async {
+                    final uri = Uri.tryParse(mediaUrl);
+                    if (uri != null) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
                   },
-                ),
-              )
-            else if (type == 'audio' && mediaUrl != null)
-              _AudioMessageBubble(
-                url: mediaUrl,
-                isMe: isMe,
-              )
-            else if (type == 'file' && mediaUrl != null)
-              InkWell(
-                onTap: () async {
-                  final uri = Uri.tryParse(mediaUrl);
-                  if (uri != null) {
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  }
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.insert_drive_file, size: 16, color: isMe ? Colors.white : Colors.black87),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        (message['text'] ?? 'Attachment').toString(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: isMe ? Colors.white : Colors.black87,
-                          fontSize: 14,
-                          decoration: TextDecoration.underline,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.insert_drive_file, size: 16, color: isMe ? Colors.white : Colors.black87),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          (message['text'] ?? 'Attachment').toString(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: isMe ? Colors.white : Colors.black87,
+                            fontSize: 14,
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Text(
+                  (message['text'] ?? '').toString(),
+                  style: TextStyle(
+                    color: isMe ? Colors.white : Colors.black87,
+                    fontSize: 14,
+                  ),
+                ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    DateFormat('HH:mm').format(time),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isMe ? Colors.white70 : Colors.grey.shade600,
+                    ),
+                  ),
+                  if (isMe) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      message['status'] == 'read' ? Icons.done_all : Icons.done,
+                      size: 12,
+                      color: message['status'] == 'read' ? Colors.white70 : Colors.white54,
+                    ),
+                    if (message['status'] == 'read') ...[
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Vu',
+                        style: TextStyle(fontSize: 10, color: Colors.white70),
+                      ),
+                    ],
+                    const SizedBox(width: 6),
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit' && onEdit != null) {
+                          onEdit!();
+                        } else if (value == 'delete' && onDelete != null) {
+                          onDelete!();
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => [
+                        const PopupMenuItem<String>(
+                          value: 'edit',
+                          child: Text('Edit'),
+                        ),
+                        const PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Text('Delete'),
+                        ),
+                      ],
+                      child: Icon(
+                        Icons.more_vert,
+                        size: 14,
+                        color: Colors.white70,
                       ),
                     ),
                   ],
-                ),
-              )
-            else
-              Text(
-                (message['text'] ?? '').toString(),
-                style: TextStyle(
-                  color: isMe ? Colors.white : Colors.black87,
-                  fontSize: 14,
-                ),
-              ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  DateFormat('HH:mm').format(time),
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isMe ? Colors.white70 : Colors.grey.shade600,
-                  ),
-                ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    message['status'] == 'read' ? Icons.done_all : Icons.done,
-                    size: 12,
-                    color: message['status'] == 'read' ? Colors.white70 : Colors.white54,
-                  ),
-                  if (message['status'] == 'read') ...[
-                    const SizedBox(width: 4),
-                    const Text(
-                      'Vu',
-                      style: TextStyle(fontSize: 10, color: Colors.white70),
-                    ),
-                  ],
                 ],
+              ),
+              if (message['is_edited'] == true) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'Edited',
+                  style: TextStyle(fontSize: 10, color: isMe ? Colors.white70 : Colors.grey.shade600),
+                ),
               ],
-            ),
-          ],
-        ),
+            ],
+          ),
+          ),
       ),
     );
   }

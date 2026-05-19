@@ -31,10 +31,10 @@ class ChatService {
   static String get _serverUrl {
     if (kIsWeb) {
       // For web, use localhost (same as your backend)
-      return 'http://localhost:5000';
+      return 'http://localhost:5001';
     } else {
       // For mobile emulator
-      return 'http://10.0.2.2:5000';
+      return 'http://10.0.2.2:5001';
     }
   }
 
@@ -191,6 +191,26 @@ class ChatService {
         print('📩 New message received: $data');
         for (var listener in _newMessageListeners) {
           listener(data);
+        }
+      });
+
+      socket?.on('energy-update', (data) {
+        print('⚡ Energy update received: $data');
+        final payload = (data is Map && data['type'] == 'energy-update' && data['data'] != null)
+            ? data
+            : {'type': 'energy-update', 'data': data};
+        for (var listener in _newMessageListeners) {
+          listener(payload);
+        }
+      });
+
+      socket?.on('energy-alert', (data) {
+        print('⚠️ Energy alert received: $data');
+        final payload = (data is Map && data['type'] == 'energy-alert' && data['data'] != null)
+            ? data
+            : {'type': 'energy-alert', 'data': data};
+        for (var listener in _newAlertListeners) {
+          listener(payload);
         }
       });
 

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart' show Share, XFile;
 
 void showGuestQRPopup(
   BuildContext context,
@@ -11,6 +12,63 @@ void showGuestQRPopup(
   String? visitDate,
   String? hostName,
 }) {
+  _shareQRCode(String qrDataUrl, String name) async {
+    try {
+      // Decode base64 to bytes
+      final base64String =
+          qrDataUrl.contains(',') ? qrDataUrl.split(',').last : qrDataUrl;
+      final Uint8List bytes = base64Decode(base64String);
+
+      if (kIsWeb) {
+        // For web platform: share a clean app link instead of the QR bytes.
+        final String appLink = Uri.base.origin;
+        await Share.share(
+          '🏡 Your Orelax Guest Pass, $name!\n\nOpen the Orelax app here: $appLink\n\nPresent the QR code to the security guard at the entrance gate.',
+          subject: 'Orelax Guest Access Pass - $name',
+        );
+      } else if (Platform.isAndroid || Platform.isIOS) {
+        // For mobile platforms: Save to temp directory and share
+        final Directory appDir = Directory.systemTemp;
+        final String filePath = '${appDir.path}/orelax_guest_qr_$name.png';
+        final File file = File(filePath);
+
+        // Write bytes to file
+        await file.writeAsBytes(bytes);
+
+        // Share the file
+        await Share.shareXFiles(
+          [XFile(file.path, mimeType: 'image/png')],
+          text:
+              '🏡 Your Orelax Guest Pass, $name!\n\nPresent this QR code to the security guard at the entrance gate.\n\nDuration: Valid from arrival date',
+          subject: 'Orelax Guest Access Pass - $name',
+        );
+
+        // Clean up file after sharing
+        await Future.delayed(const Duration(seconds: 2));
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } else {
+        // For other platforms: fallback to text-only share
+        await Share.share(
+          '🏡 Your Orelax Guest Pass, $name!\n\nPresent this QR code to the security guard at the entrance gate.\n\nDuration: Valid from arrival date',
+          subject: 'Orelax Guest Access Pass - $name',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error sharing QR: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sharing: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   showDialog(
     context: context,
     builder: (context) {
@@ -128,21 +186,7 @@ void showGuestQRPopup(
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        try {
-                          final bytes = base64Decode(
-                              qrData.contains(',') ? qrData.split(',').last : qrData);
-                          final tempDir = await getTemporaryDirectory();
-                          final file =
-                              await File('${tempDir.path}/guest_qr.png').create();
-                          await file.writeAsBytes(bytes);
-                          await Share.shareXFiles(
-                            [XFile(file.path)],
-                            text:
-                                '🏡 Your Orelax Guest Pass, $guestName!\n\nPresent this QR code to the security guard at the entrance gate.',
-                          );
-                        } catch (e) {
-                          debugPrint('Error sharing QR: $e');
-                        }
+                        await _shareQRCode(qrData, guestName);
                       },
                       icon: const Icon(Icons.share, color: Color(0xFF034808)),
                       label: const Text(

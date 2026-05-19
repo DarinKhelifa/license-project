@@ -48,6 +48,21 @@ function createParkingSpots(prefix, count) {
   });
 }
 
+function createParkingLotsFromSpots(prefix, spots) {
+  return [
+    {
+      id: `${prefix}-lot-01`,
+      name: 'Parking 1',
+      totalSpots: spots.length,
+      spots: spots.map((spot) => ({
+        id: spot.id,
+        code: spot.code,
+        status: spot.status || 'available',
+      })),
+    },
+  ];
+}
+
 function defaultParkingCountFromBuildings(buildingCount) {
   // Same ratio used in dashboard defaults: 6 spots per building.
   return Math.max(10, buildingCount * 6);
@@ -59,11 +74,13 @@ async function ensureDefaultResidences() {
 
   const docs = DEFAULT_RESIDENCES.map((item) => {
     const prefix = slugify(item.name);
+    const parkingSpots = createParkingSpots(prefix, defaultParkingCountFromBuildings(item.buildings));
     return {
       name: item.name,
       address: item.address,
       buildings: createBuildings(prefix, item.buildings, 40),
-      parkingSpots: createParkingSpots(prefix, defaultParkingCountFromBuildings(item.buildings)),
+      parkingSpots,
+      parkingLots: createParkingLotsFromSpots(prefix, parkingSpots),
       reservations: [],
     };
   });
@@ -101,12 +118,14 @@ exports.createResidence = async (req, res) => {
     const safeParking = Number(parkingCount) > 0 ? Number(parkingCount) : defaultParkingCountFromBuildings(safeBuildingCount);
 
     const prefix = `${slugify(name)}-${Date.now()}`;
+    const parkingSpots = createParkingSpots(prefix, safeParking);
 
     const residence = await Residence.create({
       name: String(name).trim(),
       address: String(address).trim(),
       buildings: createBuildings(prefix, safeBuildingCount, safeApartments),
-      parkingSpots: createParkingSpots(prefix, safeParking),
+      parkingSpots,
+      parkingLots: createParkingLotsFromSpots(prefix, parkingSpots),
       reservations: [],
     });
 
@@ -174,6 +193,25 @@ exports.addParkingSpots = async (req, res) => {
     });
 
     residence.parkingSpots.push(...added);
+    if (residence.parkingLots.length === 0) {
+      residence.parkingLots.push({
+        id: `${residence._id}-lot-01`,
+        name: 'Parking 1',
+        totalSpots: residence.parkingSpots.length,
+        spots: residence.parkingSpots.map((spot) => ({
+          id: spot.id,
+          code: spot.code,
+          status: spot.status,
+        })),
+      });
+    } else if (residence.parkingLots[0]) {
+      residence.parkingLots[0].totalSpots = residence.parkingSpots.length;
+      residence.parkingLots[0].spots = residence.parkingSpots.map((spot) => ({
+        id: spot.id,
+        code: spot.code,
+        status: spot.status,
+      }));
+    }
     await residence.save();
 
     return res.status(201).json({ message: 'Parking spots added', residence, addedCount: added.length });

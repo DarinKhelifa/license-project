@@ -103,7 +103,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
@@ -290,20 +290,15 @@ class _NotificationItemCard extends StatefulWidget {
 }
 
 class _NotificationItemCardState extends State<_NotificationItemCard> {
-  bool _isHovered = false;
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: InkWell(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          color: _isHovered ? Colors.grey.shade50 : Colors.white,
+    return InkWell(
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        color: Colors.white,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -368,7 +363,6 @@ class _NotificationItemCardState extends State<_NotificationItemCard> {
               ),
             ],
           ),
-        ),
       ),
     );
   }

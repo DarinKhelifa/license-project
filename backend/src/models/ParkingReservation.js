@@ -1,36 +1,72 @@
 const mongoose = require('mongoose');
 
 const parkingReservationSchema = new mongoose.Schema({
-  spotId: {
+  residenceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Residence',
+    required: true,
+  },
+  parkingLotId: {
     type: String,
     required: true,
     trim: true,
   },
-  date: {
-    // store as date at midnight UTC for normalization
-    type: Date,
+  spotCode: {
+    type: String,
     required: true,
+    trim: true,
   },
-  userId: {
+  residentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  userName: {
+  residentName: {
     type: String,
     required: true,
     trim: true,
+  },
+  apartmentRef: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  startDate: {
+    type: Date,
+    required: true,
+  },
+  endDate: {
+    type: Date,
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  approvedAt: {
+    type: Date,
+    default: null,
+  },
+  rejectionReason: {
+    type: String,
+    default: null,
+  },
 });
 
-// Unique index to prevent double-reserving the same spot on the same date
-parkingReservationSchema.index({ spotId: 1, date: 1 }, { unique: true });
-// Index to quickly find reservations by date or user
-parkingReservationSchema.index({ date: 1 });
-parkingReservationSchema.index({ userId: 1 });
+// Prevent overlapping reservations
+parkingReservationSchema.index({ residenceId: 1, parkingLotId: 1, spotCode: 1, startDate: 1, endDate: 1 });
+parkingReservationSchema.index({ residentId: 1 });
+parkingReservationSchema.index({ residenceId: 1 });
+parkingReservationSchema.index({ status: 1 });
 
 module.exports = mongoose.model('ParkingReservation', parkingReservationSchema);

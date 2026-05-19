@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:orelax/models/employee_model.dart';
-import 'package:orelax/screens/resident/helping_staff/staff_profile_screen.dart';
+// import 'package:orelax/screens/resident/helping_staff/staff_profile_screen.dart';
 import 'package:orelax/services/employee_api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -374,22 +374,7 @@ class _HelpingStaffListScreenState extends State<HelpingStaffListScreen> {
                         avatarUrl: avatarUrl,
                         phone: emp.phone,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => StaffProfileScreen(
-                                staffId: emp.id,
-                                staffName: name,
-                                staffRating: "4.5 (1.3k reviews)",
-                                staffAvatarUrl: avatarUrl,
-                                experience: emp.experience,
-                                profession: category,
-                                price: "120 DA/hr",
-                                about:
-                                    "$name is a highly skilled service provider specializing in $category.",
-                              ),
-                            ),
-                          );
+                          // No navigation - staff items are not clickable
                         },
                       );
                     },

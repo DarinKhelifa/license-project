@@ -10,7 +10,7 @@ class ApiService {
   // - Web: localhost
   // - Android emulator: 10.0.2.2
   // - Physical device: replace with your computer IP
-  static String get serverUrl => kIsWeb ? 'http://localhost:5000' : 'http://10.0.2.2:5000';
+  static String get serverUrl => kIsWeb ? 'http://localhost:5001' : 'http://10.0.2.2:5001';
   static String get baseUrl => '$serverUrl/api';
 
   static MediaType _parseMediaType(String? mimeType) {
@@ -263,9 +263,126 @@ class ApiService {
       throw Exception(error['message'] ?? 'Failed to change password');
     }
   }
+
+  static Future<void> forgotPassword({
+    required String email,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+
+    if (response.statusCode != 200) {
+      try {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Failed to request password reset');
+      } catch (e) {
+        throw Exception('Failed to request password reset: ${response.statusCode}');
+      }
+    }
+  }
   
   static Future<void> logout() async {
     await removeToken();
+  }
+
+  // ========== SECURITY NOTE METHODS ==========
+
+  static Future<List<Map<String, dynamic>>> getSecurityNotes() async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/security-notes'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    }
+
+    throw Exception('Failed to load security notes');
+  }
+
+  static Future<Map<String, dynamic>> createSecurityNote({
+    required String title,
+    required String content,
+    DateTime? reminder,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/security-notes'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'title': title,
+        'content': content,
+        'reminder': reminder?.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    }
+
+    final error = jsonDecode(response.body);
+    throw Exception(error['message'] ?? 'Failed to create security note');
+  }
+
+  static Future<Map<String, dynamic>> updateSecurityNote({
+    required String noteId,
+    required String title,
+    required String content,
+    DateTime? reminder,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/security-notes/$noteId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'title': title,
+        'content': content,
+        'reminder': reminder?.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    final error = jsonDecode(response.body);
+    throw Exception(error['message'] ?? 'Failed to update security note');
+  }
+
+  static Future<void> deleteSecurityNote(String noteId) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/security-notes/$noteId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to delete security note');
+    }
   }
 
   // ========== CHAT METHODS ==========
@@ -419,6 +536,66 @@ class ApiService {
       throw Exception(error['message'] ?? 'Upload failed');
     } catch (_) {
       throw Exception('Upload failed: ${response.statusCode}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> editChatMessage({
+    required String messageId,
+    required String content,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.patch(
+      Uri.parse('$baseUrl/messages/$messageId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'content': content}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    try {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to edit message');
+    } catch (_) {
+      throw Exception('Failed to edit message: ${response.statusCode}');
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteChatMessage({
+    required String messageId,
+    bool forEveryone = true,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final uri = Uri.parse('$baseUrl/messages/$messageId${forEveryone ? '?scope=everyone' : ''}');
+    final response = await http.delete(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      try {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        return {'messageId': messageId};
+      }
+    }
+
+    try {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to delete message');
+    } catch (_) {
+      throw Exception('Failed to delete message: ${response.statusCode}');
     }
   }
 
@@ -729,4 +906,200 @@ static Future<void> updateReportStatus(String reportId, String status) async {
     }
   }
 
+  // ========== PARKING METHODS ==========
+
+  // Get parking lots for a residence
+  static Future<Map<String, dynamic>> getParkingLots(String residenceId) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/parking/$residenceId/lots'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load parking lots');
+    }
+  }
+
+  // Get parking lot details with spots
+  static Future<Map<String, dynamic>> getParkingLotDetails(
+    String residenceId,
+    String parkingLotId,
+  ) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/parking/$residenceId/lots/$parkingLotId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load parking lot details');
+    }
+  }
+
+  // Create parking reservation
+  static Future<Map<String, dynamic>> createParkingReservation({
+    required String residenceId,
+    required String parkingLotId,
+    required String spotCode,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/parking/reservations/create'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'residenceId': residenceId,
+        'parkingLotId': parkingLotId,
+        'spotCode': spotCode,
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to create reservation');
+    }
+  }
+
+  // Get user's parking reservations
+  static Future<List<Map<String, dynamic>>> getUserParkingReservations() async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/parking/my-reservations'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load your reservations');
+    }
+  }
+
+  // Cancel parking reservation
+  static Future<Map<String, dynamic>> cancelParkingReservation(
+    String reservationId,
+  ) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/parking/reservations/$reservationId/cancel'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to cancel reservation');
+    }
+  }
+
+  // Get residence parking reservations (Admin)
+  static Future<List<Map<String, dynamic>>> getResidenceReservations(
+    String residenceId,
+  ) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.get(
+      Uri.parse('$baseUrl/parking/$residenceId/reservations'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load reservations');
+    }
+  }
+
+  // Approve parking reservation (Admin)
+  static Future<Map<String, dynamic>> approveReservation(
+    String residenceId,
+    String reservationId,
+  ) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.put(
+      Uri.parse(
+        '$baseUrl/parking/$residenceId/reservations/$reservationId/approve',
+      ),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to approve reservation');
+    }
+  }
+
+  // Reject parking reservation (Admin)
+  static Future<Map<String, dynamic>> rejectReservation(
+    String residenceId,
+    String reservationId, {
+    String? rejectionReason,
+  }) async {
+    final token = await getToken();
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.put(
+      Uri.parse(
+        '$baseUrl/parking/$residenceId/reservations/$reservationId/reject',
+      ),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'rejectionReason': rejectionReason}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Failed to reject reservation');
+    }
+  }
 }

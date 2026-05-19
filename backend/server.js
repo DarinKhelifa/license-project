@@ -20,8 +20,10 @@ const authRoutes = require('./src/routes/authRoutes');
 const facilityRoutes = require('./src/routes/facilityRoutes');
 const bookingRoutes = require('./src/routes/bookingRoutes');
 const chatRoutes = require('./src/routes/chatRoutes');
+const messageRoutes = require('./src/routes/messagesRoutes');
 const eventRoutes = require('./src/routes/eventRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
+const securityNoteRoutes = require('./src/routes/securityNoteRoutes');
 const guestRoutes = require('./src/routes/guestRoutes');
 const employeeRoutes = require('./src/routes/employeeRoutes');
 const socialRoutes = require('./src/routes/socialRoutes');
@@ -36,6 +38,7 @@ const settingsRoutes = require('./src/routes/settingsRoutes');
 const contactRoutes = require('./src/routes/contactRoutes');
 const parkingRoutes = require('./src/routes/parkingRoutes');
 const iotRoutes = require('./src/routes/iotRoutes');
+const { startWokwiBridge } = require('./src/services/wokwiBridge');
 
 const app = express();
 const server = http.createServer(app);
@@ -91,8 +94,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/facilities', facilityRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/messages', messageRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/security-notes', securityNoteRoutes);
 app.use('/api/guests', guestRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/social', socialRoutes);
@@ -109,6 +114,9 @@ app.use('/api/iot', iotRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'ORELAX API is running' });
 });
+
+// Wokwi serial bridge for live environment simulation
+startWokwiBridge(2442, io);
 
 // Socket.io Chat Logic
 const Chat = require('./src/models/Chat');

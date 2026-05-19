@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:orelax/widgets/custom_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:typed_data';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/social_provider.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -16,16 +18,37 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _contentController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
-  List<File> _selectedImages = [];
-  List<File> _selectedAttachments = [];
+  final List<XFile> _selectedImages = [];
+  final List<Uint8List> _selectedImageBytes = [];
   bool _isPosting = false;
+
+  String? _resolveAvatarUrl(String? raw) {
+    final value = raw?.trim() ?? '';
+    if (value.isEmpty) {
+      return null;
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return value;
+    }
+
+    return 'http://localhost:5001$value';
+  }
 
   Future<void> _pickImages() async {
     final pickedFiles = await _imagePicker.pickMultiImage();
+
+    if (pickedFiles.isEmpty) return;
+
+    final bytesList = await Future.wait(
+      pickedFiles.map((file) => file.readAsBytes()),
+    );
+
+    if (!mounted) return;
+
     setState(() {
-      _selectedImages.addAll(
-        pickedFiles.map((file) => File(file.path)),
-      );
+      _selectedImages.addAll(pickedFiles);
+      _selectedImageBytes.addAll(bytesList);
     });
   }
 
@@ -39,6 +62,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void _removeImage(int index) {
     setState(() {
       _selectedImages.removeAt(index);
+      _selectedImageBytes.removeAt(index);
     });
   }
 
@@ -54,8 +78,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
     final success = await context.read<SocialProvider>().createPost(
       content: _contentController.text,
-      images: _selectedImages.isNotEmpty ? _selectedImages : null,
-      attachments: _selectedAttachments.isNotEmpty ? _selectedAttachments : null,
+      images: _selectedImages.isNotEmpty ? _selectedImageBytes : null,
+      imageNames: _selectedImages.isNotEmpty ? _selectedImages.map((file) => file.name).toList() : null,
     );
 
     if (mounted) {
@@ -90,6 +114,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   Widget build(BuildContext context) {
     const Color darkGreen = Color(0xFF1A5C2A);
     const Color lightGreen = Color(0xFFE8F5E9);
+    final authProvider = context.watch<AuthProvider>();
+    final userName = (authProvider.userName ?? 'You').trim().isEmpty ? 'You' : authProvider.userName!.trim();
+    final avatarUrl = _resolveAvatarUrl(authProvider.userAvatar);
 
     return Scaffold(
       bottomNavigationBar: const CustomBottomNavBar(currentIndex: 0),
@@ -154,14 +181,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: lightGreen,
-                    child: const Icon(Icons.person, color: darkGreen),
+                    backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                    child: avatarUrl == null ? const Icon(Icons.person, color: darkGreen) : null,
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Your Name',
+                        userName,
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -221,9 +249,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            _selectedImages[index],
+                          child: Image.memory(
+                            _selectedImageBytes[index],
                             fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
                           ),
                         ),
                         Positioned(

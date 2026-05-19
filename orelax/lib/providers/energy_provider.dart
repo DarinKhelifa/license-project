@@ -42,6 +42,11 @@ class EnergyProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Update a single energy reading (used by simulator)
+  void updateEnergyReading(Map<String, dynamic> reading) {
+    _updateCurrentReading(reading);
+  }
+
   void _addAlert(Map<String, dynamic> alert) {
     _alerts.insert(0, alert);
     notifyListeners();
@@ -54,7 +59,24 @@ class EnergyProvider extends ChangeNotifier {
 
     try {
       final data = await EnergyService.getCurrentReadings();
-      _currentReadings = (data as List<dynamic>).cast<Map<String, dynamic>>();
+      final fetchedReadings = (data as List<dynamic>).cast<Map<String, dynamic>>();
+      final mergedReadings = <String, Map<String, dynamic>>{};
+
+      for (final reading in _currentReadings) {
+        final deviceId = reading['deviceId']?.toString();
+        if (deviceId != null && deviceId.isNotEmpty) {
+          mergedReadings[deviceId] = reading;
+        }
+      }
+
+      for (final reading in fetchedReadings) {
+        final deviceId = reading['deviceId']?.toString();
+        if (deviceId != null && deviceId.isNotEmpty) {
+          mergedReadings[deviceId] = reading;
+        }
+      }
+
+      _currentReadings = mergedReadings.values.toList();
     } catch (e) {
       _error = e.toString();
     } finally {

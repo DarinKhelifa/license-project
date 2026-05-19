@@ -184,7 +184,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_existingProfileImage != null && _existingProfileImage!.isNotEmpty) {
       String imageUrl = _existingProfileImage!;
       if (!imageUrl.startsWith('http')) {
-        imageUrl = 'http://localhost:5000$imageUrl';
+        imageUrl = 'http://localhost:5001$imageUrl';
       }
       return ClipOval(
         child: Image.network(

@@ -12,6 +12,8 @@ import '../../providers/event_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/alert_provider.dart';
 import '../../providers/fire_alert_provider.dart';
+// IoT screen removed
+import '../../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,6 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
         fireAlertProvider.addListener(_checkForNewFireAlerts);
       }
     });
+  }
+  
+  void _navigateServiceRoute(String route) {
+    Navigator.pushNamed(context, route);
   }
 
   void _checkForNewAlerts() {
@@ -216,10 +222,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    final alertProvider = Provider.of<AlertProvider>(context, listen: false);
-    final fireAlertProvider = Provider.of<FireAlertProvider>(context, listen: false);
-    alertProvider.removeListener(_checkForNewAlerts);
-    fireAlertProvider.removeListener(_checkForNewFireAlerts);
+    if (mounted) {
+      try {
+        final alertProvider = Provider.of<AlertProvider>(context, listen: false);
+        final fireAlertProvider = Provider.of<FireAlertProvider>(context, listen: false);
+        alertProvider.removeListener(_checkForNewAlerts);
+        fireAlertProvider.removeListener(_checkForNewFireAlerts);
+      } catch (_) {
+        // Ignore errors accessing providers during dispose
+      }
+    }
     super.dispose();
   }
 
@@ -280,13 +292,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() => _currentIndex = index);
 
-    // Security role uses a different 3-item layout: Home(0) / Notes(1) / Profile(2)
+    // Security and maintenance roles use a different 3-item layout.
     if (_role == 'security') {
       switch (index) {
         case 0:
           break;
         case 1:
           Navigator.pushNamed(context, '/notes');
+          break;
+        case 2:
+          Navigator.pushNamed(context, '/profile');
+          break;
+      }
+      return;
+    }
+
+    if (_role == 'maintenance') {
+      switch (index) {
+        case 0:
+          break;
+        case 1:
+          Navigator.pushNamed(context, '/work-orders');
           break;
         case 2:
           Navigator.pushNamed(context, '/profile');
@@ -466,7 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       // ...existing code for bottomNavigationBar...
-      bottomNavigationBar: _role.toLowerCase() != 'resident'
+        bottomNavigationBar: _role.toLowerCase() != 'resident'
           ? Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Container(
@@ -490,7 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 child: DockNavBar(
-                  items: _role == 'security'
+                  items: _role == 'security' || _role == 'maintenance'
                       ? [
                           _DockNavBarItem(
                             icon: 'assets/icon/house.svg',
@@ -520,7 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           _isFacilitiesManager()
                               ? _DockNavBarItem(
-                                  icon: 'assets/icon/calendar.svg',
+                                  icon: 'assets/icon/handshake.svg',
                                   label: 'Bookings',
                                   isActive: _currentIndex == 1,
                                   onTap: () => _navigateToPage(1),
@@ -532,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                           _DockNavBarItem(
                             icon: _usesNotificationsTab
-                                ? 'assets/icon/bell.svg'
+                                ? 'assets/icon/message-circle.svg'
                                 : 'assets/icon/triangle-alert.svg',
                             label: _usesNotificationsTab ? 'Notifications' : 'Report',
                             isActive: _currentIndex == 2,
@@ -590,8 +616,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         _DockNavBarSpacerItem(),
                         _DockNavBarItem(
-                          icon: 'assets/icon/triangle-alert.svg',
-                          label: 'Report',
+                          icon: 'assets/icon/message-circle.svg',
+                          label: 'Chat',
                           isActive: _currentIndex == 2,
                           onTap: () => _navigateToPage(2),
                         ),
@@ -843,17 +869,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 letterSpacing: 0.5,
               ),
             ),
-            GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/reports'),
-              child: const Text(
-                'View All',
-                style: TextStyle(
-                  color: Color(0xFF1A5C2A),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -915,7 +930,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 iconColor: card['iconColor'] as Color,
                 title: card['title'] as String,
                 subtitle: card['subtitle'] as String,
-                onTap: () => Navigator.pushNamed(context, card['route'] as String),
+                onTap: () => _navigateServiceRoute(card['route'] as String),
               );
             }),
           );
@@ -926,12 +941,24 @@ class _HomeScreenState extends State<HomeScreen> {
         FutureBuilder<Map<String, String?>>(
           future: () async {
             try {
+              final notes = await ApiService.getSecurityNotes();
+              if (notes.isNotEmpty) {
+                final note = notes.first;
+                return {
+                  'title': (note['title'] as String?) ?? '(No title)',
+                  'content': (note['content'] as String?) ?? '',
+                };
+              }
+
               final prefs = await SharedPreferences.getInstance();
               final auth = Provider.of<AuthProvider>(context, listen: false);
               final uid = auth.userId ?? 'anonymous';
               final key = 'notes_$uid';
               final raw = prefs.getStringList(key) ?? [];
-              if (raw.isEmpty) return {'title': 'No shift notes', 'content': 'No notes yet. Tap Notes to add a shift note.'};
+              if (raw.isEmpty) {
+                return {'title': 'No shift notes', 'content': 'No notes yet. Tap Notes to add a shift note.'};
+              }
+
               final first = raw.first;
               final m = json.decode(first) as Map<String, dynamic>;
               return {
@@ -1067,7 +1094,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Open work orders and pending requests below — Home · Chat · Report · Profile stay the same.',
+                            'Open work orders and the schedule below — Home · Notes · Profile stay the same.',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white.withOpacity(0.85),
@@ -1134,17 +1161,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 letterSpacing: 0.5,
               ),
             ),
-            GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/schedule'),
-              child: const Text(
-                'View All',
-                style: TextStyle(
-                  color: Color(0xFF1A5C2A),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -1160,26 +1176,14 @@ class _HomeScreenState extends State<HomeScreen> {
               'route': '/work-orders',
             },
             {
-              'icon': Icons.pending_actions_outlined,
-              'iconColor': const Color(0xFFE07B3F),
-              'title': 'Pending',
-              'subtitle': 'Awaiting action',
-              'route': '/pending-requests',
-            },
-            {
               'icon': Icons.calendar_today_outlined,
               'iconColor': const Color(0xFFE05C8A),
               'title': 'Schedule',
               'subtitle': 'Your calendar',
               'route': '/schedule',
             },
-            {
-              'icon': Icons.report_problem_outlined,
-              'iconColor': const Color(0xFF9B59B6),
-              'title': 'Report',
-              'subtitle': 'Submit an issue',
-              'route': '/report',
-            },
+            // IoT Dashboard removed
+            // Access logs card removed
           ];
 
           final lowerQuery = _searchQuery.trim().toLowerCase();
@@ -1218,10 +1222,10 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: Icons.build,
           title: 'Team note',
           subtitle: 'Today • Maintenance',
-          buttonLabel: 'PENDING',
+          buttonLabel: 'SCHEDULE',
           content:
-              'Prioritize common-area repairs before unit callbacks. Use Report in the bottom bar for new tickets.',
-          onButtonTap: () => Navigator.pushNamed(context, '/pending-requests'),
+              'Prioritize common-area repairs before unit callbacks. Use the schedule and work orders views to plan the shift.',
+          onButtonTap: () => Navigator.pushNamed(context, '/schedule'),
           delay: const Duration(milliseconds: 400),
         ),
 
@@ -1603,8 +1607,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       iconColor: card['iconColor'] as Color,
                       title: card['title'] as String,
                       subtitle: card['subtitle'] as String,
-                      onTap: () =>
-                          Navigator.pushNamed(context, card['route'] as String),
+                      onTap: () => _navigateServiceRoute(card['route'] as String),
                     );
                   },
                 ),
@@ -1782,14 +1785,7 @@ class _PillNotificationToggleState extends State<_PillNotificationToggle>
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        _swapController.forward();
-      },
-      onExit: (_) {
-        _swapController.reverse();
-      },
-      child: Container(
+    return Container(
         width: 140,
         height: 50,
         decoration: BoxDecoration(
@@ -1907,7 +1903,7 @@ class _PillNotificationToggleState extends State<_PillNotificationToggle>
                         var userAvatar = authProvider.userAvatar;
                         // Construct full URL if it's a relative path
                         if (userAvatar != null && !userAvatar.startsWith('http')) {
-                          userAvatar = 'http://localhost:5000$userAvatar';
+                          userAvatar = 'http://localhost:5001$userAvatar';
                         }
                         return Container(
                           width: 38,
@@ -1941,7 +1937,6 @@ class _PillNotificationToggleState extends State<_PillNotificationToggle>
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -1955,42 +1950,33 @@ class _HoverableQRButton extends StatefulWidget {
 }
 
 class _HoverableQRButtonState extends State<_HoverableQRButton> {
-  bool _isHovered = false;
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: _isHovered ? 78 : 70,
-          height: _isHovered ? 78 : 70,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: _isHovered
-                  ? const Color(0xFF1A5C2A)
-                  : const Color(0xFFE05C8A).withOpacity(0.5),
-              width: _isHovered ? 3 : 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(_isHovered ? 0.3 : 0.2),
-                blurRadius: _isHovered ? 20 : 15,
-                offset: Offset(0, _isHovered ? 10 : 8),
-              ),
-            ],
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Container(
+        width: 70,
+        height: 70,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFFE05C8A).withOpacity(0.5),
+            width: 2,
           ),
-          child: Center(
-            child: Icon(
-              Icons.qr_code_scanner_rounded,
-              size: _isHovered ? 38 : 32,
-              color: const Color(0xFF1A5C2A),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
+          ],
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.qr_code_scanner_rounded,
+            size: 32,
+            color: Color(0xFF1A5C2A),
           ),
         ),
       ),
@@ -2570,6 +2556,8 @@ class _SearchBarWithResultsState extends State<_SearchBarWithResults> {
     }
   }
 
+  // navigation helper is defined in the parent state
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -2823,41 +2811,27 @@ class _BannerWithHover extends StatefulWidget {
 }
 
 class _BannerWithHoverState extends State<_BannerWithHover> {
-  bool _isHovered = false;
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 800),
-        curve: Curves.easeInOut,
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: _isHovered
-                ? [const Color(0xFF1A5C2A), const Color(0xFF2E7D32)]
-                : [
-                    const Color(0xFF1A5C2A),
-                    const Color(0xFF2A7D3A),
-                    const Color(0xFF1A5C2A)
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color:
-                  const Color(0xFF1A5C2A).withOpacity(_isHovered ? 0.3 : 0.2),
-              blurRadius: _isHovered ? 25 : 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A5C2A), Color(0xFF2A7D3A), Color(0xFF1A5C2A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Stack(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1A5C2A).withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
           children: [
             ...List.generate(4, (index) {
               final positions = [
@@ -2877,44 +2851,9 @@ class _BannerWithHoverState extends State<_BannerWithHover> {
                 ),
               );
             }),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 600),
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              child: _isHovered
-                  ? Center(
-                      key: const ValueKey('hoverContent'),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Orelax Real Estate',
-                            style: GoogleFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFFF5C518),
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            "Your comfort, our priority. A secure and peaceful home for your family's brightest future.",
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white.withOpacity(0.9),
-                              fontStyle: FontStyle.italic,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Column(
-                      key: const ValueKey('normalContent'),
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            Column(
+              key: const ValueKey('normalContent'),
+              crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -2951,36 +2890,40 @@ class _BannerWithHoverState extends State<_BannerWithHover> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5C518),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Learn More',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                        GestureDetector(
+                          onTap: () {
+                            // Navigate to announcement details or open dialog
+                            Navigator.pushNamed(context, '/events');
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5C518),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Learn More',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_forward,
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward,
                                   color: Colors.black, size: 16),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],
-                    ),
-            ),
+                    )
           ],
         ),
-      ),
     );
   }
 }
@@ -3148,6 +3091,8 @@ class _DockNavBarState extends State<DockNavBar>
       item.onTap();
     }
   }
+
+  // navigation helper is defined in the parent state
 
   @override
   Widget build(BuildContext context) {

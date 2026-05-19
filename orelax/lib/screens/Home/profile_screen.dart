@@ -10,6 +10,7 @@ import 'about_page.dart';
 import 'help_center_page.dart';
 import 'notification_settings_screen.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
+import '../../widgets/maintenance_bottom_nav_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -45,9 +46,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
     const Color darkGreen = Color(0xFF1A5C2A);
+    final isMaintenance = user?['role']?.toString().toLowerCase() == 'maintenance';
 
     return Scaffold(
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 3),
+      bottomNavigationBar: isMaintenance
+          ? const MaintenanceBottomNavBar(currentIndex: 2)
+          : const CustomBottomNavBar(currentIndex: 3),
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -250,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Construct full URL if it's a relative path
       String imageUrl = profileImage.toString();
       if (!imageUrl.startsWith('http')) {
-        imageUrl = 'http://localhost:5000$imageUrl';
+        imageUrl = 'http://localhost:5001$imageUrl';
       }
       
       // Display network image if available
@@ -360,54 +364,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ContactUsScreen()),
-    );
-  }
-
-  void _showAboutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('About ORELAX'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text('ORELAX is a resident-centered community management platform designed to simplify daily life in apartment complexes and residential buildings.'),
-              SizedBox(height: 8),
-              Text('Version: 1.0.0'),
-              SizedBox(height: 8),
-              Text('Our mission is to make residential living safer, more convenient, and more connected by delivering an easy, secure, and reliable digital experience for residents and staff.'),
-              SizedBox(height: 8),
-              Text('Key features include: Facility bookings, event announcements, incident reporting, visitor QR passes, and real-time notifications.'),
-              SizedBox(height: 12),
-              Text('© 2024 ORELAX. All rights reserved.'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _toggleNotifications() {
-    // kept for backward compatibility; main settings moved to NotificationSettingsScreen
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NotificationSettingsScreen()),
-    );
-  }
-
-  void _showHelpCenter() {
-    // Help center is now a full page. Use navigation instead.
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const HelpCenterPage()),
     );
   }
 

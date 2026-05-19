@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import 'dart:ui'; // Import dart:ui for ImageFilter
 
 import '../../providers/auth_provider.dart';
+import '../../widgets/auth_error_banner.dart';
 import 'signup_screen.dart';
+import 'forgot_password_screen.dart';
 
 // Palette for the "Soft Green" theme
 const kGreenDark = Color(0xFF134E21);
@@ -195,10 +197,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       if (_errorMessage != null)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(_errorMessage!,
-                              style: const TextStyle(
-                                  color: Colors.red, fontSize: 12)),
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: AuthErrorBanner(message: _errorMessage!),
                         ),
 
                       // Email Input (background applied to input already)
@@ -232,7 +232,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       Align(
                         alignment: Alignment.center,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen(),
+                            ),
+                          ),
                           child: Text(
                             'Forgot Password',
                             style: GoogleFonts.dmSans(
@@ -332,19 +337,11 @@ class _GoogleSignInButton extends StatefulWidget {
 }
 
 class _GoogleSignInButtonState extends State<_GoogleSignInButton> {
-  bool _isHovered = false;
-
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _isHovered ? 1.2 : 1.0,
-          duration: const Duration(milliseconds: 200),
-          child: Column(
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Column(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
@@ -365,9 +362,7 @@ class _GoogleSignInButtonState extends State<_GoogleSignInButton> {
                       fontSize: 10, fontWeight: FontWeight.w500)),
             ],
           ),
-        ),
-      ),
-    );
+        );
   }
 }
 

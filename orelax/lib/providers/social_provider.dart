@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../models/post_model.dart';
 import '../models/story_model.dart';
@@ -42,8 +42,10 @@ class SocialProvider extends ChangeNotifier {
   // Create post
   Future<bool> createPost({
     required String content,
-    List<File>? images,
-    List<File>? attachments,
+    List<Uint8List>? images,
+    List<String>? imageNames,
+    List<Uint8List>? attachments,
+    List<String>? attachmentNames,
   }) async {
     _isLoading = true;
     _error = null;
@@ -53,7 +55,9 @@ class SocialProvider extends ChangeNotifier {
       final newPost = await SocialApiService.createPost(
         content: content,
         images: images,
+        imageNames: imageNames,
         attachments: attachments,
+        attachmentNames: attachmentNames,
       );
       _posts.insert(0, newPost);
       _error = null;
@@ -192,13 +196,19 @@ class SocialProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> createStory(File image) async {
+  Future<bool> createStory({
+    required Uint8List imageBytes,
+    required String filename,
+  }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final newStory = await SocialApiService.createStory(image);
+      final newStory = await SocialApiService.createStory(
+        imageBytes: imageBytes,
+        filename: filename,
+      );
       _stories.insert(0, newStory);
       _error = null;
       return true;
@@ -240,6 +250,38 @@ class SocialProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       debugPrint('Error sharing post: $e');
+      return false;
+    }
+  }
+
+  // Share post with specific user
+  Future<bool> sharePostWithUser(String postId, String recipientUserId) async {
+    try {
+      await SocialApiService.sharePostWithUser(postId, recipientUserId);
+      final index = _posts.indexWhere((p) => p.id == postId);
+      if (index != -1) {
+        final post = _posts[index];
+        _posts[index] = Post(
+          id: post.id,
+          userId: post.userId,
+          userName: post.userName,
+          userAvatar: post.userAvatar,
+          content: post.content,
+          imageUrls: post.imageUrls,
+          attachmentUrls: post.attachmentUrls,
+          createdAt: post.createdAt,
+          likes: post.likes,
+          comments: post.comments,
+          shares: post.shares + 1,
+          isLikedByCurrentUser: post.isLikedByCurrentUser,
+          reactions: post.reactions,
+        );
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      debugPrint('Error sharing post with user: $e');
       return false;
     }
   }

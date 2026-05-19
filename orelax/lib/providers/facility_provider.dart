@@ -58,7 +58,7 @@ class FacilityProvider extends ChangeNotifier {
       // Log detailed error for debugging
       if (errorMsg.contains('Could not start listening on Socket') ||
           errorMsg.contains('Connection refused')) {
-        _error = 'Backend server is not running. Please check that the backend is running on localhost:5000';
+        _error = 'Backend server is not running. Please check that the backend is running on localhost:5001';
       } else if (errorMsg.contains('400')) {
         _error = 'Invalid facility data. Please check all fields are filled correctly';
       } else if (errorMsg.contains('timeout') || errorMsg.contains('Time')) {

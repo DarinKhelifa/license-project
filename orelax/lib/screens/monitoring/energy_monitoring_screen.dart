@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import '../../widgets/custom_bottom_nav_bar.dart';
 import '../../providers/energy_provider.dart';
+import '../../utils/wokwi_listener.dart';
 
 class EnergyMonitoringScreen extends StatefulWidget {
   const EnergyMonitoringScreen({super.key});
@@ -13,6 +16,11 @@ class EnergyMonitoringScreen extends StatefulWidget {
 
 class _EnergyMonitoringScreenState extends State<EnergyMonitoringScreen> {
   int _selectedDays = 7;
+  bool _listeningToWokwi = false;
+  String _wokwiUrl = '';
+  Timer? _pollTimer;
+  static const String _wokwiBridgeUrl = 'ws://localhost:2442';
+  static const String _sharedWokwiUrl = 'https://wokwi.com/projects/464451062725011457';
 
   @override
   void initState() {
@@ -27,6 +35,13 @@ class _EnergyMonitoringScreenState extends State<EnergyMonitoringScreen> {
   }
 
   @override
+  void dispose() {
+    _stopPolling();
+    stopWokwiListener();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final provider = Provider.of<EnergyProvider>(context);
 
@@ -38,10 +53,15 @@ class _EnergyMonitoringScreenState extends State<EnergyMonitoringScreen> {
         backgroundColor: const Color(0xFF034808),
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            tooltip: 'Open simulator',
+            icon: const Icon(Icons.developer_mode_outlined),
+            onPressed: () => _showSimulatorOptions(context),
+          ),
           PopupMenuButton<int>(
             onSelected: (days) {
               setState(() => _selectedDays = days);
-              provider.fetchHistoricalData(days: days);
+              Provider.of<EnergyProvider>(context, listen: false).fetchHistoricalData(days: days);
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 1, child: Text('Last 24h')),
@@ -58,7 +78,34 @@ class _EnergyMonitoringScreenState extends State<EnergyMonitoringScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [ 
+            children: [
+              if (_listeningToWokwi)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withOpacity(0.12)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.wifi_tethering, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text('Listening to simulator: $_wokwiUrl', style: const TextStyle(fontSize: 13))),
+                        TextButton(
+                          onPressed: () {
+                            stopWokwiListener();
+                            _stopPolling();
+                            setState(() => _listeningToWokwi = false);
+                          },
+                          child: const Text('Stop'),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
               // Total Consumption Card
               _buildTotalCard(provider),
               const SizedBox(height: 20),
@@ -92,6 +139,206 @@ class _EnergyMonitoringScreenState extends State<EnergyMonitoringScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showSimulatorOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Energy Simulator', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Start Wokwi (web)'),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await _promptAndStartWokwi(context);
+                },
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.tune),
+                label: const Text('Local simulator'),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _openLocalSimulator(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _promptAndStartWokwi(BuildContext context) async {
+    final controller = TextEditingController(text: _sharedWokwiUrl);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Wokwi URL'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: 'Paste Wokwi project URL'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Start')),
+        ],
+      ),
+    );
+
+    if (ok == true) {
+      final url = controller.text.trim();
+      if (url.isEmpty) return;
+      setState(() {
+        _wokwiUrl = url;
+        _listeningToWokwi = true;
+      });
+
+      startWokwiListener((data) {
+        final provider = Provider.of<EnergyProvider>(context, listen: false);
+        if (data['type'] == 'wokwi-energy') {
+          final readings = data['readings'];
+          if (readings is List) {
+            for (final reading in readings) {
+              provider.updateEnergyReading(Map<String, dynamic>.from(reading as Map));
+            }
+          } else {
+            final electricity = data['electricity'];
+            final water = data['water'];
+            if (electricity is num) {
+              provider.updateEnergyReading({
+                'deviceId': 'wokwi-electricity',
+                'deviceName': 'Wokwi Electricity',
+                'readingType': 'electricity',
+                'value': electricity.toDouble(),
+                'unit': 'kWh',
+                'timestamp': DateTime.now().toIso8601String(),
+              });
+            }
+            if (water is num) {
+              provider.updateEnergyReading({
+                'deviceId': 'wokwi-water',
+                'deviceName': 'Wokwi Water',
+                'readingType': 'water',
+                'value': water.toDouble(),
+                'unit': 'L',
+                'timestamp': DateTime.now().toIso8601String(),
+              });
+            }
+          }
+        } else if (data['readings'] is List) {
+          for (final reading in data['readings']) {
+            provider.updateEnergyReading(Map<String, dynamic>.from(reading as Map));
+          }
+        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Energy simulator: received ${data['readings']?.length ?? 0} readings')),
+        );
+      });
+
+      _startPolling();
+
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Wokwi started'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Open the following URL in a new tab and run the simulation, then connect its Debug Web Socket to:'),
+              const SizedBox(height: 8),
+              SelectableText(url, style: const TextStyle(color: Colors.blue)),
+              const SizedBox(height: 12),
+              SelectableText(_wokwiBridgeUrl, style: const TextStyle(fontWeight: FontWeight.w700)),
+            ],
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))],
+        ),
+      );
+    }
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      try {
+        final provider = Provider.of<EnergyProvider>(context, listen: false);
+        await provider.fetchCurrentReadings();
+      } catch (_) {}
+    });
+  }
+
+  void _stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+  }
+
+  void _openLocalSimulator(BuildContext context) {
+    Map<String, double> values = {'electricity': 2.5, 'water': 150.0};
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Local Energy Simulator'),
+        content: StatefulBuilder(
+          builder: (context, setLocalState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Electricity: ${values['electricity']!.toStringAsFixed(2)} kWh'),
+              Slider(
+                value: values['electricity']!,
+                min: 0,
+                max: 10,
+                divisions: 100,
+                onChanged: (v) => setLocalState(() => values['electricity'] = v),
+              ),
+              const SizedBox(height: 8),
+              Text('Water: ${values['water']!.toStringAsFixed(0)} L'),
+              Slider(
+                value: values['water']!,
+                min: 0,
+                max: 500,
+                divisions: 500,
+                onChanged: (v) => setLocalState(() => values['water'] = v),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final provider = Provider.of<EnergyProvider>(context, listen: false);
+              provider.updateEnergyReading({
+                'deviceId': 'local-electricity',
+                'deviceName': 'Local Electricity',
+                'readingType': 'electricity',
+                'value': values['electricity'],
+                'unit': 'kWh',
+                'timestamp': DateTime.now().toIso8601String(),
+              });
+              provider.updateEnergyReading({
+                'deviceId': 'local-water',
+                'deviceName': 'Local Water',
+                'readingType': 'water',
+                'value': values['water'],
+                'unit': 'L',
+                'timestamp': DateTime.now().toIso8601String(),
+              });
+              Navigator.pop(ctx);
+            },
+            child: const Text('Send'),
+          ),
+        ],
       ),
     );
   }
@@ -188,8 +435,17 @@ class _EnergyMonitoringScreenState extends State<EnergyMonitoringScreen> {
     }
 
     if (provider.currentReadings.isEmpty) {
-      return const Center(
-        child: Text('No energy data available'),
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Text(
+          'No energy data available yet. Start the simulator and keep this screen open; live electricity and water readings will appear here as soon as the bridge receives them.',
+          textAlign: TextAlign.center,
+        ),
       );
     }
 
