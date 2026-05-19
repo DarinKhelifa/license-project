@@ -69,6 +69,7 @@ class AuthProvider extends ChangeNotifier {
   String? get userName => _user?['name'];
   String? get userAvatar => _user?['profileImage'];
   String? get userEmail => _user?['email'];
+    String? get residenceId => _user?['residence'];
   
   AuthProvider() {
     _checkAuthStatus();
@@ -233,9 +234,24 @@ class AuthProvider extends ChangeNotifier {
   }
   
   Future<bool> sendPasswordResetEmail(String email) async {
-    _errorMessage = 'Password reset coming soon';
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
-    return false;
+
+    try {
+      await ApiService.forgotPassword(email: email);
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = _friendlyAuthError(
+        e,
+        fallback: 'We could not request a password reset right now. Please try again later.',
+      );
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
   
 Future<bool> updateUserData(Map<String, dynamic> data) async {

@@ -52,7 +52,7 @@ type TabValue = 'overview' | 'buildings' | 'parking' | 'reservations' | 'residen
 
 function statusChipColor(status: ReservationStatus): 'warning' | 'success' | 'error' {
   if (status === 'approved') return 'success';
-  if (status === 'denied') return 'error';
+  if (status === 'rejected') return 'error';
   return 'warning';
 }
 
@@ -88,6 +88,8 @@ export default function MyResidences() {
   // Residents list
   const [residents, setResidents] = useState<any[]>([]);
   const [residentsLoading, setResidentsLoading] = useState(false);
+
+  const [reservations, setReservations] = useState<any[]>([]);
 
   const activeResidence = useMemo(
     () => residences.find((r) => r._id === activeResidenceId) ?? residences[0],
@@ -260,23 +262,21 @@ export default function MyResidences() {
 
   async function handleReservationDecision(
     reservationId: string,
-    status: Extract<ReservationStatus, 'approved' | 'denied'>
+    status: Extract<ReservationStatus, 'approved' | 'rejected'>
   ) {
     if (!activeResidence) return;
 
     setSaving(true);
     try {
-      const result = await residencesAPI.updateReservationStatus(
-        activeResidence._id,
-        reservationId,
-        { status }
-      );
+      if (status === 'approved') {
+        await residencesAPI.approveParkingReservation(activeResidence._id, reservationId);
+      } else if (status === 'rejected') {
+        await residencesAPI.rejectParkingReservation(activeResidence._id, reservationId);
+      }
 
-      setResidences((prev) =>
-        prev.map((residence) =>
-          residence._id === result.residence._id ? result.residence : residence
-        )
-      );
+      // Refresh the reservations list
+      const updatedReservations = await residencesAPI.getResidentReservations(activeResidence._id);
+      setReservations(updatedReservations);
 
       setMessage(`Reservation ${status}.`);
     } catch (e) {
@@ -327,6 +327,21 @@ export default function MyResidences() {
       setSaving(false);
     }
   }
+
+  useEffect(() => {
+    async function fetchResidentReservations() {
+      if (!activeResidence) return;
+
+      try {
+        const reservations = await residencesAPI.getResidentReservations(activeResidence._id);
+        setReservations(reservations);
+      } catch (e) {
+        setMessage(e instanceof Error ? e.message : 'Failed to fetch reservations');
+      }
+    }
+
+    fetchResidentReservations();
+  }, [activeResidence]);
 
   if (loading) {
     return (
@@ -505,7 +520,7 @@ export default function MyResidences() {
                 <Stack direction="row" spacing={1.2} flexWrap="wrap" useFlexGap>
                   <Chip label={`Pending: ${activeResidence.reservations.filter((item) => item.status === 'pending').length}`} color="warning" />
                   <Chip label={`Approved: ${activeResidence.reservations.filter((item) => item.status === 'approved').length}`} color="success" />
-                  <Chip label={`Denied: ${activeResidence.reservations.filter((item) => item.status === 'denied').length}`} color="error" />
+                  <Chip label={`Rejected: ${activeResidence.reservations.filter((item) => item.status === 'rejected').length}`} color="error" />
                 </Stack>
                 <Typography sx={{ mt: 2, color: 'text.secondary' }}>
                   You can approve or deny resident parking requests in the Reservations tab.
@@ -625,107 +640,75 @@ export default function MyResidences() {
       ) : null}
 
       {activeTab === 'reservations' ? (
-        <Grid container spacing={2}>
-          <Grid item xs={12} lg={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" sx={{ mb: 1.5 }}>New Reservation Request</Typography>
-                <Stack spacing={1.5}>
-                  <TextField
-                    label="Resident Name"
-                    value={reservationResident}
-                    onChange={(event) => setReservationResident(event.target.value)}
-                  />
-                  <TextField
-                    label="Apartment"
-                    value={reservationApartment}
-                    onChange={(event) => setReservationApartment(event.target.value)}
-                    placeholder="Example: A-14"
-                  />
-                  <TextField
-                    label="Building"
-                    value={reservationBuilding}
-                    onChange={(event) => setReservationBuilding(event.target.value)}
-                    placeholder="Example: Building 03"
-                  />
-                  <TextField
-                    label="Requested Spot Code"
-                    value={reservationSpotCode}
-                    onChange={(event) => setReservationSpotCode(event.target.value)}
-                    placeholder="Example: P-010"
-                  />
-                  <Button variant="contained" onClick={() => void handleCreateReservation()} disabled={saving}>Create Request</Button>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          <Grid item xs={12} lg={8}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" sx={{ mb: 1.5 }}>Reservation Management</Typography>
-                <TableContainer sx={{ maxHeight: 460 }}>
-                  <Table stickyHeader size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Resident</TableCell>
-                        <TableCell>Apartment</TableCell>
-                        <TableCell>Building</TableCell>
-                        <TableCell>Spot</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell align="right">Actions</TableCell>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" sx={{ mb: 1.5 }}>Resident Parking Reservations</Typography>
+            <TableContainer sx={{ maxHeight: 600 }}>
+              <Table stickyHeader size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#f5f5f5' }}>
+                    <TableCell><strong>Resident</strong></TableCell>
+                    <TableCell><strong>Email</strong></TableCell>
+                    <TableCell><strong>Apartment</strong></TableCell>
+                    <TableCell><strong>Parking Lot</strong></TableCell>
+                    <TableCell><strong>Spot Code</strong></TableCell>
+                    <TableCell><strong>Status</strong></TableCell>
+                    <TableCell align="right"><strong>Actions</strong></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {reservations.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7}>
+                        <Typography color="text.secondary" align="center">No reservation requests yet.</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    reservations.map((item: any) => (
+                      <TableRow key={item._id} hover>
+                        <TableCell>{item.residentId?.name || 'Unknown'}</TableCell>
+                        <TableCell>{item.residentId?.email || '-'}</TableCell>
+                        <TableCell>{item.residentId?.apartment || '-'}</TableCell>
+                        <TableCell>{item.parkingLotId?.name || item.parkingLot || '-'}</TableCell>
+                        <TableCell><strong>{item.spotCode}</strong></TableCell>
+                        <TableCell>
+                          <Chip 
+                            size="small" 
+                            color={item.status === 'pending' ? 'warning' : item.status === 'approved' ? 'success' : 'error'} 
+                            label={item.status} 
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <Button
+                              size="small"
+                              color="success"
+                              variant="contained"
+                              startIcon={<CheckCircleIcon />}
+                              disabled={item.status === 'approved' || saving}
+                              onClick={() => void handleReservationDecision(item._id, 'approved')}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="small"
+                              color="error"
+                              variant="outlined"
+                              disabled={item.status === 'rejected' || saving}
+                              onClick={() => void handleReservationDecision(item._id, 'rejected')}
+                            >
+                              Reject
+                            </Button>
+                          </Stack>
+                        </TableCell>
                       </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {activeResidence.reservations.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6}>
-                            <Typography color="text.secondary">No reservation requests yet.</Typography>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        activeResidence.reservations.map((item) => (
-                          <TableRow key={item._id} hover>
-                            <TableCell>{item.residentName}</TableCell>
-                            <TableCell>{item.apartmentRef}</TableCell>
-                            <TableCell>{item.buildingRef}</TableCell>
-                            <TableCell>{item.spotCode}</TableCell>
-                            <TableCell>
-                              <Chip size="small" color={statusChipColor(item.status)} label={item.status} />
-                            </TableCell>
-                            <TableCell align="right">
-                              <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                <Button
-                                  size="small"
-                                  color="success"
-                                  variant="contained"
-                                  startIcon={<CheckCircleIcon />}
-                                  disabled={item.status === 'approved' || saving}
-                                  onClick={() => void handleReservationDecision(item._id, 'approved')}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="small"
-                                  color="error"
-                                  variant="outlined"
-                                  disabled={item.status === 'denied' || saving}
-                                  onClick={() => void handleReservationDecision(item._id, 'denied')}
-                                >
-                                  Deny
-                                </Button>
-                              </Stack>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
       ) : null}
 
       {activeTab === 'residents' ? (

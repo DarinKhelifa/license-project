@@ -15,6 +15,8 @@ const {
   deleteUser,
   verifyOTP,
   resendOTP,
+  requestPasswordReset,
+  resetPassword,
   createUserAdmin
 } = require('../controllers/authController');
 
@@ -23,6 +25,9 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/verify-otp', verifyOTP);
 router.post('/resend-otp', resendOTP);
+// Password reset routes
+router.post('/forgot-password', requestPasswordReset);
+router.post('/reset-password', resetPassword);
 
 // Protected routes
 router.get('/me', protect, getMe);

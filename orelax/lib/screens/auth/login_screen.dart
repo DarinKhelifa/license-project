@@ -6,6 +6,7 @@ import 'dart:ui'; // Import dart:ui for ImageFilter
 import '../../providers/auth_provider.dart';
 import '../../widgets/auth_error_banner.dart';
 import 'signup_screen.dart';
+import 'forgot_password_screen.dart';
 
 // Palette for the "Soft Green" theme
 const kGreenDark = Color(0xFF134E21);
@@ -231,7 +232,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       Align(
                         alignment: Alignment.center,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen(),
+                            ),
+                          ),
                           child: Text(
                             'Forgot Password',
                             style: GoogleFonts.dmSans(

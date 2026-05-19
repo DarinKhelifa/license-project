@@ -2,7 +2,8 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const generateOTP = require('../utils/otpGenerator');
-const { sendOTPEmail } = require('../utils/emailService');
+const crypto = require('crypto');
+const { sendOTPEmail, sendPasswordResetEmail } = require('../utils/emailService');
 
 const STRONG_PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[._@])[A-Za-z\d._@]{8,}$/;
 
@@ -392,6 +393,77 @@ const changePassword = async (req, res) => {
   }
 };
 
+// ========== REQUEST PASSWORD RESET ==========
+const requestPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const normalizedEmail = (email || '').trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      // respond with success to avoid leaking registered emails
+      return res.json({ success: true, message: 'If an account exists, a reset link has been sent.' });
+    }
+
+    // Create reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save();
+
+    const emailSent = await sendPasswordResetEmail({ email: user.email, name: user.name, token: resetToken });
+    if (!emailSent) {
+      // clear token if email fails
+      user.resetPasswordToken = null;
+      user.resetPasswordExpire = null;
+      await user.save();
+      return res.status(500).json({ message: 'Failed to send password reset email' });
+    }
+
+    res.json({ success: true, message: 'If an account exists, a reset link has been sent.' });
+  } catch (error) {
+    console.error('Request password reset error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ========== RESET PASSWORD ==========
+const resetPassword = async (req, res) => {
+  try {
+    const { token, email, newPassword } = req.body;
+    if (!token || !email || !newPassword) {
+      return res.status(400).json({ message: 'Token, email and new password are required' });
+    }
+
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters and include letters, numbers, and at least one symbol (._@).' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({ email: (email || '').trim().toLowerCase(), resetPasswordToken: hashedToken }).select('+resetPasswordToken +resetPasswordExpire');
+
+    if (!user || !user.resetPasswordExpire || user.resetPasswordExpire < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpire = null;
+    await user.save();
+
+    res.json({ success: true, message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // ========== GET ALL USERS (Admin) ==========
 const getAllUsers = async (req, res) => {
   try {
@@ -619,3 +691,6 @@ module.exports = {
   verifyOTP,
   resendOTP
 };
+// Add password reset exports
+module.exports.requestPasswordReset = requestPasswordReset;
+module.exports.resetPassword = resetPassword;

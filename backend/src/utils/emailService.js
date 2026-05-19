@@ -111,3 +111,35 @@ const sendOTPEmail = async ({ email, name, otp }) => {
 };
 
 module.exports = { sendOTPEmail };
+// Send password reset email with a tokenized link
+const sendPasswordResetEmail = async ({ email, name, token }) => {
+  try {
+    if (!transporter) {
+      console.warn(`Skipping password reset email to ${email} because the mail transporter is unavailable.`);
+      return false;
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || process.env.DASHBOARD_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+
+    const info = await transporter.sendMail({
+      from: `"ORELAX" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Reset Your ORELAX Password',
+      html: `
+        <p>Hi ${name || ''},</p>
+        <p>You requested a password reset. Click the link below to set a new password. This link expires in 1 hour.</p>
+        <p><a href="${resetUrl}">Reset your password</a></p>
+        <p>If you didn't request a reset, ignore this email.</p>
+      `,
+    });
+
+    console.log(`✅ Password reset email sent to ${email}. Message ID: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Password reset email failed:', error);
+    return false;
+  }
+};
+
+module.exports.sendPasswordResetEmail = sendPasswordResetEmail;

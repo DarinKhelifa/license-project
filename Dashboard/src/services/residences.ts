@@ -1,6 +1,6 @@
 import { request } from './api';
 
-export type ReservationStatus = 'pending' | 'approved' | 'denied';
+export type ReservationStatus = 'pending' | 'approved' | 'rejected';
 
 export type Building = {
   id: string;
@@ -16,12 +16,19 @@ export type ParkingSpot = {
 
 export type ParkingReservation = {
   _id: string;
+  residentId?: any;
+  residenceId?: any;
+  parkingLotId: string;
   residentName: string;
   apartmentRef: string;
-  buildingRef: string;
   spotCode: string;
   status: ReservationStatus;
   createdAt: string;
+  startDate?: string;
+  endDate?: string;
+  approvedBy?: any;
+  approvedAt?: string | null;
+  rejectionReason?: string | null;
 };
 
 export type Residence = {
@@ -31,6 +38,15 @@ export type Residence = {
   buildings: Building[];
   parkingSpots: ParkingSpot[];
   reservations: ParkingReservation[];
+};
+
+export type Reservation = {
+  _id: string;
+  residentName: string;
+  apartmentRef: string;
+  buildingRef: string;
+  spotCode: string;
+  status: ReservationStatus;
 };
 
 export const residencesAPI = {
@@ -77,7 +93,7 @@ export const residencesAPI = {
   updateReservationStatus: (
     residenceId: string,
     reservationId: string,
-    payload: { status: 'approved' | 'denied' }
+    payload: { status: 'approved' | 'rejected' }
   ) =>
     request<{ message: string; residence: Residence }>(
       `/residences/${residenceId}/reservations/${reservationId}`,
@@ -86,4 +102,31 @@ export const residencesAPI = {
         body: JSON.stringify(payload),
       }
     ),
+
+  getParkingReservations: (residenceId: string) =>
+    request<ParkingReservation[]>(`/parking/${residenceId}/reservations`),
+
+  approveParkingReservation: (residenceId: string, reservationId: string) =>
+    request<{ success: boolean; message: string; reservation: ParkingReservation }>(
+      `/parking/${residenceId}/reservations/${reservationId}/approve`,
+      {
+        method: 'PUT',
+      }
+    ),
+
+  rejectParkingReservation: (
+    residenceId: string,
+    reservationId: string,
+    rejectionReason?: string
+  ) =>
+    request<{ success: boolean; message: string; reservation: ParkingReservation }>(
+      `/parking/${residenceId}/reservations/${reservationId}/reject`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ rejectionReason }),
+      }
+    ),
+
+  getResidentReservations: (residenceId: string) =>
+    request<ParkingReservation[]>(`/parking/${residenceId}/reservations`),
 };
