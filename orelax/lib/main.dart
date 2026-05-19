@@ -33,6 +33,7 @@ import 'screens/resident/community/community_feed_screen.dart';
 import 'providers/event_provider.dart';
 import 'providers/report_provider.dart';
 import 'providers/alert_provider.dart';
+import 'providers/fire_alert_provider.dart';
 import 'screens/resident/guest_qr/guest_qr_form_screen.dart';
 import 'screens/resident/guest_qr/guest_qr_view_screen.dart';
 import 'screens/resident/parking/parking_screen.dart';
@@ -65,6 +66,7 @@ class OrelaxApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => ReportProvider()),
         ChangeNotifierProvider(create: (context) => NotificationProvider()),
         ChangeNotifierProvider(create: (context) => AlertProvider()),
+        ChangeNotifierProvider(create: (context) => FireAlertProvider()),
         ChangeNotifierProvider(create: (context) => EnergyProvider()),
       ],
       child: MaterialApp(

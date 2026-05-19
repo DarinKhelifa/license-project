@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../services/socket_service.dart';
+import '../services/api_service.dart';
 
 class FireAlert {
   final String id;
@@ -12,9 +13,39 @@ class FireAlert {
   FireAlert({required this.id, required this.timestamp, this.status = 'active'});
 
   factory FireAlert.fromMap(Map<String, dynamic> map) {
+    String id = map['id']?.toString() ?? map['_id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+    dynamic ts = map['timestamp'] ?? map['createdAt'];
+
+    DateTime parseTimestamp(dynamic value) {
+      if (value == null) return DateTime.now();
+      try {
+        if (value is DateTime) return value;
+        if (value is int) return DateTime.fromMillisecondsSinceEpoch(value);
+        if (value is String) return DateTime.parse(value);
+        if (value is Map) {
+          // Handle MongoDB extended JSON like { "$date": "2023-..." } or {"$date": {"$numberLong":"..."}}
+          if (value.containsKey(r'\$date')) {
+            final d = value[r'\$date'];
+            if (d is String) return DateTime.parse(d);
+            if (d is Map && d.containsKey(r'\$numberLong')) {
+              final nl = d[r'\$numberLong'];
+              return DateTime.fromMillisecondsSinceEpoch(int.parse(nl.toString()));
+            }
+          }
+          // Fallback: try toString()
+          return DateTime.parse(value.toString());
+        }
+        // Fallback
+        return DateTime.parse(value.toString());
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
     return FireAlert(
-      id: map['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      timestamp: DateTime.parse(map['timestamp'] ?? map['createdAt'] ?? DateTime.now().toIso8601String()),
+      id: id,
+      timestamp: parseTimestamp(ts ?? DateTime.now().toIso8601String()),
       status: (map['status'] as String?) ?? 'active',
     );
   }
@@ -52,7 +83,9 @@ class FireAlertProvider extends ChangeNotifier {
 
   Future<void> fetchHistory() async {
     try {
-      final resp = await http.get(Uri.parse('http://10.40.104.216:5000/api/iot/alerts'));
+      final url = '${ApiService.baseUrl}/iot/alerts';
+      print('📡 Fetching fire alert history from $url');
+      final resp = await http.get(Uri.parse(url));
       if (resp.statusCode == 200) {
         final body = jsonDecode(resp.body);
         if (body is List) {
@@ -65,7 +98,7 @@ class FireAlertProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      // ignore errors for now
+      print('❌ Error fetching fire alert history: $e');
     }
   }
 
