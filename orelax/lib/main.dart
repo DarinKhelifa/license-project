@@ -180,16 +180,38 @@ class GlobalFireAlertOverlay extends StatefulWidget {
 
 class _GlobalFireAlertOverlayState extends State<GlobalFireAlertOverlay> with SingleTickerProviderStateMixin {
   late AnimationController _blinkController;
+  void Function(FlutterErrorDetails)? _oldFlutterErrorOnError;
 
   @override
   void initState() {
     super.initState();
     _blinkController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))
       ..repeat(reverse: true);
+
+    // Capture previous handler and override Flutter error handler so uncaught
+    // framework errors show the full-screen red alert via the provider.
+    _oldFlutterErrorOnError = FlutterError.onError;
+    FlutterError.onError = (FlutterErrorDetails details) {
+      // Call previous handler to preserve logs
+      try {
+        _oldFlutterErrorOnError?.call(details);
+      } catch (_) {}
+
+      // Post-frame: create an error alert so the Global overlay displays
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          if (mounted) {
+            context.read<FireAlertProvider>().createErrorAlert(details.exceptionAsString());
+          }
+        } catch (_) {}
+      });
+    };
   }
 
   @override
   void dispose() {
+    // restore previous handler
+    FlutterError.onError = _oldFlutterErrorOnError;
     _blinkController.dispose();
     super.dispose();
   }

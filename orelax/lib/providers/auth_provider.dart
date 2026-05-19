@@ -30,7 +30,11 @@ class AuthProvider extends ChangeNotifier {
     
     try {
       final user = await ApiService.getCurrentUser();
-      _user = user;
+      if (user is Map<String, dynamic>) {
+        _user = Map<String, dynamic>.from(user);
+      } else {
+        _user = null;
+      }
       _errorMessage = null;
       
       if (_user != null) {
@@ -49,7 +53,11 @@ class AuthProvider extends ChangeNotifier {
     final id = userId;
     if (_user != null && id != null) {
       final role = (_user!['role'] ?? 'resident').toString();
-      await ChatService.connect(id, role: role);
+      try {
+        await ChatService.connect(id, role: role);
+      } catch (e) {
+        // Preserve app flow even if chat fails
+      }
     }
   }
   
@@ -64,7 +72,18 @@ class AuthProvider extends ChangeNotifier {
     
     try {
       final response = await ApiService.login(email: email, password: password);
-      _user = response['user'];
+      // API may return either the user map directly or a wrapper { user: {...} }
+      if (response is Map<String, dynamic>) {
+        if (response.containsKey('user')) {
+          _user = Map<String, dynamic>.from(response['user'] ?? {});
+        } else if (response.containsKey('_id') || response.containsKey('id')) {
+          _user = Map<String, dynamic>.from(response);
+        } else {
+          _user = null;
+        }
+      } else {
+        _user = null;
+      }
       
       if (_user != null) {
         await initializeChat();
@@ -109,7 +128,17 @@ class AuthProvider extends ChangeNotifier {
         building: building,
         role: role,
       );
-      _user = response['user'];
+      if (response is Map<String, dynamic>) {
+        if (response.containsKey('user')) {
+          _user = Map<String, dynamic>.from(response['user'] ?? {});
+        } else if (response.containsKey('_id') || response.containsKey('id')) {
+          _user = Map<String, dynamic>.from(response);
+        } else {
+          _user = null;
+        }
+      } else {
+        _user = null;
+      }
       
       if (_user != null) {
         // Check if email is verified
@@ -162,25 +191,29 @@ Future<bool> updateUserData(Map<String, dynamic> data) async {
   _isLoading = true;
   notifyListeners();
 
-  try {
-    final updatedUser;
+    try {
+    Map<String, dynamic>? updatedUser;
 
     if (data['photo'] != null) {
-      updatedUser = await ApiService.updateProfileWithPhoto(
+      final resp = await ApiService.updateProfileWithPhoto(
         name: data['name']?.toString() ?? '',
         phone: data['phone']?.toString() ?? '',
         apartment: data['apartment']?.toString() ?? '',
         photoFile: data['photo'],
       );
+      if (resp is Map<String, dynamic>) updatedUser = Map<String, dynamic>.from(resp);
     } else {
-      updatedUser = await ApiService.updateProfile(
+      final resp = await ApiService.updateProfile(
         name: data['name']?.toString() ?? '',
         phone: data['phone']?.toString() ?? '',
         apartment: data['apartment']?.toString() ?? '',
       );
+      if (resp is Map<String, dynamic>) updatedUser = Map<String, dynamic>.from(resp);
     }
 
-    _user = updatedUser;
+    if (updatedUser != null) {
+      _user = updatedUser;
+    }
     _isLoading = false;
     notifyListeners();
     return true;

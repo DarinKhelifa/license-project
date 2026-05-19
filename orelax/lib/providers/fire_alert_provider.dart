@@ -7,14 +7,16 @@ import '../services/socket_service.dart';
 class FireAlert {
   final String id;
   final DateTime timestamp;
+  final String? location;
   String status; // 'active' or 'acknowledged'
 
-  FireAlert({required this.id, required this.timestamp, this.status = 'active'});
+  FireAlert({required this.id, required this.timestamp, this.location, this.status = 'active'});
 
   factory FireAlert.fromMap(Map<String, dynamic> map) {
     return FireAlert(
       id: map['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
       timestamp: DateTime.parse(map['timestamp'] ?? map['createdAt'] ?? DateTime.now().toIso8601String()),
+      location: map['location']?.toString(),
       status: (map['status'] as String?) ?? 'active',
     );
   }
@@ -28,6 +30,8 @@ class FireAlertProvider extends ChangeNotifier {
 
   List<FireAlert> get alerts => _alerts;
   FireAlert? get activeAlert => _active;
+
+  bool get isHandlingAlert => _active != null && _active!.status.toLowerCase() == 'active';
 
   FireAlertProvider() {
     _listenSocket();
@@ -75,6 +79,34 @@ class FireAlertProvider extends ChangeNotifier {
       _alerts[idx].status = 'acknowledged';
     }
     if (_active?.id == id) _active = null;
+    notifyListeners();
+  }
+
+  void markSafe(String id) {
+    acknowledge(id);
+  }
+
+  Future<void> reportNotSafe(String id, [Object? _]) async {
+    final idx = _alerts.indexWhere((a) => a.id == id);
+    if (idx != -1) {
+      _alerts[idx].status = 'not_safe';
+    }
+    if (_active?.id == id) {
+      _active = _alerts[idx != -1 ? idx : 0];
+    }
+    notifyListeners();
+  }
+
+  /// Create an alert programmatically (used for uncaught errors or manual triggers)
+  void createErrorAlert(String message) {
+    final alert = FireAlert(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      location: message,
+      status: 'active',
+    );
+    _alerts.insert(0, alert);
+    _active = alert;
     notifyListeners();
   }
 }
