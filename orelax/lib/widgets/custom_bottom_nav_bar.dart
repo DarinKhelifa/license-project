@@ -15,24 +15,20 @@ class CustomBottomNavBar extends StatelessWidget {
     String routeName = '/';
     switch (index) {
       case 0:
-        routeName = '/';
+        routeName = '/home';
         break;
       case 1:
-        routeName = '/chat';
+        routeName = '/booking-history';
         break;
       case 2:
-        routeName = '/report';
+        routeName = '/chat';
         break;
       case 3:
         routeName = '/profile';
         break;
     }
 
-    if (index == 0) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/auth', (route) => false);
-    } else {
-      Navigator.pushReplacementNamed(context, routeName);
-    }
+    Navigator.pushReplacementNamed(context, routeName);
   }
 
   @override
@@ -61,13 +57,13 @@ class CustomBottomNavBar extends StatelessWidget {
               isActive: currentIndex == 0,
               onTap: () => _onItemTapped(context, 0),
             ),
-            _ChatNavItem(
+            _NavItem(
+              icon: 'assets/icon/handshake.svg',
+              label: 'Booking',
               isActive: currentIndex == 1,
               onTap: () => _onItemTapped(context, 1),
             ),
-            _NavItem(
-              icon: 'assets/icon/triangle-alert.svg',
-              label: 'Report',
+            _ChatNavItem(
               isActive: currentIndex == 2,
               onTap: () => _onItemTapped(context, 2),
             ),

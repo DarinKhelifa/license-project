@@ -546,7 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           _isFacilitiesManager()
                               ? _DockNavBarItem(
-                                  icon: 'assets/icon/calendar.svg',
+                                  icon: 'assets/icon/handshake.svg',
                                   label: 'Bookings',
                                   isActive: _currentIndex == 1,
                                   onTap: () => _navigateToPage(1),
@@ -558,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                           _DockNavBarItem(
                             icon: _usesNotificationsTab
-                                ? 'assets/icon/bell.svg'
+                                ? 'assets/icon/message-circle.svg'
                                 : 'assets/icon/triangle-alert.svg',
                             label: _usesNotificationsTab ? 'Notifications' : 'Report',
                             isActive: _currentIndex == 2,
@@ -616,8 +616,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         _DockNavBarSpacerItem(),
                         _DockNavBarItem(
-                          icon: 'assets/icon/triangle-alert.svg',
-                          label: 'Report',
+                          icon: 'assets/icon/message-circle.svg',
+                          label: 'Chat',
                           isActive: _currentIndex == 2,
                           onTap: () => _navigateToPage(2),
                         ),

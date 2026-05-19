@@ -425,7 +425,7 @@ class _ChatScreenState extends State<ChatScreen>
     final currentUserId = authProvider.userId;
     
     return Scaffold(
-      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 1),
+      bottomNavigationBar: const CustomBottomNavBar(currentIndex: 2),
       appBar: AppBar(
         title: const Text('Messages'),
         backgroundColor: Colors.white,
